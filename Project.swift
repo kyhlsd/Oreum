@@ -1,13 +1,16 @@
 import ProjectDescription
 
+let version = "16.0"
+
 let project = Project(
     name: "Oreum",
     targets: [
         .target(
             name: "Oreum",
-            destinations: .iOS,
+            destinations: [.iPhone],
             product: .app,
             bundleId: "io.tuist.Oreum",
+            deploymentTargets: .iOS(version),
             infoPlist: .extendingDefault(
                 with: [
                     "UILaunchStoryboardName": "LaunchScreen",
@@ -22,7 +25,11 @@ let project = Project(
                             ]
                         ]
                     ],
-                ]
+                    "UIUserInterfaceStyle": "Light",
+                    "UISupportedInterfaceOrientations": [
+                        "UIInterfaceOrientationPortrait"
+                    ]
+                ],
             ),
             sources: ["Oreum/Sources/**"],
             resources: ["Oreum/Resources/**"],
