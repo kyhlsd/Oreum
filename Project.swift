@@ -33,7 +33,61 @@ let project = Project(
             ),
             sources: ["Oreum/Sources/**"],
             resources: ["Oreum/Resources/**"],
-            dependencies: []
+            dependencies: [
+                .target(name: "Presentation"),
+                .target(name: "Domain"),
+                .target(name: "Data"),
+                .target(name: "Common")
+            ]
         ),
+        
+            .target(name: "Domain",
+                    destinations: [.iPhone],
+                    product: .framework,
+                    bundleId: "io.tuist.Domain",
+                    deploymentTargets: .iOS(version),
+                    sources: ["Domain/Sources/**"],
+                    resources: ["Domain/Resources/**"],
+                    dependencies: [
+                        .target(name: "Common")
+                    ]
+                   ),
+        
+            .target(name: "Data",
+                    destinations: [.iPhone],
+                    product: .framework,
+                    bundleId: "io.tuist.Data",
+                    deploymentTargets: .iOS(version),
+                    sources: ["Data/Sources/**"],
+                    resources: ["Data/Resources/**"],
+                    dependencies: [
+                        .target(name: "Common"),
+                        .target(name: "Domain")
+                    ]
+                   ),
+        
+            .target(name: "Presentation",
+                    destinations: [.iPhone],
+                    product: .framework,
+                    bundleId: "io.tuist.Presentation",
+                    deploymentTargets: .iOS(version),
+                    sources: ["Presentation/Sources/**"],
+                    resources: ["Presentation/Resources/**"],
+                    dependencies: [
+                        .target(name: "Common"),
+                        .target(name: "Domain"),
+                        .target(name: "Data")
+                    ]
+                   ),
+        
+            .target(name: "Common",
+                    destinations: [.iPhone],
+                    product: .framework,
+                    bundleId: "io.tuist.Common",
+                    deploymentTargets: .iOS(version),
+                    sources: ["Common/Sources/**"],
+                    resources: ["Common/Resources/**"],
+                    dependencies: []
+                   ),
     ]
 )
