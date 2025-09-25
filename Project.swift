@@ -62,7 +62,9 @@ let project = Project(
                     resources: ["Data/Resources/**"],
                     dependencies: [
                         .target(name: "Common"),
-                        .target(name: "Domain")
+                        .target(name: "Domain"),
+                        .external(name: "Realm"),
+                        .external(name: "Alamofire")
                     ]
                    ),
         
@@ -76,7 +78,11 @@ let project = Project(
                     dependencies: [
                         .target(name: "Common"),
                         .target(name: "Domain"),
-                        .target(name: "Data")
+                        .target(name: "Data"),
+                        .external(name: "Kingfisher"),
+                        .external(name: "KingfisherWebP"),
+                        .external(name: "SnapKit"),
+                        .external(name: "Toast")
                     ]
                    ),
         
