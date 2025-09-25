@@ -10,25 +10,23 @@ let project = Project(
             bundleId: "io.tuist.Oreum",
             infoPlist: .extendingDefault(
                 with: [
-                    "UILaunchScreen": [
-                        "UIColorName": "",
-                        "UIImageName": "",
+                    "UILaunchStoryboardName": "LaunchScreen",
+                    "UIApplicationSceneManifest": [
+                        "UIApplicationSupportsMultipleScenes": false,
+                        "UISceneConfigurations": [
+                            "UIWindowSceneSessionRoleApplication": [
+                                [
+                                    "UISceneConfigurationName": "Default Configuration",
+                                    "UISceneDelegateClassName": "$(PRODUCT_MODULE_NAME).SceneDelegate"
+                                ],
+                            ]
+                        ]
                     ],
                 ]
             ),
             sources: ["Oreum/Sources/**"],
             resources: ["Oreum/Resources/**"],
             dependencies: []
-        ),
-        .target(
-            name: "OreumTests",
-            destinations: .iOS,
-            product: .unitTests,
-            bundleId: "io.tuist.OreumTests",
-            infoPlist: .default,
-            sources: ["Oreum/Tests/**"],
-            resources: [],
-            dependencies: [.target(name: "Oreum")]
         ),
     ]
 )
