@@ -11,10 +11,6 @@ import SnapKit
 
 final class ClimbRecordListView: BaseView {
     
-    enum Section: CaseIterable {
-        case main
-    }
-    
     private let searchBar = {
         let searchBar = UISearchBar()
         searchBar.placeholder = "산 이름 검색하세요"
@@ -42,18 +38,14 @@ final class ClimbRecordListView: BaseView {
         return label
     }()
     
-    private lazy var recordCollectionView = {
-        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(120))
-        let item = NSCollectionLayoutItem(layoutSize: size)
+    private lazy var recordCollectionView = { [weak self] in
+        guard let self else {
+            return UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
+        }
         
-        let group = NSCollectionLayoutGroup.vertical(layoutSize: size, subitems: [item])
-        
-        let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: AppSpacing.regular, bottom: 0, trailing: AppSpacing.regular)
-        
-        let layout = UICollectionViewCompositionalLayout(section: section)
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .clear
+        collectionView.keyboardDismissMode = .onDrag
         
         return collectionView
     }()
@@ -65,30 +57,8 @@ final class ClimbRecordListView: BaseView {
             }
         }
         
-        let oddRegistration = UICollectionView.CellRegistration<ClimbRecordOddCollectionViewCell, ClimbRecord> { [weak self] cell, indexPath, item in
-            guard let self else { return }
-            
-            let isFirst = indexPath.item == 0
-            let lastIndex = self.recordCollectionView.numberOfItems(inSection: indexPath.section) - 1
-            let isLast = indexPath.item == lastIndex
-            
-            cell.setUpRoadImageHidden(isFirst: isFirst)
-            cell.setDownRoadImageHidden(isLast: isLast)
-            cell.setData(item)
-        }
-        
-        let evenRegistration = UICollectionView.CellRegistration<ClimbRecordEvenCollectionViewCell, ClimbRecord> { [weak self] cell, indexPath, item in
-            guard let self else { return }
-            
-            let isFirst = indexPath.item == 0
-            let lastIndex = self.recordCollectionView.numberOfItems(inSection: indexPath.section) - 1
-            let isLast = indexPath.item == lastIndex
-            
-            cell.setUpRoadImageHidden(isFirst: isFirst)
-            cell.setDownRoadImageHidden(isLast: isLast)
-            cell.setData(item)
-        }
-
+        let oddRegistration = createRegistration(cellType: ClimbRecordOddCollectionViewCell.self)
+        let evenRegistration = createRegistration(cellType: ClimbRecordEvenCollectionViewCell.self)
         
         let dataSource = UICollectionViewDiffableDataSource<Section, ClimbRecord>(collectionView: self.recordCollectionView) { collectionView, indexPath, item in
             if indexPath.item % 2 == 0 {
@@ -102,6 +72,7 @@ final class ClimbRecordListView: BaseView {
         return dataSource
     }()
  
+    // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
     }
@@ -138,6 +109,7 @@ final class ClimbRecordListView: BaseView {
     }
 }
 
+// MARK: - Binding Methods
 extension ClimbRecordListView {
     
     func setSearchBarBorder(isFirstResponder: Bool) {
@@ -155,4 +127,39 @@ extension ClimbRecordListView {
         snapshot.appendItems(items)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
+}
+
+// MARK: - CollectionView Helper
+extension ClimbRecordListView {
+    
+    private enum Section: CaseIterable {
+        case main
+    }
+    
+    private func createLayout() -> UICollectionViewCompositionalLayout {
+        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(120))
+        let item = NSCollectionLayoutItem(layoutSize: size)
+        
+        let group = NSCollectionLayoutGroup.vertical(layoutSize: size, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: AppSpacing.regular, bottom: 0, trailing: AppSpacing.regular)
+        
+        return UICollectionViewCompositionalLayout(section: section)
+    }
+    
+    private func createRegistration<Cell: ClimbRecordCollectionViewCell>(cellType: Cell.Type) -> UICollectionView.CellRegistration<Cell, ClimbRecord> {
+        return UICollectionView.CellRegistration<Cell, ClimbRecord> { [weak self] cell, indexPath, item in
+            guard let self else { return }
+            
+            let isFirst = indexPath.item == 0
+            let lastIndex = self.recordCollectionView.numberOfItems(inSection: indexPath.section) - 1
+            let isLast =  indexPath.item == lastIndex
+            
+            cell.setUpRoadImageHidden(isFirst: isFirst)
+            cell.setDownRoadImageHidden(isLast: isLast)
+            cell.setData(item)
+        }
+    }
+    
 }

@@ -25,5 +25,6 @@ enum AppFont {
     static var description: UIFont { UIFont.systemFont(ofSize: 14, weight: .regular)}
     static var button: UIFont  { UIFont.systemFont(ofSize: 16, weight: .medium) }  // button
     static var input: UIFont   { UIFont.systemFont(ofSize: 16, weight: .regular) } // input
+    static var tag: UIFont { UIFont.systemFont(ofSize: 12, weight: .medium) } // tag
 }
 

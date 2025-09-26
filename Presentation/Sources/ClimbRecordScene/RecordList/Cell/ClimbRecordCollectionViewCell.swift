@@ -35,6 +35,8 @@ class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     
     private let dateLabel = UILabel.create(color: AppColor.subText, font: AppFont.description)
     
+    private let tagStackView = TagStackView()
+    
     private let bookmarkButton = {
         let button = UIButton()
         button.tintColor = AppColor.primary
@@ -47,9 +49,17 @@ class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     }
     
     final func setData(_ data: ClimbRecord) {
+        // TODO: DTO, model 재정의
+        let mountains = Mountain.dummy
+        let mountain = mountains.filter { $0.id == data.mountainId }.first!
+        let isFamous = mountain.isFamous
+        let record = ClimbRecord.dummy.filter { $0.mountainId == data.mountainId }.first!
+        let isFirstVisit = record.id == data.id
+        let name = mountain.name
+        
         let date = data.timeLog.first?.time
         mountainImageView.image = getMountainImage(date: date)
-        nameLabel.text = data.mountainName
+        nameLabel.text = name
         if let date {
             dateLabel.text = AppFormatter.dateFormatter.string(from: date)
         } else {
@@ -58,6 +68,8 @@ class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         
         let image = data.isBookmarked ? AppIcon.bookmarkFill : AppIcon.bookmark
         bookmarkButton.setImage(image, for: .normal)
+        
+        tagStackView.setData(isFirstVisit: isFirstVisit, isFamous: isFamous)
     }
     
     final func setUpRoadImageHidden(isFirst: Bool) {
@@ -93,21 +105,27 @@ class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     }
     
     final override func setupHierarchy() {
-        [upRoadImageView, downRoadImageView, mountainImageView, nameLabel, dateLabel, bookmarkButton].forEach {
+        [upRoadImageView, downRoadImageView, mountainImageView, nameLabel, dateLabel, tagStackView, bookmarkButton].forEach {
             contentView.addSubview($0)
         }
     }
     
     override func setupLayout() {
+        nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         nameLabel.snp.makeConstraints { make in
             make.bottom.equalTo(mountainImageView.snp.centerY)
             make.leading.equalTo(mountainImageView.snp.trailing).offset(AppSpacing.regular)
-            make.trailing.equalTo(bookmarkButton.snp.leading)
+            make.trailing.equalTo(tagStackView.snp.leading).offset(-AppSpacing.small)
         }
         
         dateLabel.snp.makeConstraints { make in
             make.top.equalTo(mountainImageView.snp.centerY)
             make.horizontalEdges.equalTo(nameLabel)
+        }
+
+        tagStackView.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.trailing.equalTo(bookmarkButton.snp.leading)
         }
         
         bookmarkButton.snp.makeConstraints { make in

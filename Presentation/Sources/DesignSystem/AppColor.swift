@@ -62,6 +62,12 @@ enum AppColor {
     static let tabSelectedForeground = forestGreen
     static let tabNormal = stoneGray
     
+    //MARK: - TagLabel
+    static let firstVisitForeground = UIColor(hex: "#92400e")
+    static let firstVisitBackground = UIColor(hex: "#fef3c7")
+    static let famousForeground = UIColor(hex: "#065f46")
+    static let famousBackground = UIColor(hex: "#d1fae5")
+    
     // MARK: - Nature Colors
     static let forestGreen = UIColor(hex: "#2d5832")
     static let mossGreen = UIColor(hex: "#4a7c59")
