@@ -65,13 +65,30 @@ final class ClimbRecordListView: BaseView {
             }
         }
         
-        let oddRegistration = UICollectionView.CellRegistration<ClimbRecordOddCollectionViewCell, ClimbRecord> { cell, _, item in
-            return cell.setData(item)
+        let oddRegistration = UICollectionView.CellRegistration<ClimbRecordOddCollectionViewCell, ClimbRecord> { [weak self] cell, indexPath, item in
+            guard let self else { return }
+            
+            let isFirst = indexPath.item == 0
+            let lastIndex = self.recordCollectionView.numberOfItems(inSection: indexPath.section) - 1
+            let isLast = indexPath.item == lastIndex
+            
+            cell.setUpRoadImageHidden(isFirst: isFirst)
+            cell.setDownRoadImageHidden(isLast: isLast)
+            cell.setData(item)
         }
         
-        let evenRegistration = UICollectionView.CellRegistration<ClimbRecordEvenCollectionViewCell, ClimbRecord> { cell, _, item in
-            return cell.setData(item)
+        let evenRegistration = UICollectionView.CellRegistration<ClimbRecordEvenCollectionViewCell, ClimbRecord> { [weak self] cell, indexPath, item in
+            guard let self else { return }
+            
+            let isFirst = indexPath.item == 0
+            let lastIndex = self.recordCollectionView.numberOfItems(inSection: indexPath.section) - 1
+            let isLast = indexPath.item == lastIndex
+            
+            cell.setUpRoadImageHidden(isFirst: isFirst)
+            cell.setDownRoadImageHidden(isLast: isLast)
+            cell.setData(item)
         }
+
         
         let dataSource = UICollectionViewDiffableDataSource<Section, ClimbRecord>(collectionView: self.recordCollectionView) { collectionView, indexPath, item in
             if indexPath.item % 2 == 0 {

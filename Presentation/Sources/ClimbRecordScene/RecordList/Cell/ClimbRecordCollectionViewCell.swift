@@ -11,6 +11,20 @@ import SnapKit
 
 class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     
+    let mountainImageSize = 80
+    
+    let upRoadImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleToFill
+        return imageView
+    }()
+    
+    let downRoadImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleToFill
+        return imageView
+    }()
+    
     let mountainImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleToFill
@@ -46,6 +60,14 @@ class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         bookmarkButton.setImage(image, for: .normal)
     }
     
+    final func setUpRoadImageHidden(isFirst: Bool) {
+        upRoadImageView.isHidden = isFirst
+    }
+    
+    final func setDownRoadImageHidden(isLast: Bool) {
+        downRoadImageView.isHidden = isLast
+    }
+    
     private func getMountainImage(date: Date?) -> UIImage? {
         guard let date else {
             return UIImage(named: "spring")
@@ -66,12 +88,12 @@ class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         }
     }
     
-    final override func setupView() {
+    override func setupView() {
         contentView.backgroundColor = .clear
     }
     
-    override func setupHierarchy() {
-        [mountainImageView, nameLabel, dateLabel, bookmarkButton].forEach {
+    final override func setupHierarchy() {
+        [upRoadImageView, downRoadImageView, mountainImageView, nameLabel, dateLabel, bookmarkButton].forEach {
             contentView.addSubview($0)
         }
     }
