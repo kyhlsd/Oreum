@@ -20,6 +20,8 @@ enum AppColor {
     static let cardText = UIColor(hex: "#1a2319")
     static let popoverText = UIColor(hex: "#1a2319")
     static let sidebarText = UIColor(hex: "#1a2319")
+    static let inputText = UIColor(hex: "#1a2319")
+    static let subText = UIColor(hex: "#5a6b5d")
     
     // MARK: - Buttons
     static let primary = UIColor(hex: "#2d5832")           // 주요 버튼 배경
@@ -39,7 +41,7 @@ enum AppColor {
     static let border = UIColor(hex: "#2d5832").withAlphaComponent(0.15)
     static let inputBackground = UIColor(hex: "#f8faf9")
     static let switchBackground = UIColor(hex: "#cbd5ce")
-    static let focusRing = UIColor(hex: "#2d5832")
+    static let focusRing = forestGreen
     
     // MARK: - Chart
     static let chart1 = UIColor(hex: "#2d5832")
@@ -49,7 +51,7 @@ enum AppColor {
     static let chart5 = UIColor(hex: "#b3d9b6")
     
     // MARK: - Sidebar
-    static let sidebarPrimary = UIColor(hex: "#2d5832")
+    static let sidebarPrimary = forestGreen
     static let sidebarPrimaryText = UIColor(hex: "#ffffff")
     static let sidebarAccent = UIColor(hex: "#e8f3ea")
     static let sidebarAccentText = UIColor(hex: "#1a2319")

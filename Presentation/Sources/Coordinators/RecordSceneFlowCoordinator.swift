@@ -17,9 +17,7 @@ public final class RecordSceneFlowCoordinator: Coordinator {
     
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "기록", image: AppIcon.bookOpen, tag: 0)
-        let vc = UIViewController()
-        vc.view.backgroundColor = .white
-        navigationController.pushViewController(vc, animated: false)
+        navigationController.pushViewController(ClimbRecordListViewController(), animated: false)
     }
     
 }

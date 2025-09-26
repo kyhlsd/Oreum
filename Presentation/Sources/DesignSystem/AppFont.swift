@@ -22,6 +22,7 @@ enum AppFont {
     // MARK: - Body / Text
     static var body: UIFont    { UIFont.systemFont(ofSize: 16, weight: .regular) } // p
     static var label: UIFont   { UIFont.systemFont(ofSize: 16, weight: .medium) }  // label
+    static var description: UIFont { UIFont.systemFont(ofSize: 14, weight: .regular)}
     static var button: UIFont  { UIFont.systemFont(ofSize: 16, weight: .medium) }  // button
     static var input: UIFont   { UIFont.systemFont(ofSize: 16, weight: .regular) } // input
 }
