@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Presentation
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -18,12 +19,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
         guard let scene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: scene)
+        guard let window else { return }
         
-        let viewController = UIViewController()
-        viewController.view.backgroundColor = .orange
+        AppAppearance.setupNavAppearance()
+        AppAppearance.setupTabAppearance()
         
-        window?.rootViewController = viewController
-        window?.makeKeyAndVisible()
+        let tabBarController = UITabBarController()
+        let appDIContainer = AppDIContainer(appConfiguration: .current)
+        let appFlowCoordinator = AppFlowCoordinator(window: window, tabBarController: tabBarController, appDIContainer: appDIContainer)
+        appFlowCoordinator.start()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

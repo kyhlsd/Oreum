@@ -13,6 +13,7 @@ enum AppColor {
     static let cardBackground = UIColor(hex: "#ffffff")
     static let popoverBackground = UIColor(hex: "#ffffff")
     static let sidebarBackground = UIColor(hex: "#f8faf9")
+    static let tabBarBackground = UIColor(hex: "#ffffff")
     
     // MARK: - Text
     static let primaryText = UIColor(hex: "#1a2319")   // 메인 텍스트
@@ -54,6 +55,10 @@ enum AppColor {
     static let sidebarAccentText = UIColor(hex: "#1a2319")
     static let sidebarBorder = UIColor(hex: "#2d5832").withAlphaComponent(0.15)
     static let sidebarFocusRing = UIColor(hex: "#2d5832")
+    
+    //MARK: - TabBar
+    static let tabSelectedForeground = forestGreen
+    static let tabNormal = stoneGray
     
     // MARK: - Nature Colors
     static let forestGreen = UIColor(hex: "#2d5832")
