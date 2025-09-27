@@ -38,7 +38,8 @@ final class ClimbRecordListViewController: UIViewController {
     private func bind() {
         let input = ClimbRecordListViewModel.Input(
             viewDidLoad: Just(()).eraseToAnyPublisher(),
-            searchText: mainView.searchBar.textDidChange
+            searchText: mainView.searchBar.textDidChange,
+            bookmarkTap: mainView.bookmarkButton.tap
         )
         
         let output = viewModel.transform(input: input)
@@ -52,6 +53,12 @@ final class ClimbRecordListViewController: UIViewController {
         output.guideText
             .sink { [weak self] text in
                 self?.mainView.setGuideLabelText(text)
+            }
+            .store(in: &cancellables)
+        
+        output.isOnlyBookmarked
+            .sink { [weak self] isOnlyBookmarked in
+                self?.mainView.setBookmarkImage(isOnlyBookmarked: isOnlyBookmarked)
             }
             .store(in: &cancellables)
         

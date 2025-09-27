@@ -27,9 +27,8 @@ final class ClimbRecordListView: BaseView {
         return searchBar
     }()
     
-    private let bookmarkButton = {
+    let bookmarkButton = {
         let button = UIButton()
-        button.setImage(AppIcon.bookmark, for: .normal)
         button.tintColor = AppColor.primary
         return button
     }()
@@ -105,6 +104,14 @@ extension ClimbRecordListView {
     func setClimbRecords(items: [ClimbRecord]) {
         climbRecordList = items
         recordCollectionView.reloadData()
+    }
+    
+    func setBookmarkImage(isOnlyBookmarked: Bool) {
+        if isOnlyBookmarked {
+            bookmarkButton.setImage(AppIcon.bookmarkFill, for: .normal)
+        } else {
+            bookmarkButton.setImage(AppIcon.bookmark, for: .normal)
+        }
     }
 }
 
