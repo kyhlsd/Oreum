@@ -8,31 +8,34 @@
 import Combine
 
 public protocol ClimbRecordRepository {
-    func fetchClimbRecords() -> AnyPublisher<[ClimbRecord], Error>
-    func search(keyword: String) -> AnyPublisher<[ClimbRecord], Error>
+    func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], Error>
+    func toggleBookmark(recordID: String) -> AnyPublisher<Void, Error>
 }
 // TODO: Realm
 public final class ClimbRecordRepositoryImpl: ClimbRecordRepository {
     
     public init() {}
     
-    public func fetchClimbRecords() -> AnyPublisher<[ClimbRecord], any Error> {
-        let records = ClimbRecord.dummy
+    public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], any Error> {
+        var records = ClimbRecord.dummy
+        
+        if !keyword.isEmpty {
+            let id = Mountain.dummy.filter { $0.name.contains(keyword)}.first?.id
+            records = records.filter { $0.mountainId == id}
+        }
+        
+        if isOnlyBookmarked {
+            records = records.filter { $0.isBookmarked }
+        }
+        
         return Just(records)
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }
     
-    public func search(keyword: String) -> AnyPublisher<[ClimbRecord], any Error> {
-        let records = ClimbRecord.dummy
-        if keyword.isEmpty {
-            return Just(records)
-                .setFailureType(to: Error.self)
-                .eraseToAnyPublisher()
-        }
-        let id = Mountain.dummy.filter { $0.name.contains(keyword)}.first?.id
-        let results = records.filter { $0.mountainId == id}
-        return Just(results)
+    public func toggleBookmark(recordID: String) -> AnyPublisher<Void, any Error> {
+        
+        return Just(())
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }

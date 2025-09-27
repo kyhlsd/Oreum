@@ -10,6 +10,8 @@ import Domain
 
 public final class RecordSceneDIContainer {
     
+    private lazy var climbRecordRepository = makeClimbRecordRepository()
+    
     public init() {}
     
     public func makeRecordSceneFlowCoordinator(navigationController: UINavigationController) -> RecordSceneFlowCoordinator {
@@ -23,11 +25,15 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeClimbRecordListViewModel() -> ClimbRecordListViewModel {
-        return ClimbRecordListViewModel(useCase: makeFetchClimbRecordsUseCase())
+        return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase())
     }
     
     private func makeFetchClimbRecordsUseCase() -> FetchClimbRecordUseCase {
-        return FetchClimbRecordUseCaseImpl(repository: makeClimbRecordRepository())
+        return FetchClimbRecordUseCaseImpl(repository: climbRecordRepository)
+    }
+    
+    private func makeToggleBookmarkUseCase() -> ToggleBookmarkUseCase {
+        return ToggleBookmarkUseCaseImpl(repository: climbRecordRepository)
     }
     
     private func makeClimbRecordRepository() -> ClimbRecordRepository {

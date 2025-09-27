@@ -12,8 +12,9 @@ public struct ClimbRecord: Hashable {
     public let mountainId: String
     public let timeLog: [ActivityLog]
     public let images: [String]
-    public let score: Int
-    public let isBookmarked: Bool
+    public var score: Int
+    public var comment: String
+    public var isBookmarked: Bool
 }
 
 extension ClimbRecord {
@@ -24,6 +25,7 @@ extension ClimbRecord {
             timeLog: ActivityLog.dummy,
             images: ["hallasan1.jpg", "hallasan2.jpg"],
             score: 5,
+            comment: "comment",
             isBookmarked: true
         ),
         ClimbRecord(
@@ -32,6 +34,7 @@ extension ClimbRecord {
             timeLog: ActivityLog.dummy,
             images: ["seoraksan1.jpg"],
             score: 4,
+            comment: "comment",
             isBookmarked: false
         ),
         ClimbRecord(
@@ -40,6 +43,7 @@ extension ClimbRecord {
             timeLog: ActivityLog.dummy,
             images: ["hallasan1.jpg", "hallasan2.jpg"],
             score: 5,
+            comment: "comment",
             isBookmarked: true
         ),
         ClimbRecord(
@@ -48,6 +52,7 @@ extension ClimbRecord {
             timeLog: ActivityLog.dummy,
             images: [],
             score: 3,
+            comment: "comment",
             isBookmarked: true
         ),
         ClimbRecord(
@@ -56,6 +61,7 @@ extension ClimbRecord {
             timeLog: ActivityLog.dummy,
             images: ["seoraksan1.jpg"],
             score: 4,
+            comment: "comment",
             isBookmarked: false
         ),
         ClimbRecord(
@@ -64,6 +70,7 @@ extension ClimbRecord {
             timeLog: ActivityLog.dummy,
             images: ["jirisann1.jpg"],
             score: 4,
+            comment: "comment",
             isBookmarked: false
         ),
         ClimbRecord(
@@ -72,6 +79,7 @@ extension ClimbRecord {
             timeLog: ActivityLog.dummy,
             images: [],
             score: 3,
+            comment: "comment",
             isBookmarked: true
         ),
         

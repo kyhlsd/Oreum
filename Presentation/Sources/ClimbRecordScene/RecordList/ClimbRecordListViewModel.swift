@@ -11,79 +11,97 @@ import Domain
 
 final class ClimbRecordListViewModel {
     
+    private let fetchUseCase: FetchClimbRecordUseCase
+    private let toggleBookmarkUseCase: ToggleBookmarkUseCase
+    private var cancellables = Set<AnyCancellable>()
+    
+    private(set) var climbRecordList = [ClimbRecord]()
+    private let baseGuideText = "산을 눌러 자세한 정보를 확인하세요."
+    
+    init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase) {
+        self.fetchUseCase = fetchUseCase
+        self.toggleBookmarkUseCase = toggleBookmarkUseCase
+    }
+    
     struct Input {
         let viewDidLoad: AnyPublisher<Void, Never>
         let searchText: AnyPublisher<String, Never>
         let bookmarkTap: AnyPublisher<Void, Never>
+        let cellBookmarkTap: AnyPublisher<String, Never>
     }
     
     struct Output {
-        let climbRecordList: AnyPublisher<[ClimbRecord], Never>
+        let reloadData: AnyPublisher<Void, Never>
         let guideText: AnyPublisher<String, Never>
         let isOnlyBookmarked: AnyPublisher<Bool, Never>
+        let bookmarkToggled: AnyPublisher<Int, Never>
         let errorMessage: AnyPublisher<String, Never>
     }
     
-    private let useCase: FetchClimbRecordUseCase
-    private var cancellables = Set<AnyCancellable>()
-    
-    private let baseGuideText = "산을 눌러 자세한 정보를 확인하세요"
-    private var showOnlyBookmarked = false
-    
-    init(useCase: FetchClimbRecordUseCase) {
-        self.useCase = useCase
-    }
-    
     func transform(input: Input) -> Output {
-        let errorMessageSubject = PassthroughSubject<String, Never>()
+        let reloadDataSubject = PassthroughSubject<Void, Never>()
         let guideTextSubject = CurrentValueSubject<String, Never>(baseGuideText)
+        let errorMessageSubject = PassthroughSubject<String, Never>()
         
-        let total = input.viewDidLoad
-            .flatMap { [useCase] in
-                useCase.execute()
-                    .catch { error -> Just<[ClimbRecord]> in
-                        errorMessageSubject.send(error.localizedDescription)
-                        return Just([])
-                    }
-            }
-        
-        let searched = input.searchText
+        let searchText = input.viewDidLoad
+            .map { "" }
+            .merge(with: input.searchText)
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .removeDuplicates()
-            .flatMap { [useCase] keyword in
-                useCase.search(keyword: keyword)
+        
+        let isOnlyBookmarked = input.bookmarkTap
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .scan(false) { last, _ in !last }
+            .prepend(false)
+            .share()
+            .eraseToAnyPublisher()
+        
+        Publishers.CombineLatest(searchText, isOnlyBookmarked)
+            .flatMap { [fetchUseCase] keyword, isOnlyBookmarked in
+                fetchUseCase.execute(keyword: keyword, isOnlyBookmarked: isOnlyBookmarked)
                     .catch { error -> Just<[ClimbRecord]> in
                         errorMessageSubject.send(error.localizedDescription)
                         return Just([])
                     }
+                    .map { ($0, isOnlyBookmarked)}
             }
-        
-        let isOnlyBookmarked = input.bookmarkTap
-            .scan(false) { last, _ in !last }
-            .prepend(false)
-            .eraseToAnyPublisher()
-        
-        let climbRecordList = Publishers.CombineLatest(Publishers.Merge(total, searched), isOnlyBookmarked)
-            .map { [weak self] list, isBookmarkOnly in
-                guard let self else { return list }
+            .sink { [weak self] (list, isOnlyBookmarked) in
+                guard let self else { return }
                 
-                var list = list
-                if isBookmarkOnly {
-                    list = list.filter { $0.isBookmarked }
+                climbRecordList = list
+                
+                if isOnlyBookmarked {
                     guideTextSubject.send("북마크한 산들 (\(list.count)개)")
                 } else {
                     guideTextSubject.send("\(baseGuideText) (\(list.count)개)")
                 }
-                return list
+                reloadDataSubject.send(())
+            }
+            .store(in: &cancellables)
+        
+        let bookmarkToggled = input.cellBookmarkTap
+            .flatMap { [toggleBookmarkUseCase] id in
+                toggleBookmarkUseCase.execute(recordID: id)
+                    .compactMap { [weak self] in
+                        if let index = self?.climbRecordList.firstIndex(where: { $0.id == id }) {
+                            self?.climbRecordList[index].isBookmarked.toggle()
+                            return index
+                        }
+                        return nil
+                    }
+                    .catch { error -> Just<Int> in
+                        errorMessageSubject.send(error.localizedDescription)
+                        return Just(-1)
+                    }
             }
             .eraseToAnyPublisher()
         
-            
-        
-        return Output(climbRecordList: climbRecordList,
-                      guideText: guideTextSubject.eraseToAnyPublisher(),
-                      isOnlyBookmarked: isOnlyBookmarked,
-                      errorMessage: errorMessageSubject.eraseToAnyPublisher()
+        return Output(
+            reloadData: reloadDataSubject.eraseToAnyPublisher(),
+            guideText: guideTextSubject.eraseToAnyPublisher(),
+            isOnlyBookmarked: isOnlyBookmarked,
+            bookmarkToggled: bookmarkToggled,
+            errorMessage: errorMessageSubject.eraseToAnyPublisher()
         )
     }
 }

@@ -6,12 +6,15 @@
 //
 
 import UIKit
+import Combine
 import Domain
 import SnapKit
 
 final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     
     private let mountainImageSize = 80
+    weak var cellBookmarkTapSubject: PassthroughSubject<String, Never>?
+    private var cancellables = Set<AnyCancellable>()
     
     private let upRoadImageView = {
         let imageView = UIImageView()
@@ -48,6 +51,8 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         mountainImageView.image = nil
         upRoadImageView.image = nil
         downRoadImageView.image = nil
+        cellBookmarkTapSubject = nil
+        cancellables = Set<AnyCancellable>()
     }
     
     final func setData(_ data: ClimbRecord) {
@@ -72,6 +77,14 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         bookmarkButton.setImage(image, for: .normal)
         
         tagStackView.setData(isFirstVisit: isFirstVisit, isFamous: isFamous)
+        
+        bookmarkButton.tap
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink { [weak self] in
+                self?.cellBookmarkTapSubject?.send(data.id)
+                
+            }
+            .store(in: &cancellables)
     }
     
     func setImages(row: Int, total: Int) {
@@ -128,6 +141,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         }
     }
     
+    // MARK: Setups
     override func setupView() {
         contentView.backgroundColor = .clear
     }

@@ -6,12 +6,13 @@
 //
 
 import UIKit
+import Combine
 import Domain
 import SnapKit
 
 final class ClimbRecordListView: BaseView {
-    
-    private var climbRecordList = [ClimbRecord]()
+
+    let cellBookmarkTapSubject = PassthroughSubject<String, Never>()
     
     let searchBar = {
         let searchBar = UISearchBar()
@@ -39,7 +40,7 @@ final class ClimbRecordListView: BaseView {
         return label
     }()
     
-    private lazy var recordCollectionView = { [weak self] in
+    lazy var recordCollectionView = { [weak self] in
         guard let self else {
             return UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
         }
@@ -49,17 +50,26 @@ final class ClimbRecordListView: BaseView {
         collectionView.keyboardDismissMode = .onDrag
         collectionView.register(cellClass: ClimbRecordCollectionViewCell.self)
         
-        collectionView.delegate = self
-        collectionView.dataSource = self
-        
         return collectionView
     }()
  
+    private func createLayout() -> UICollectionViewCompositionalLayout {
+        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(120))
+        let item = NSCollectionLayoutItem(layoutSize: size)
+        
+        let group = NSCollectionLayoutGroup.vertical(layoutSize: size, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: AppSpacing.regular, bottom: 0, trailing: AppSpacing.regular)
+        
+        return UICollectionViewCompositionalLayout(section: section)
+    }
+    
     // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
         setSearchBarBorder(isFirstResponder: false)
-        searchBar.delegate = self
+        setBookmarkImage(isOnlyBookmarked: false)
     }
     
     override func setupHierarchy() {
@@ -101,61 +111,23 @@ extension ClimbRecordListView {
         guideLabel.text = text
     }
     
-    func setClimbRecords(items: [ClimbRecord]) {
-        climbRecordList = items
+    func reloadData() {
         recordCollectionView.reloadData()
     }
     
     func setBookmarkImage(isOnlyBookmarked: Bool) {
-        if isOnlyBookmarked {
-            bookmarkButton.setImage(AppIcon.bookmarkFill, for: .normal)
-        } else {
-            bookmarkButton.setImage(AppIcon.bookmark, for: .normal)
-        }
-    }
-}
-
-// MARK: - CollectionView
-extension ClimbRecordListView: UICollectionViewDelegate, UICollectionViewDataSource {
-    
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return climbRecordList.count
+        bookmarkButton.setImage(isOnlyBookmarked ? AppIcon.bookmarkFill : AppIcon.bookmark, for: .normal)
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(for: indexPath, cellClass: ClimbRecordCollectionViewCell.self)
-        
-        cell.setImages(row: indexPath.item, total: climbRecordList.count)
-        cell.setData(climbRecordList[indexPath.item])
-        
-        return cell
+    var getCellBookmarkTap: AnyPublisher<String, Never> {
+        return cellBookmarkTapSubject.eraseToAnyPublisher()
     }
     
-    private func createLayout() -> UICollectionViewCompositionalLayout {
-        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(120))
-        let item = NSCollectionLayoutItem(layoutSize: size)
-        
-        let group = NSCollectionLayoutGroup.vertical(layoutSize: size, subitems: [item])
-        
-        let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: AppSpacing.regular, bottom: 0, trailing: AppSpacing.regular)
-        
-        return UICollectionViewCompositionalLayout(section: section)
-    }
-}
-
-// MARK: SearchBar
-extension ClimbRecordListView: UISearchBarDelegate {
-    
-    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-        setSearchBarBorder(isFirstResponder: true)
+    func toggleCellBookmarked(row: Int) {
+        recordCollectionView.reloadItems(at: [IndexPath(item: row, section: 0)])
     }
     
-    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        setSearchBarBorder(isFirstResponder: false)
-    }
-    
-    private func setSearchBarBorder(isFirstResponder: Bool) {
+    func setSearchBarBorder(isFirstResponder: Bool) {
         let color = isFirstResponder ? AppColor.focusRing : UIColor.clear
         searchBar.layer.borderColor = color.cgColor
     }

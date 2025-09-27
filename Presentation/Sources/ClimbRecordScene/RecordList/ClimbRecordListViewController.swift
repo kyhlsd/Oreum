@@ -33,20 +33,23 @@ final class ClimbRecordListViewController: UIViewController {
 
         bind()
         setupNavItem()
+        
+        setupDelegates()
     }
     
     private func bind() {
         let input = ClimbRecordListViewModel.Input(
             viewDidLoad: Just(()).eraseToAnyPublisher(),
             searchText: mainView.searchBar.textDidChange,
-            bookmarkTap: mainView.bookmarkButton.tap
+            bookmarkTap: mainView.bookmarkButton.tap,
+            cellBookmarkTap: mainView.getCellBookmarkTap
         )
         
         let output = viewModel.transform(input: input)
         
-        output.climbRecordList
-            .sink { [weak self] recordList in
-                self?.mainView.setClimbRecords(items: recordList)
+        output.reloadData
+            .sink { [weak self] in
+                self?.mainView.reloadData()
             }
             .store(in: &cancellables)
         
@@ -62,6 +65,12 @@ final class ClimbRecordListViewController: UIViewController {
             }
             .store(in: &cancellables)
         
+        output.bookmarkToggled
+            .sink { [weak self] row in
+                self?.mainView.toggleCellBookmarked(row: row)
+            }
+            .store(in: &cancellables)
+        
         output.errorMessage
             .sink { errorMessage in
                print(errorMessage)
@@ -74,7 +83,43 @@ final class ClimbRecordListViewController: UIViewController {
         navigationItem.backButtonTitle = " "
     }
     
+    private func setupDelegates() {
+        mainView.searchBar.delegate = self
+        
+        mainView.recordCollectionView.delegate = self
+        mainView.recordCollectionView.dataSource = self
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         view.endEditing(true)
+    }
+}
+
+// MARK: - UISearchBarDelegate
+extension ClimbRecordListViewController: UISearchBarDelegate {
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        mainView.setSearchBarBorder(isFirstResponder: true)
+    }
+    
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        mainView.setSearchBarBorder(isFirstResponder: false)
+    }
+}
+
+// MARK: - UICollectionViewDelegate & DataSource
+extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionViewDataSource {
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return viewModel.climbRecordList.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(for: indexPath, cellClass: ClimbRecordCollectionViewCell.self)
+        
+        cell.setImages(row: indexPath.item, total: viewModel.climbRecordList.count)
+        cell.setData(viewModel.climbRecordList[indexPath.item])
+        cell.cellBookmarkTapSubject = mainView.cellBookmarkTapSubject
+        
+        return cell
     }
 }

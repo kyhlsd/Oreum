@@ -8,8 +8,7 @@
 import Combine
 
 public protocol FetchClimbRecordUseCase {
-    func execute() -> AnyPublisher<[ClimbRecord], Error>
-    func search(keyword: String) -> AnyPublisher<[ClimbRecord], Error>
+    func execute(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], Error>
 }
 
 public final class FetchClimbRecordUseCaseImpl: FetchClimbRecordUseCase {
@@ -19,11 +18,7 @@ public final class FetchClimbRecordUseCaseImpl: FetchClimbRecordUseCase {
         self.repository = repository
     }
     
-    public func execute() -> AnyPublisher<[ClimbRecord], Error> {
-        repository.fetchClimbRecords()
-    }
-    
-    public func search(keyword: String) -> AnyPublisher<[ClimbRecord], Error> {
-        repository.search(keyword: keyword)
+    public func execute(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], Error> {
+        repository.fetch(keyword: keyword, isOnlyBookmarked: isOnlyBookmarked)
     }
 }
