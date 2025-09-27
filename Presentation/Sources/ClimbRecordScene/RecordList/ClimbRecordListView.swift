@@ -11,6 +11,8 @@ import SnapKit
 
 final class ClimbRecordListView: BaseView {
     
+    private var climbRecordList = [ClimbRecord]()
+    
     let searchBar = {
         let searchBar = UISearchBar()
         searchBar.placeholder = "산 이름 검색하세요"
@@ -46,23 +48,12 @@ final class ClimbRecordListView: BaseView {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .clear
         collectionView.keyboardDismissMode = .onDrag
+        collectionView.register(cellClass: ClimbRecordCollectionViewCell.self)
+        
+        collectionView.delegate = self
+        collectionView.dataSource = self
         
         return collectionView
-    }()
-    
-    private lazy var dataSource = { [weak self] in
-        guard let self else {
-            return UICollectionViewDiffableDataSource<Section, ClimbRecord>(collectionView: UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())) { _, _, _ in
-                return nil
-            }
-        }
-        
-        let registration = createRegistration()
-        let dataSource = UICollectionViewDiffableDataSource<Section, ClimbRecord>(collectionView: self.recordCollectionView) { collectionView, indexPath, item in
-            return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
-        }
-        
-        return dataSource
     }()
  
     // MARK: - Setups
@@ -115,18 +106,25 @@ extension ClimbRecordListView {
     }
     
     func setClimbRecords(items: [ClimbRecord]) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, ClimbRecord>()
-        snapshot.appendSections(Section.allCases)
-        snapshot.appendItems(items)
-        dataSource.apply(snapshot, animatingDifferences: false)
+        climbRecordList = items
+        recordCollectionView.reloadData()
     }
 }
 
-// MARK: - CollectionView Helper
-extension ClimbRecordListView {
+// MARK: - CollectionView
+extension ClimbRecordListView: UICollectionViewDelegate, UICollectionViewDataSource {
     
-    private enum Section: CaseIterable {
-        case main
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return climbRecordList.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(for: indexPath, cellClass: ClimbRecordCollectionViewCell.self)
+        
+        cell.setImages(row: indexPath.item, total: climbRecordList.count)
+        cell.setData(climbRecordList[indexPath.item])
+        
+        return cell
     }
     
     private func createLayout() -> UICollectionViewCompositionalLayout {
@@ -139,20 +137,5 @@ extension ClimbRecordListView {
         section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: AppSpacing.regular, bottom: 0, trailing: AppSpacing.regular)
         
         return UICollectionViewCompositionalLayout(section: section)
-    }
-    
-    private func createRegistration() -> UICollectionView.CellRegistration<ClimbRecordCollectionViewCell, ClimbRecord> {
-        return UICollectionView.CellRegistration<ClimbRecordCollectionViewCell, ClimbRecord> { [weak self] cell, indexPath, item in
-            guard let self else { return }
-            
-            let isFirst = indexPath.item == 0
-            let lastIndex = self.recordCollectionView.numberOfItems(inSection: indexPath.section) - 1
-            let isLast =  indexPath.item == lastIndex
-            
-            cell.setUpRoadImageHidden(isFirst: isFirst)
-            cell.setDownRoadImageHidden(isLast: isLast)
-            cell.setRoadImages(row: indexPath.item)
-            cell.setData(item)
-        }
     }
 }

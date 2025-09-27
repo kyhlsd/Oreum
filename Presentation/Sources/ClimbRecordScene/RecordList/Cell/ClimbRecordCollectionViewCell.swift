@@ -74,16 +74,26 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         tagStackView.setData(isFirstVisit: isFirstVisit, isFamous: isFamous)
     }
     
-    func setUpRoadImageHidden(isFirst: Bool) {
+    func setImages(row: Int, total: Int) {
+        let isFirst = row == 0
+        let isLast = row == total - 1
+        let isEven = row % 2 == 0
+        
+        setUpRoadImageHidden(isFirst: isFirst)
+        setDownRoadImageHidden(isLast: isLast)
+        setRoadImages(isEven: isEven)
+    }
+    
+    private func setUpRoadImageHidden(isFirst: Bool) {
         upRoadImageView.isHidden = isFirst
     }
     
-    func setDownRoadImageHidden(isLast: Bool) {
+    private func setDownRoadImageHidden(isLast: Bool) {
         downRoadImageView.isHidden = isLast
     }
     
-    func setRoadImages(row: Int) {
-        if row % 2 == 0 {
+    private func setRoadImages(isEven: Bool) {
+        if isEven {
             upRoadImageView.image = UIImage(named: "road4", in: .module, with: nil)
             downRoadImageView.image = UIImage(named: "road1", in: .module, with: nil)
             mountainImageView.snp.updateConstraints { make in
