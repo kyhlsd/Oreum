@@ -9,23 +9,23 @@ import UIKit
 import Domain
 import SnapKit
 
-class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
+final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     
-    let mountainImageSize = 80
+    private let mountainImageSize = 80
     
-    let upRoadImageView = {
+    private let upRoadImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleToFill
         return imageView
     }()
     
-    let downRoadImageView = {
+    private let downRoadImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleToFill
         return imageView
     }()
     
-    let mountainImageView = {
+    private let mountainImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleToFill
         return imageView
@@ -43,9 +43,11 @@ class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         return button
     }()
     
-    final override func prepareForReuse() {
+    override func prepareForReuse() {
         super.prepareForReuse()
         mountainImageView.image = nil
+        upRoadImageView.image = nil
+        downRoadImageView.image = nil
     }
     
     final func setData(_ data: ClimbRecord) {
@@ -72,12 +74,28 @@ class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         tagStackView.setData(isFirstVisit: isFirstVisit, isFamous: isFamous)
     }
     
-    final func setUpRoadImageHidden(isFirst: Bool) {
+    func setUpRoadImageHidden(isFirst: Bool) {
         upRoadImageView.isHidden = isFirst
     }
     
-    final func setDownRoadImageHidden(isLast: Bool) {
+    func setDownRoadImageHidden(isLast: Bool) {
         downRoadImageView.isHidden = isLast
+    }
+    
+    func setRoadImages(row: Int) {
+        if row % 2 == 0 {
+            upRoadImageView.image = UIImage(named: "road4", in: .module, with: nil)
+            downRoadImageView.image = UIImage(named: "road1", in: .module, with: nil)
+            mountainImageView.snp.updateConstraints { make in
+                make.leading.equalToSuperview()
+            }
+        } else {
+            upRoadImageView.image = UIImage(named: "road2", in: .module, with: nil)
+            downRoadImageView.image = UIImage(named: "road3", in: .module, with: nil)
+            mountainImageView.snp.updateConstraints { make in
+                make.leading.equalToSuperview().offset(mountainImageSize / 2)
+            }
+        }
     }
     
     private func getMountainImage(date: Date?) -> UIImage? {
@@ -104,13 +122,33 @@ class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         contentView.backgroundColor = .clear
     }
     
-    final override func setupHierarchy() {
+    override func setupHierarchy() {
         [upRoadImageView, downRoadImageView, mountainImageView, nameLabel, dateLabel, tagStackView, bookmarkButton].forEach {
             contentView.addSubview($0)
         }
     }
     
     override func setupLayout() {
+        
+        upRoadImageView.snp.makeConstraints { make in
+            make.width.equalTo(mountainImageSize)
+            make.top.equalToSuperview()
+            make.leading.equalToSuperview().offset(mountainImageSize / 2)
+            make.bottom.equalTo(mountainImageView.snp.centerY)
+        }
+        
+        downRoadImageView.snp.makeConstraints { make in
+            make.width.equalTo(mountainImageSize)
+            make.bottom.equalToSuperview()
+            make.leading.equalToSuperview().offset(mountainImageSize / 2)
+            make.top.equalTo(mountainImageView.snp.centerY)
+        }
+        
+        mountainImageView.snp.makeConstraints { make in
+            make.size.equalTo(mountainImageSize)
+            make.centerY.leading.equalToSuperview()
+        }
+        
         nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         nameLabel.snp.makeConstraints { make in
             make.bottom.equalTo(mountainImageView.snp.centerY)

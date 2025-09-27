@@ -11,7 +11,7 @@ import SnapKit
 
 final class ClimbRecordListView: BaseView {
     
-    private let searchBar = {
+    let searchBar = {
         let searchBar = UISearchBar()
         searchBar.placeholder = "산 이름 검색하세요"
         searchBar.searchTextField.font = AppFont.input
@@ -57,18 +57,11 @@ final class ClimbRecordListView: BaseView {
             }
         }
         
-        let oddRegistration = createRegistration(cellType: ClimbRecordOddCollectionViewCell.self)
-        let evenRegistration = createRegistration(cellType: ClimbRecordEvenCollectionViewCell.self)
-        
+        let registration = createRegistration()
         let dataSource = UICollectionViewDiffableDataSource<Section, ClimbRecord>(collectionView: self.recordCollectionView) { collectionView, indexPath, item in
-            if indexPath.item % 2 == 0 {
-                let cell = collectionView.dequeueConfiguredReusableCell(using: evenRegistration, for: indexPath, item: item)
-                return cell
-            } else {
-                let cell = collectionView.dequeueConfiguredReusableCell(using: oddRegistration, for: indexPath, item: item)
-                return cell
-            }
+            return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
         }
+        
         return dataSource
     }()
  
@@ -148,8 +141,8 @@ extension ClimbRecordListView {
         return UICollectionViewCompositionalLayout(section: section)
     }
     
-    private func createRegistration<Cell: ClimbRecordCollectionViewCell>(cellType: Cell.Type) -> UICollectionView.CellRegistration<Cell, ClimbRecord> {
-        return UICollectionView.CellRegistration<Cell, ClimbRecord> { [weak self] cell, indexPath, item in
+    private func createRegistration() -> UICollectionView.CellRegistration<ClimbRecordCollectionViewCell, ClimbRecord> {
+        return UICollectionView.CellRegistration<ClimbRecordCollectionViewCell, ClimbRecord> { [weak self] cell, indexPath, item in
             guard let self else { return }
             
             let isFirst = indexPath.item == 0
@@ -158,8 +151,8 @@ extension ClimbRecordListView {
             
             cell.setUpRoadImageHidden(isFirst: isFirst)
             cell.setDownRoadImageHidden(isLast: isLast)
+            cell.setRoadImages(row: indexPath.item)
             cell.setData(item)
         }
     }
-    
 }
