@@ -59,6 +59,8 @@ final class ClimbRecordListView: BaseView {
     // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
+        setSearchBarBorder(isFirstResponder: false)
+        searchBar.delegate = self
     }
     
     override func setupHierarchy() {
@@ -96,11 +98,6 @@ final class ClimbRecordListView: BaseView {
 // MARK: - Binding Methods
 extension ClimbRecordListView {
     
-    func setSearchBarBorder(isFirstResponder: Bool) {
-        let color = isFirstResponder ? AppColor.focusRing : UIColor.clear
-        searchBar.layer.borderColor = color.cgColor
-    }
-    
     func setGuideLabelText(_ text: String) {
         guideLabel.text = text
     }
@@ -137,5 +134,22 @@ extension ClimbRecordListView: UICollectionViewDelegate, UICollectionViewDataSou
         section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: AppSpacing.regular, bottom: 0, trailing: AppSpacing.regular)
         
         return UICollectionViewCompositionalLayout(section: section)
+    }
+}
+
+// MARK: SearchBar
+extension ClimbRecordListView: UISearchBarDelegate {
+    
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        setSearchBarBorder(isFirstResponder: true)
+    }
+    
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        setSearchBarBorder(isFirstResponder: false)
+    }
+    
+    private func setSearchBarBorder(isFirstResponder: Bool) {
+        let color = isFirstResponder ? AppColor.focusRing : UIColor.clear
+        searchBar.layer.borderColor = color.cgColor
     }
 }

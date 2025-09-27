@@ -66,4 +66,8 @@ final class ClimbRecordListViewController: UIViewController {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "나의 등산 기록"))
         navigationItem.backButtonTitle = " "
     }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        view.endEditing(true)
+    }
 }
