@@ -56,6 +56,10 @@ final class ClimbRecordListViewModel {
             }
         
         let climbRecordList = Publishers.Merge(total, searched)
+            .handleEvents(receiveOutput: { [weak self] recordList in
+                guard let self else { return }
+                guideTextSubject.send("\(baseGuideText) (\(recordList.count)개)")
+            })
             .eraseToAnyPublisher()
         
         return Output(climbRecordList: climbRecordList,
