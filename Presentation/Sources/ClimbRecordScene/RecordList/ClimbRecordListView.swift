@@ -39,11 +39,7 @@ final class ClimbRecordListView: BaseView {
         return label
     }()
     
-    lazy var recordCollectionView = { [weak self] in
-        guard let self else {
-            return UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
-        }
-        
+    lazy var recordCollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .clear
         collectionView.keyboardDismissMode = .onDrag

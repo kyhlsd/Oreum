@@ -10,7 +10,7 @@ import UIKit
 enum AppColor {
     // MARK: - Backgrounds
     static let background = UIColor(hex: "#fafbf8")   // 앱 배경
-    static let cardBackground = UIColor(hex: "#ffffff")
+    static let boxBackground = UIColor(hex: "#ffffff")
     static let popoverBackground = UIColor(hex: "#ffffff")
     static let sidebarBackground = UIColor(hex: "#f8faf9")
     static let tabBarBackground = UIColor(hex: "#ffffff")

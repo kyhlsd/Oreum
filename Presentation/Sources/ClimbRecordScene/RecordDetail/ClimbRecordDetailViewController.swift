@@ -68,9 +68,15 @@ final class ClimbRecordDetailViewController: UIViewController {
 extension ClimbRecordDetailViewController: UICollectionViewDelegate {
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        let width = scrollView.frame.width
+        print("mainView", mainView.imageCollectionView.bounds.width)
+        let width = scrollView.bounds.width
+        print(width)
+        print(scrollView.contentOffset.x)
         guard width > 0 else { return }
-        mainView.pageControl.currentPage = Int(scrollView.contentOffset.x / width)
+        print("asdf")
+        
+        let page = Int(round(scrollView.contentOffset.x / width))
+        mainView.pageControl.currentPage = page
     }
     
     private func createRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, String> {

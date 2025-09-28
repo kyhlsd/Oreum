@@ -19,13 +19,14 @@ enum AppIcon {
     static let clock = UIImage(systemName: "clock.fill")                  // 시간
     static let footprints = UIImage(systemName: "figure.walk")            // 걸음
     static let star = UIImage(systemName: "star.fill")                    // 별점
+    static let timeline = UIImage(systemName: "chart.xyaxis.line")
     static let play = UIImage(systemName: "play.circle.fill")             // 재생
     static let pause = UIImage(systemName: "pause.circle.fill")           // 일시정지
     static let square = UIImage(systemName: "stop.circle.fill")           // 정지
     static let arrowLeft = UIImage(systemName: "arrow.left")              // 뒤로가기
     static let chevronLeft = UIImage(systemName: "chevron.left")          // 좌측 화살표
     static let x = UIImage(systemName: "xmark")                           // 닫기
-    static let trash = UIImage(systemName: "trash.fill")                  // 삭제
+    static let trash = UIImage(systemName: "trash")                  // 삭제
     static let edit = UIImage(systemName: "pencil")                       // 편집
     static let save = UIImage(systemName: "checkmark")                    // 저장
     static let camera = UIImage(systemName: "camera.fill")                // 카메라
