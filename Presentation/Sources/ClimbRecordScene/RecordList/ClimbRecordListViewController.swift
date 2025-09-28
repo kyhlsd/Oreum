@@ -7,9 +7,12 @@
 
 import UIKit
 import Combine
+import Domain
 
 final class ClimbRecordListViewController: UIViewController {
 
+    var didClimbRecordTapped: ((ClimbRecord) -> Void)?
+    
     private let mainView = ClimbRecordListView()
     private let viewModel: ClimbRecordListViewModel
     private var cancellables = Set<AnyCancellable>()
@@ -121,5 +124,10 @@ extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionV
         cell.cellBookmarkTapSubject = mainView.cellBookmarkTapSubject
         
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let climbRecord = viewModel.climbRecordList[indexPath.item]
+        didClimbRecordTapped?(climbRecord)
     }
 }

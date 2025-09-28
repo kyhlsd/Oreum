@@ -20,12 +20,21 @@ public final class RecordSceneDIContainer {
 }
 
 extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
+    
     func makeClimbRecordListViewController() -> ClimbRecordListViewController {
         return ClimbRecordListViewController(viewModel: makeClimbRecordListViewModel())
     }
     
+    func makeClimbRecordDetailViewController(climbRecord: ClimbRecord) -> ClimbRecordDetailViewController {
+        return ClimbRecordDetailViewController(viewModel: makeClimbRecordDetailViewModel(), climbRecord: climbRecord)
+    }
+    
     private func makeClimbRecordListViewModel() -> ClimbRecordListViewModel {
         return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase())
+    }
+    
+    private func makeClimbRecordDetailViewModel() -> ClimbRecordDetailViewModel {
+        return ClimbRecordDetailViewModel()
     }
     
     private func makeFetchClimbRecordsUseCase() -> FetchClimbRecordUseCase {

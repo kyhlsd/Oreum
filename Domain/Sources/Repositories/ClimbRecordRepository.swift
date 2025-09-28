@@ -21,7 +21,7 @@ public final class ClimbRecordRepositoryImpl: ClimbRecordRepository {
         
         if !keyword.isEmpty {
             let id = Mountain.dummy.filter { $0.name.contains(keyword)}.first?.id
-            records = records.filter { $0.mountainId == id}
+            records = records.filter { $0.mountain.id == id}
         }
         
         if isOnlyBookmarked {

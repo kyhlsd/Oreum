@@ -6,14 +6,16 @@
 //
 
 import UIKit
+import Domain
 
 protocol RecordSceneFlowCoordinatorDependencies {
     func makeClimbRecordListViewController() -> ClimbRecordListViewController
+    func makeClimbRecordDetailViewController(climbRecord: ClimbRecord) -> ClimbRecordDetailViewController
 }
 
 public final class RecordSceneFlowCoordinator: Coordinator {
     
-    let navigationController: UINavigationController
+    public let navigationController: UINavigationController
     private let dependencies: RecordSceneFlowCoordinatorDependencies
     
     init(
@@ -26,8 +28,15 @@ public final class RecordSceneFlowCoordinator: Coordinator {
     
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "기록", image: AppIcon.bookOpen, tag: 0)
-        let vc = dependencies.makeClimbRecordListViewController()
-        navigationController.pushViewController(vc, animated: false)
+        
+        let listVC = dependencies.makeClimbRecordListViewController()
+        listVC.didClimbRecordTapped = { [weak self] climbRecord in
+            guard let self else { return }
+            let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord)
+            self.navigationController.pushViewController(detailVC, animated: true)
+        }
+        
+        navigationController.pushViewController(listVC, animated: false)
     }
     
 }

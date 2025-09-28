@@ -9,7 +9,7 @@ import Foundation
 
 public struct ClimbRecord: Hashable {
     public let id: String
-    public let mountainId: String
+    public let mountain: Mountain
     public let timeLog: [ActivityLog]
     public let images: [String]
     public var score: Int
@@ -21,7 +21,7 @@ extension ClimbRecord {
     public static let dummy: [ClimbRecord] = [
         ClimbRecord(
             id: UUID().uuidString,
-            mountainId: "MT001",
+            mountain: Mountain.dummy[0],
             timeLog: ActivityLog.dummy,
             images: ["hallasan1.jpg", "hallasan2.jpg"],
             score: 5,
@@ -30,7 +30,7 @@ extension ClimbRecord {
         ),
         ClimbRecord(
             id: UUID().uuidString,
-            mountainId: "MT002",
+            mountain:  Mountain.dummy[1],
             timeLog: ActivityLog.dummy,
             images: ["seoraksan1.jpg"],
             score: 4,
@@ -39,7 +39,7 @@ extension ClimbRecord {
         ),
         ClimbRecord(
             id: UUID().uuidString,
-            mountainId: "MT001",
+            mountain:  Mountain.dummy[0],
             timeLog: ActivityLog.dummy,
             images: ["hallasan1.jpg", "hallasan2.jpg"],
             score: 5,
@@ -48,7 +48,7 @@ extension ClimbRecord {
         ),
         ClimbRecord(
             id: UUID().uuidString,
-            mountainId: "MT003",
+            mountain:  Mountain.dummy[2],
             timeLog: ActivityLog.dummy,
             images: [],
             score: 3,
@@ -57,7 +57,7 @@ extension ClimbRecord {
         ),
         ClimbRecord(
             id: UUID().uuidString,
-            mountainId: "MT002",
+            mountain:  Mountain.dummy[1],
             timeLog: ActivityLog.dummy,
             images: ["seoraksan1.jpg"],
             score: 4,
@@ -66,7 +66,7 @@ extension ClimbRecord {
         ),
         ClimbRecord(
             id: UUID().uuidString,
-            mountainId: "MT004",
+            mountain:  Mountain.dummy[3],
             timeLog: ActivityLog.dummy,
             images: ["jirisann1.jpg"],
             score: 4,
@@ -75,7 +75,7 @@ extension ClimbRecord {
         ),
         ClimbRecord(
             id: UUID().uuidString,
-            mountainId: "MT005",
+            mountain:  Mountain.dummy[4],
             timeLog: ActivityLog.dummy,
             images: [],
             score: 3,

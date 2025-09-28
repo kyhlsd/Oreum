@@ -9,7 +9,7 @@ import UIKit
 
 public final class SearchSceneFlowCoordinator: Coordinator {
     
-    let navigationController: UINavigationController
+    public let navigationController: UINavigationController
     
     public init(navigationController: UINavigationController) {
         self.navigationController = navigationController

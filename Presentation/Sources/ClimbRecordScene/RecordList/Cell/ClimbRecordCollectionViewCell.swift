@@ -58,9 +58,9 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     final func setData(_ data: ClimbRecord) {
         // TODO: DTO, model 재정의
         let mountains = Mountain.dummy
-        let mountain = mountains.filter { $0.id == data.mountainId }.first!
+        let mountain = mountains.filter { $0.id == data.mountain.id }.first!
         let isFamous = mountain.isFamous
-        let record = ClimbRecord.dummy.filter { $0.mountainId == data.mountainId }.first!
+        let record = ClimbRecord.dummy.filter { $0.mountain.id == data.mountain.id }.first!
         let isFirstVisit = record.id == data.id
         let name = mountain.name
         
