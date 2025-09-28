@@ -12,15 +12,7 @@ final class ClimbRecordDetailView: BaseView {
     
     private let scrollView = UIScrollView()
     
-    private let stackView = {
-        let stackView = UIStackView()
-        stackView.axis = .vertical
-        stackView.spacing = AppSpacing.regular
-        stackView.alignment = .fill
-        stackView.isLayoutMarginsRelativeArrangement = true
-        stackView.layoutMargins = UIEdgeInsets(top: 0, left: 0, bottom: AppSpacing.regular, right: 0)
-        return stackView
-    }()
+    private let contentView = UIView()
     
     lazy var imageCollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
@@ -47,16 +39,6 @@ final class ClimbRecordDetailView: BaseView {
 
     private let deleteButton = CustomButton(title: "기록 삭제", image: AppIcon.trash, foreground: AppColor.danger, background: AppColor.dangerText, hasBorder: true)
     
-    private func createContainerView(contentView: UIView) -> UIView {
-        let view = UIView()
-        view.addSubview(contentView)
-        contentView.snp.makeConstraints { make in
-            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
-            make.verticalEdges.equalToSuperview()
-        }
-        return view
-    }
-    
     private func createLayout() -> UICollectionViewCompositionalLayout {
         let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
         let item = NSCollectionLayoutItem(layoutSize: size)
@@ -77,15 +59,11 @@ final class ClimbRecordDetailView: BaseView {
     
     override func setupHierarchy() {
         addSubview(scrollView)
-        scrollView.addSubview(stackView)
+        scrollView.addSubview(contentView)
         
-        stackView.addArrangedSubview(imageCollectionView)
-        
-        [recordView, reviewView, timelineButton, deleteButton].forEach {
-            stackView.addArrangedSubview(createContainerView(contentView: $0))
+        [imageCollectionView, pageControl, recordView, reviewView, timelineButton, deleteButton].forEach {
+            contentView.addSubview($0)
         }
-        
-        addSubview(pageControl)
     }
     
     override func setupLayout() {
@@ -93,12 +71,12 @@ final class ClimbRecordDetailView: BaseView {
             make.edges.equalTo(safeAreaLayoutGuide)
         }
         
-        stackView.snp.makeConstraints { make in
-            make.edges.equalTo(scrollView)
-            make.width.equalTo(scrollView.snp.width)
+        contentView.snp.makeConstraints { make in
+            make.edges.width.equalToSuperview()
         }
         
         imageCollectionView.snp.makeConstraints { make in
+            make.top.horizontalEdges.equalToSuperview()
             make.height.equalTo(imageCollectionView.snp.width).multipliedBy(0.75)
         }
         
@@ -108,19 +86,28 @@ final class ClimbRecordDetailView: BaseView {
         }
         
         recordView.snp.makeConstraints { make in
+            make.top.equalTo(imageCollectionView.snp.bottom).offset(AppSpacing.regular)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
             make.height.equalTo(200)
         }
         
         reviewView.snp.makeConstraints { make in
+            make.top.equalTo(recordView.snp.bottom).offset(AppSpacing.regular)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
             make.height.equalTo(200)
         }
         
         timelineButton.snp.makeConstraints { make in
+            make.top.equalTo(reviewView.snp.bottom).offset(AppSpacing.regular)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
             make.height.equalTo(44)
         }
         
         deleteButton.snp.makeConstraints { make in
+            make.top.equalTo(timelineButton.snp.bottom).offset(AppSpacing.small)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
             make.height.equalTo(44)
+            make.bottom.equalToSuperview().inset(AppSpacing.regular)
         }
     }
 }
