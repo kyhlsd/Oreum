@@ -10,21 +10,21 @@ import SnapKit
 
 final class BoxView: BaseView {
     
-    private let titleLabel: UILabel
-    private let lineView = {
+    let titleLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleM)
+    
+    let lineView = {
         let view = UIView()
         view.backgroundColor = AppColor.border
         return view
     }()
     
     init(title: String) {
-        self.titleLabel = UILabel.create(title, color: AppColor.primaryText, font: AppFont.titleS)
         super.init(frame: .zero)
+        configure(title: title)
     }
     
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    func configure(title: String) {
+        titleLabel.text = title
     }
     
     override func setupView() {

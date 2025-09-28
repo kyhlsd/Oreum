@@ -33,7 +33,26 @@ final class ClimbRecordDetailView: BaseView {
     
     private let recordView = BoxView(title: "기록")
     
+    private let dateView = ItemView(icon: AppIcon.date, title: "24년 9월 21일", subtitle: "날짜")
+    private let timeView = ItemView(icon: AppIcon.clock, title: "4시간 35분", subtitle: "소요시간")
+    private let stepView = ItemView(icon: AppIcon.footprints, title: "12,345", subtitle: "걸음수")
+    private let heightView = ItemView(icon: AppIcon.mountain, title: "2,744m", subtitle: "높이")
+    
     private let reviewView = BoxView(title: "나의 후기")
+    private let commentTextView = {
+        let textView = UITextView(usingTextLayoutManager: false)
+        textView.textContainerInset = .zero
+        textView.textContainer.lineFragmentPadding = 0
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 8
+        textView.typingAttributes = [
+            .paragraphStyle: paragraphStyle,
+            .font: AppFont.body,
+            .foregroundColor: AppColor.subText
+        ]
+        textView.isScrollEnabled = false
+        return textView
+    }()
     
     private let timelineButton = CustomButton(title: "타임라인 보기", image: AppIcon.timeline, foreground: .white, background: AppColor.primary)
 
@@ -64,6 +83,12 @@ final class ClimbRecordDetailView: BaseView {
         [imageCollectionView, pageControl, recordView, reviewView, timelineButton, deleteButton].forEach {
             contentView.addSubview($0)
         }
+        
+        [dateView, timeView, stepView, heightView].forEach {
+            recordView.addSubview($0)
+        }
+        
+        reviewView.addSubview(commentTextView)
     }
     
     override func setupLayout() {
@@ -88,13 +113,50 @@ final class ClimbRecordDetailView: BaseView {
         recordView.snp.makeConstraints { make in
             make.top.equalTo(imageCollectionView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
-            make.height.equalTo(200)
+        }
+        
+        let itemHeight = 48
+        
+        dateView.snp.makeConstraints { make in
+            make.top.equalTo(recordView.lineView.snp.bottom).offset(AppSpacing.compact)
+            make.leading.equalToSuperview().offset(AppSpacing.compact)
+            make.trailing.equalTo(recordView.snp.centerX).inset(AppSpacing.compact / 2)
+            make.height.equalTo(itemHeight)
+        }
+        
+        timeView.snp.makeConstraints { make in
+            make.top.equalTo(recordView.lineView.snp.bottom).offset(AppSpacing.compact)
+            make.leading.equalTo(recordView.snp.centerX).offset(AppSpacing.compact / 2)
+            make.trailing.equalToSuperview().inset(AppSpacing.compact)
+            make.height.equalTo(itemHeight)
+        }
+        
+        stepView.snp.makeConstraints { make in
+            make.top.equalTo(dateView.snp.bottom).offset(AppSpacing.compact)
+            make.leading.equalToSuperview().offset(AppSpacing.compact)
+            make.trailing.equalTo(recordView.snp.centerX).inset(AppSpacing.compact / 2)
+            make.height.equalTo(itemHeight)
+            make.bottom.equalToSuperview().inset(AppSpacing.compact)
+        }
+        
+        heightView.snp.makeConstraints { make in
+            make.top.equalTo(dateView.snp.bottom).offset(AppSpacing.compact)
+            make.leading.equalTo(recordView.snp.centerX).offset(AppSpacing.compact / 2)
+            make.trailing.equalToSuperview().inset(AppSpacing.compact)
+            make.height.equalTo(itemHeight)
+            make.bottom.equalToSuperview().inset(AppSpacing.compact)
         }
         
         reviewView.snp.makeConstraints { make in
             make.top.equalTo(recordView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
-            make.height.equalTo(200)
+        }
+        
+        commentTextView.snp.makeConstraints { make in
+            make.top.equalTo(reviewView.lineView.snp.bottom).offset(AppSpacing.compact)
+            make.horizontalEdges.bottom.equalToSuperview().inset(AppSpacing.compact)
+            make.height.greaterThanOrEqualTo(20)
+            make.height.lessThanOrEqualTo(144)
         }
         
         timelineButton.snp.makeConstraints { make in

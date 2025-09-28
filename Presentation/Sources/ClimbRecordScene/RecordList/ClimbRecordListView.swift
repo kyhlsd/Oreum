@@ -34,7 +34,7 @@ final class ClimbRecordListView: BaseView {
     }()
     
     private let guideLabel = {
-        let label = UILabel.create(color: AppColor.mossGreen, font: AppFont.description)
+        let label = UILabel.create(color: AppColor.mossGreen, font: AppFont.body)
         label.textAlignment = .center
         return label
     }()

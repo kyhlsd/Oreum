@@ -34,9 +34,9 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         return imageView
     }()
     
-    private let nameLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleS)
+    private let nameLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleM)
     
-    private let dateLabel = UILabel.create(color: AppColor.subText, font: AppFont.description)
+    private let dateLabel = UILabel.create(color: AppColor.subText, font: AppFont.body)
     
     private let tagStackView = TagStackView()
     
