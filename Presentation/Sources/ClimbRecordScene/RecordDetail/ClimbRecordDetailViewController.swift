@@ -20,6 +20,7 @@ final class ClimbRecordDetailViewController: UIViewController {
     private var climbRecord: ClimbRecord
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
+    private let keyboardObserver = KeyboardHeightObserver()
     
     init(viewModel: ClimbRecordDetailViewModel, climbRecord: ClimbRecord) {
         self.viewModel = viewModel
@@ -41,8 +42,8 @@ final class ClimbRecordDetailViewController: UIViewController {
         
         bind()
         setupNavItem()
-        
         setupDelegates()
+        setupKeyboardAction()
         
         mainView.pageControl.numberOfPages = climbRecord.images.count
     }
@@ -61,25 +62,35 @@ final class ClimbRecordDetailViewController: UIViewController {
     
     private func setupDelegates() {
         mainView.imageCollectionView.delegate = self
+        mainView.commentTextView.delegate = self
     }
     
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    private func setupKeyboardAction() {
+        keyboardObserver.didKeyboardHeightChange = { [weak self] height in
+            self?.mainView.adjustForKeyboard(height: height)
+        }
+    }
+    
+    @objc private func dismissKeyboard() {
         view.endEditing(true)
     }
 }
 
+// MARK: - CollectionViewDelegate
 extension ClimbRecordDetailViewController: UICollectionViewDelegate {
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        print("mainView", mainView.imageCollectionView.bounds.width)
-        let width = scrollView.bounds.width
-        print(width)
-        print(scrollView.contentOffset.x)
-        guard width > 0 else { return }
-        print("asdf")
-        
-        let page = Int(round(scrollView.contentOffset.x / width))
-        mainView.pageControl.currentPage = page
+        if scrollView == mainView.imageCollectionView {
+            print("mainView", mainView.imageCollectionView.bounds.width)
+            let width = scrollView.bounds.width
+            print(width)
+            print(scrollView.contentOffset.x)
+            guard width > 0 else { return }
+            print("asdf")
+            
+            let page = Int(round(scrollView.contentOffset.x / width))
+            mainView.pageControl.currentPage = page
+        }
     }
     
     private func createRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, String> {
@@ -94,4 +105,17 @@ extension ClimbRecordDetailViewController: UICollectionViewDelegate {
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
         }
     }
+}
+
+// MARK: - TextViewDelegate
+extension ClimbRecordDetailViewController: UITextViewDelegate {
+    
+    func textViewDidChange(_ textView: UITextView) {
+        let maxHeight: CGFloat = 144
+        let fittingSize = CGSize(width: textView.bounds.width, height: .greatestFiniteMagnitude)
+        let size = textView.sizeThatFits(fittingSize)
+        
+        textView.isScrollEnabled = size.height > maxHeight
+    }
+    
 }

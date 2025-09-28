@@ -10,7 +10,11 @@ import SnapKit
 
 final class ClimbRecordDetailView: BaseView {
     
-    private let scrollView = UIScrollView()
+    private let scrollView = {
+        let scrollView = UIScrollView()
+        scrollView.keyboardDismissMode = .onDrag
+        return scrollView
+    }()
     
     private let contentView = UIView()
     
@@ -39,7 +43,7 @@ final class ClimbRecordDetailView: BaseView {
     private let heightView = ItemView(icon: AppIcon.mountain, title: "2,744m", subtitle: "높이")
     
     private let reviewView = BoxView(title: "나의 후기")
-    private let commentTextView = {
+    let commentTextView = {
         let textView = UITextView(usingTextLayoutManager: false)
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
@@ -177,5 +181,8 @@ final class ClimbRecordDetailView: BaseView {
 // MARK: - Binding Methods
 extension ClimbRecordDetailView {
     
-    
+    func adjustForKeyboard(height: CGFloat) {
+        scrollView.contentInset.bottom = height
+        scrollView.verticalScrollIndicatorInsets.bottom = height
+    }
 }
