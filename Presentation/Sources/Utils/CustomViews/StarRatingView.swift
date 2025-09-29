@@ -25,7 +25,7 @@ final class StarRatingView: BaseView {
     private let filled = UIImage(systemName: "star.fill")
     
     @Published private(set) var rating = 0
-    @Published private(set) var isEditable = true
+    @Published private(set) var isEditable = false
     private var cancellables = Set<AnyCancellable>()
     
     override init(frame: CGRect) {

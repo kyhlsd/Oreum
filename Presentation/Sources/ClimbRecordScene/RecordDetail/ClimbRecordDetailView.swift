@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Domain
 import SnapKit
 
 final class ClimbRecordDetailView: BaseView {
@@ -30,17 +31,17 @@ final class ClimbRecordDetailView: BaseView {
     let pageControl = {
         let pageControl = UIPageControl()
         pageControl.isUserInteractionEnabled = false
-        pageControl.backgroundStyle = .prominent
+        pageControl.backgroundStyle = .minimal
         pageControl.hidesForSinglePage = true
         return pageControl
     }()
     
     private let recordView = BoxView(title: "기록")
     
-    private let dateView = ItemView(icon: AppIcon.date, title: "24년 9월 21일", subtitle: "날짜")
-    private let timeView = ItemView(icon: AppIcon.clock, title: "4시간 35분", subtitle: "소요시간")
-    private let stepView = ItemView(icon: AppIcon.footprints, title: "12,345", subtitle: "걸음수")
-    private let heightView = ItemView(icon: AppIcon.mountain, title: "2,744m", subtitle: "높이")
+    private let dateView = ItemView(icon: AppIcon.date, subtitle: "날짜")
+    private let timeView = ItemView(icon: AppIcon.clock, subtitle: "소요시간")
+    private let stepView = ItemView(icon: AppIcon.footprints, subtitle: "걸음수")
+    private let heightView = ItemView(icon: AppIcon.mountain, subtitle: "높이")
     
     private let reviewView = BoxView(title: "나의 후기")
     let commentTextView = {
@@ -56,10 +57,34 @@ final class ClimbRecordDetailView: BaseView {
             .foregroundColor: AppColor.subText
         ]
         textView.isScrollEnabled = false
+        textView.isEditable = false
         return textView
     }()
     
-    let ratingView = StarRatingView()
+    private let ratingView = StarRatingView()
+    
+    let editButton = {
+        let button = UIButton()
+        button.setImage(AppIcon.edit, for: .normal)
+        button.tintColor = AppColor.primaryText
+        return button
+    }()
+    
+    let saveButton = {
+        let button = UIButton()
+        button.setImage(AppIcon.save, for: .normal)
+        button.tintColor = AppColor.primaryText
+        button.isHidden = true
+        return button
+    }()
+    
+    let cancelButton = {
+        let button = UIButton()
+        button.setImage(AppIcon.x, for: .normal)
+        button.tintColor = AppColor.danger
+        button.isHidden = true
+        return button
+    }()
     
     private let timelineButton = CustomButton(title: "타임라인 보기", image: AppIcon.timeline, foreground: .white, background: AppColor.primary)
 
@@ -95,7 +120,7 @@ final class ClimbRecordDetailView: BaseView {
             recordView.addSubview($0)
         }
         
-        [commentTextView, ratingView].forEach {
+        [commentTextView, ratingView, editButton, saveButton, cancelButton].forEach {
             reviewView.addSubview($0)
         }
     }
@@ -173,6 +198,21 @@ final class ClimbRecordDetailView: BaseView {
             make.leading.equalTo(reviewView.titleLabel.snp.trailing).offset(AppSpacing.compact)
         }
         
+        editButton.snp.makeConstraints { make in
+            make.verticalEdges.equalTo(reviewView.titleLabel)
+            make.width.equalTo(editButton.snp.height)
+            make.trailing.equalToSuperview().inset(AppSpacing.compact)
+        }
+        
+        cancelButton.snp.makeConstraints { make in
+            make.edges.equalTo(editButton)
+        }
+        
+        saveButton.snp.makeConstraints { make in
+            make.size.verticalEdges.equalTo(cancelButton)
+            make.trailing.equalTo(cancelButton.snp.leading).offset(-AppSpacing.small)
+        }
+        
         timelineButton.snp.makeConstraints { make in
             make.top.equalTo(reviewView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
@@ -194,5 +234,26 @@ extension ClimbRecordDetailView {
     func adjustForKeyboard(height: CGFloat) {
         scrollView.contentInset.bottom = height
         scrollView.verticalScrollIndicatorInsets.bottom = height
+    }
+    
+    func setData(climbRecord: ClimbRecord) {
+        // TODO: 메서드로 만들기
+        if let date = climbRecord.timeLog.first?.time {
+            dateView.setTitle(title: AppFormatter.dateFormatter.string(from: date))
+        } else {
+            dateView.setTitle(title: "기록 없음")
+        }
+
+        timeView.setTitle(title: climbRecord.totalDuration)
+        stepView.setTitle(title: climbRecord.step)
+        heightView.setTitle(title: climbRecord.mountain.height.formatted())
+    }
+    
+    func setEditable(_ isEditable: Bool) {
+        commentTextView.isEditable = isEditable
+        ratingView.setEditable(isEditable)
+        editButton.isHidden = isEditable
+        saveButton.isHidden = !isEditable
+        cancelButton.isHidden = !isEditable
     }
 }

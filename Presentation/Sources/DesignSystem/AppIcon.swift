@@ -29,7 +29,7 @@ enum AppIcon {
     static let chevronLeft = UIImage(systemName: "chevron.left")          // 좌측 화살표
     static let x = UIImage(systemName: "xmark")                           // 닫기
     static let trash = UIImage(systemName: "trash")                  // 삭제
-    static let edit = UIImage(systemName: "pencil")                       // 편집
+    static let edit = UIImage(systemName: "square.and.pencil")            // 편집
     static let save = UIImage(systemName: "checkmark")                    // 저장
     static let camera = UIImage(systemName: "camera.fill")                // 카메라
     static let thermometer = UIImage(systemName: "thermometer")           // 온도
