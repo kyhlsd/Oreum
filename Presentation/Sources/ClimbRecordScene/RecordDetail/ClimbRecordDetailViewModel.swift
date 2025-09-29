@@ -9,6 +9,11 @@ import Foundation
 import Combine
 import Domain
 
+protocol ClimbRecordDetailViewModelDelegate: AnyObject {
+    func updateReview(id: String, rating: Int, comment: String)
+    func deleteRecord(id: String)
+}
+
 final class ClimbRecordDetailViewModel {
     
     private let updateUseCase: UpdateClimbRecordUseCase
@@ -16,6 +21,7 @@ final class ClimbRecordDetailViewModel {
     private var cancellables = Set<AnyCancellable>()
     
     private(set) var climbRecord: ClimbRecord
+    weak var delegate: ClimbRecordDetailViewModelDelegate?
     
     init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, climbRecord: ClimbRecord) {
         self.updateUseCase = updateUseCase
@@ -29,17 +35,22 @@ final class ClimbRecordDetailViewModel {
         let cancelButtonTapped: AnyPublisher<Void, Never>
         let timelineButtonTapped: AnyPublisher<Void, Never>
         let deleteButtonTapped: AnyPublisher<Void, Never>
+        let deleteSelected: AnyPublisher<Void, Never>
     }
     
     struct Output {
         let recordEditable: AnyPublisher<Bool, Never>
         let resetReview: AnyPublisher<(Int, String), Never>
+        let presentCancellableAlert: AnyPublisher<(String, String), Never>
+        let popVC: AnyPublisher<Void, Never>
         let errorMessage: AnyPublisher<String, Never>
     }
     
     func transform(input: Input) -> Output {
         let recordEditableSubject = CurrentValueSubject<Bool, Never>(false)
         let resetReviewSubject = PassthroughSubject<(Int, String), Never>()
+        let presentCancellableAlertSubject = PassthroughSubject<(String, String), Never>()
+        let popVCSubject = PassthroughSubject<Void, Never>()
         let errorMesssageSubject = PassthroughSubject<String, Never>()
         
         input.editButtonTapped
@@ -58,8 +69,9 @@ final class ClimbRecordDetailViewModel {
                         guard let self else { return }
                         climbRecord.score = rating
                         climbRecord.comment = comment
+                        delegate?.updateReview(id: climbRecord.id, rating: rating, comment: comment)
                     })
-                    .catch { error -> Just<Void> in
+                    .catch { error in
                         errorMesssageSubject.send(error.localizedDescription)
                         return Just(())
                     }
@@ -79,9 +91,42 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
         
+        input.timelineButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink {
+                
+            }
+            .store(in: &cancellables)
+        
+        input.deleteButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink {
+                presentCancellableAlertSubject.send(("기록을 삭제하시겠습니까?", "삭제된 기록은 복구되지 않습니다."))
+            }
+            .store(in: &cancellables)
+        
+        input.deleteSelected
+            .flatMap { [weak self, deleteUseCase] in
+                guard let self else { return Just(()).eraseToAnyPublisher() }
+                return deleteUseCase.execute(recordID: climbRecord.id)
+                    .catch { error in
+                        errorMesssageSubject.send(error.localizedDescription)
+                        return Just(())
+                    }
+                    .eraseToAnyPublisher()
+            }
+            .sink { [weak self] in
+                guard let self else { return }
+                delegate?.deleteRecord(id: climbRecord.id)
+                popVCSubject.send(())
+            }
+            .store(in: &cancellables)
+        
         return Output(
             recordEditable: recordEditableSubject.eraseToAnyPublisher(),
             resetReview: resetReviewSubject.eraseToAnyPublisher(),
+            presentCancellableAlert: presentCancellableAlertSubject.eraseToAnyPublisher(),
+            popVC: popVCSubject.eraseToAnyPublisher(),
             errorMessage: errorMesssageSubject.eraseToAnyPublisher()
         )
     }

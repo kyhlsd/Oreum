@@ -11,12 +11,10 @@ import Domain
 
 final class ClimbRecordDetailViewController: UIViewController {
     
-    private enum Section: CaseIterable {
-        case main
-    }
+    var popVC: (() -> Void)?
     
     private let mainView = ClimbRecordDetailView()
-    private let viewModel: ClimbRecordDetailViewModel
+    let viewModel: ClimbRecordDetailViewModel
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
     private let keyboardObserver = KeyboardHeightObserver()
@@ -45,12 +43,15 @@ final class ClimbRecordDetailViewController: UIViewController {
     }
     
     private func bind() {
+        let deleteSelectedSubject = PassthroughSubject<Void, Never>()
+        
         let input = ClimbRecordDetailViewModel.Input(
             editButtonTapped: mainView.editButton.tap,
             saveButtonTapped: mainView.saveButtonTapped,
             cancelButtonTapped: mainView.cancelButton.tap,
             timelineButtonTapped: mainView.timelineButton.tap,
-            deleteButtonTapped: mainView.deleteButton.tap
+            deleteButtonTapped: mainView.deleteButton.tap,
+            deleteSelected: deleteSelectedSubject.eraseToAnyPublisher()
         )
         
         let output = viewModel.transform(input: input)
@@ -66,6 +67,20 @@ final class ClimbRecordDetailViewController: UIViewController {
         output.resetReview
             .sink { [weak self] (rating, comment) in
                 self?.mainView.setReview(rating: rating, comment: comment)
+            }
+            .store(in: &cancellables)
+        
+        output.presentCancellableAlert
+            .sink { [weak self] (title, message) in
+                self?.presentCancellableAlert(title: title, message: message) {
+                    deleteSelectedSubject.send(())
+                }
+            }
+            .store(in: &cancellables)
+        
+        output.popVC
+            .sink { [weak self] in
+                self?.popVC?()
             }
             .store(in: &cancellables)
         
@@ -109,6 +124,10 @@ final class ClimbRecordDetailViewController: UIViewController {
 
 // MARK: - CollectionViewDelegate
 extension ClimbRecordDetailViewController: UICollectionViewDelegate {
+    
+    private enum Section: CaseIterable {
+        case main
+    }
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         if scrollView == mainView.imageCollectionView {

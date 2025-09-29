@@ -11,10 +11,10 @@ import Domain
 
 final class ClimbRecordListViewController: UIViewController {
 
-    var didClimbRecordTapped: ((ClimbRecord) -> Void)?
+    var pushVC: ((ClimbRecord) -> Void)?
     
     private let mainView = ClimbRecordListView()
-    private let viewModel: ClimbRecordListViewModel
+    let viewModel: ClimbRecordListViewModel
     private var cancellables = Set<AnyCancellable>()
     
     init(viewModel: ClimbRecordListViewModel) {
@@ -128,6 +128,6 @@ extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionV
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let climbRecord = viewModel.climbRecordList[indexPath.item]
-        didClimbRecordTapped?(climbRecord)
+        pushVC?(climbRecord)
     }
 }

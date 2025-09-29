@@ -17,6 +17,8 @@ public final class MapSceneFlowCoordinator: Coordinator {
     
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "지도", image: AppIcon.map, tag: 2)
+        navigationController.navigationBar.tintColor = AppColor.primary
+        
         let vc = UIViewController()
         vc.view.backgroundColor = .white
         navigationController.pushViewController(vc, animated: false)

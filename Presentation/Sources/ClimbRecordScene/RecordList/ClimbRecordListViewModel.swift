@@ -17,6 +17,7 @@ final class ClimbRecordListViewModel {
     
     private(set) var climbRecordList = [ClimbRecord]()
     private let baseGuideText = "산을 눌러 자세한 정보를 확인하세요."
+    private let reloadDataSubject = PassthroughSubject<Void, Never>()
     
     init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase) {
         self.fetchUseCase = fetchUseCase
@@ -39,7 +40,6 @@ final class ClimbRecordListViewModel {
     }
     
     func transform(input: Input) -> Output {
-        let reloadDataSubject = PassthroughSubject<Void, Never>()
         let guideTextSubject = CurrentValueSubject<String, Never>(baseGuideText)
         let errorMessageSubject = PassthroughSubject<String, Never>()
         
@@ -104,5 +104,27 @@ final class ClimbRecordListViewModel {
             bookmarkToggled: bookmarkToggled,
             errorMessage: errorMessageSubject.eraseToAnyPublisher()
         )
+    }
+}
+
+// MARK: - ClimbRecordDetailViewModelDelegate
+extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
+    
+    func updateReview(id: String, rating: Int, comment: String) {
+        if let index = climbRecordList.firstIndex(where: {
+            $0.id == id
+        }) {
+            climbRecordList[index].score = rating
+            climbRecordList[index].comment = comment
+        }
+    }
+    
+    func deleteRecord(id: String) {
+        if let index = climbRecordList.firstIndex(where: {
+            $0.id == id
+        }) {
+            climbRecordList.remove(at: index)
+            reloadDataSubject.send(())
+        }
     }
 }

@@ -28,11 +28,18 @@ public final class RecordSceneFlowCoordinator: Coordinator {
     
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "기록", image: AppIcon.bookOpen, tag: 0)
+        navigationController.navigationBar.tintColor = AppColor.primary
         
         let listVC = dependencies.makeClimbRecordListViewController()
-        listVC.didClimbRecordTapped = { [weak self] climbRecord in
+        listVC.pushVC = { [weak self] climbRecord in
             guard let self else { return }
+            
             let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord)
+            detailVC.popVC = { [weak self] in
+                self?.navigationController.popViewController(animated: true)
+            }
+            detailVC.viewModel.delegate = listVC.viewModel
+            
             self.navigationController.pushViewController(detailVC, animated: true)
         }
         
