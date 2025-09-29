@@ -47,6 +47,7 @@ final class ClimbRecordDetailView: BaseView {
         let textView = UITextView(usingTextLayoutManager: false)
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
+        textView.font = AppFont.body
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = 8
         textView.typingAttributes = [
@@ -57,6 +58,8 @@ final class ClimbRecordDetailView: BaseView {
         textView.isScrollEnabled = false
         return textView
     }()
+    
+    let ratingView = StarRatingView()
     
     private let timelineButton = CustomButton(title: "타임라인 보기", image: AppIcon.timeline, foreground: .white, background: AppColor.primary)
 
@@ -92,7 +95,9 @@ final class ClimbRecordDetailView: BaseView {
             recordView.addSubview($0)
         }
         
-        reviewView.addSubview(commentTextView)
+        [commentTextView, ratingView].forEach {
+            reviewView.addSubview($0)
+        }
     }
     
     override func setupLayout() {
@@ -161,6 +166,11 @@ final class ClimbRecordDetailView: BaseView {
             make.horizontalEdges.bottom.equalToSuperview().inset(AppSpacing.compact)
             make.height.greaterThanOrEqualTo(20)
             make.height.lessThanOrEqualTo(144)
+        }
+        
+        ratingView.snp.makeConstraints { make in
+            make.verticalEdges.equalTo(reviewView.titleLabel)
+            make.leading.equalTo(reviewView.titleLabel.snp.trailing).offset(AppSpacing.compact)
         }
         
         timelineButton.snp.makeConstraints { make in

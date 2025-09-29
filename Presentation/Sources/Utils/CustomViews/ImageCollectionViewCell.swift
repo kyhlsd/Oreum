@@ -12,7 +12,7 @@ final class ImageCollectionViewCell: BaseCollectionViewCell {
     
     private let imageView = {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleToFill
+        imageView.contentMode = .scaleAspectFit
         return imageView
     }()
     
