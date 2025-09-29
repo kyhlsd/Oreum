@@ -79,7 +79,6 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         tagStackView.setData(isFirstVisit: isFirstVisit, isFamous: isFamous)
         
         bookmarkButton.tap
-            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
                 self?.cellBookmarkTapSubject?.send(data.id)
                 

@@ -26,8 +26,8 @@ final class ClimbRecordListViewModel {
     struct Input {
         let viewDidLoad: AnyPublisher<Void, Never>
         let searchText: AnyPublisher<String, Never>
-        let bookmarkTap: AnyPublisher<Void, Never>
-        let cellBookmarkTap: AnyPublisher<String, Never>
+        let bookmarkButtonTapped: AnyPublisher<Void, Never>
+        let cellBookmarkButtonTapped: AnyPublisher<String, Never>
     }
     
     struct Output {
@@ -49,7 +49,7 @@ final class ClimbRecordListViewModel {
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .removeDuplicates()
         
-        let isOnlyBookmarked = input.bookmarkTap
+        let isOnlyBookmarked = input.bookmarkButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .scan(false) { last, _ in !last }
             .prepend(false)
@@ -79,7 +79,8 @@ final class ClimbRecordListViewModel {
             }
             .store(in: &cancellables)
         
-        let bookmarkToggled = input.cellBookmarkTap
+        let bookmarkToggled = input.cellBookmarkButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .flatMap { [toggleBookmarkUseCase] id in
                 toggleBookmarkUseCase.execute(recordID: id)
                     .compactMap { [weak self] in

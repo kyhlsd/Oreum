@@ -44,8 +44,8 @@ final class StarRatingView: BaseView {
     
     private func setupBindings() {
         $rating
-            .sink { [weak self] _ in
-                self?.updateStarSelectioinStates(animated: true)
+            .sink { [weak self] rating in
+                self?.updateStarSelectionStates(rating: rating, animated: true)
             }
             .store(in: &cancellables)
         
@@ -54,9 +54,18 @@ final class StarRatingView: BaseView {
                 self?.stars.forEach { $0.isUserInteractionEnabled = isEditable }
             }
             .store(in: &cancellables)
+        
+        for (i, star) in stars.enumerated() {
+            star.tap
+                .sink { [weak self] in
+                    guard let self, self.isEditable else { return }
+                    rating = i + 1
+                }
+                .store(in: &cancellables)
+        }
     }
     
-    private func updateStarSelectioinStates(animated: Bool) {
+    private func updateStarSelectionStates(rating: Int, animated: Bool) {
         for (index, star) in stars.enumerated() {
             let shouldBeSelected = index < rating
             star.tintColor = shouldBeSelected ? .systemYellow : .systemGray
@@ -79,14 +88,6 @@ final class StarRatingView: BaseView {
             
             star.setImage(empty, for: .normal)
             star.setImage(filled, for: .selected)
-            
-            star.tap
-                .sink { [weak self] in
-                    guard let self, self.isEditable else { return }
-                    rating = i + 1
-                    updateStarSelectioinStates(animated: false)
-                }
-                .store(in: &cancellables)
             
             stackView.addArrangedSubview(star)
             stars.append(star)

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Combine
 import Domain
 import SnapKit
 
@@ -70,7 +71,7 @@ final class ClimbRecordDetailView: BaseView {
         return button
     }()
     
-    let saveButton = {
+    private let saveButton = {
         let button = UIButton()
         button.setImage(AppIcon.save, for: .normal)
         button.tintColor = AppColor.primaryText
@@ -86,9 +87,9 @@ final class ClimbRecordDetailView: BaseView {
         return button
     }()
     
-    private let timelineButton = CustomButton(title: "타임라인 보기", image: AppIcon.timeline, foreground: .white, background: AppColor.primary)
+    let timelineButton = CustomButton(title: "타임라인 보기", image: AppIcon.timeline, foreground: .white, background: AppColor.primary)
 
-    private let deleteButton = CustomButton(title: "기록 삭제", image: AppIcon.trash, foreground: AppColor.danger, background: AppColor.dangerText, hasBorder: true)
+    let deleteButton = CustomButton(title: "기록 삭제", image: AppIcon.trash, foreground: AppColor.danger, background: AppColor.dangerText, hasBorder: true)
     
     private func createLayout() -> UICollectionViewCompositionalLayout {
         let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
@@ -246,7 +247,9 @@ extension ClimbRecordDetailView {
 
         timeView.setTitle(title: climbRecord.totalDuration)
         stepView.setTitle(title: climbRecord.step)
-        heightView.setTitle(title: climbRecord.mountain.height.formatted())
+        heightView.setTitle(title: climbRecord.mountain.height.formatted() + "m")
+        
+        setReview(rating: climbRecord.score, comment: climbRecord.comment)
     }
     
     func setEditable(_ isEditable: Bool) {
@@ -255,5 +258,19 @@ extension ClimbRecordDetailView {
         editButton.isHidden = isEditable
         saveButton.isHidden = !isEditable
         cancelButton.isHidden = !isEditable
+    }
+    
+    var saveButtonTapped: AnyPublisher<(Int, String), Never> {
+        return saveButton.tap
+            .compactMap { [weak self] in
+                guard let self else { return nil }
+                return (ratingView.rating, commentTextView.text)
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    func setReview(rating: Int, comment: String) {
+        ratingView.setRating(rating: rating, animated: true)
+        commentTextView.text = comment
     }
 }

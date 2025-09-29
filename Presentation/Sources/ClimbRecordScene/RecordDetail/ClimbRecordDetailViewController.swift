@@ -17,14 +17,12 @@ final class ClimbRecordDetailViewController: UIViewController {
     
     private let mainView = ClimbRecordDetailView()
     private let viewModel: ClimbRecordDetailViewModel
-    private var climbRecord: ClimbRecord
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
     private let keyboardObserver = KeyboardHeightObserver()
     
-    init(viewModel: ClimbRecordDetailViewModel, climbRecord: ClimbRecord) {
+    init(viewModel: ClimbRecordDetailViewModel) {
         self.viewModel = viewModel
-        self.climbRecord = climbRecord
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -44,19 +42,52 @@ final class ClimbRecordDetailViewController: UIViewController {
         setupNavItem()
         setupDelegates()
         setupKeyboardAction()
-        
-        mainView.pageControl.numberOfPages = climbRecord.images.count
     }
     
     private func bind() {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, String>()
-        snapshot.appendSections(Section.allCases)
-        snapshot.appendItems(climbRecord.images)
-        dataSource.apply(snapshot, animatingDifferences: true)
+        let input = ClimbRecordDetailViewModel.Input(
+            editButtonTapped: mainView.editButton.tap,
+            saveButtonTapped: mainView.saveButtonTapped,
+            cancelButtonTapped: mainView.cancelButton.tap,
+            timelineButtonTapped: mainView.timelineButton.tap,
+            deleteButtonTapped: mainView.deleteButton.tap
+        )
+        
+        let output = viewModel.transform(input: input)
+        
+        output.recordEditable
+            .sink { [weak self] isEditable in
+                guard let self else { return }
+                
+                mainView.setEditable(isEditable)
+            }
+            .store(in: &cancellables)
+        
+        output.resetReview
+            .sink { [weak self] (rating, comment) in
+                self?.mainView.setReview(rating: rating, comment: comment)
+            }
+            .store(in: &cancellables)
+        
+        output.errorMessage
+            .sink { errorMessage in
+                print(errorMessage)
+            }
+            .store(in: &cancellables)
+        
+        configureView(viewModel.climbRecord)
+    }
+    
+    private func configureView(_ climbRecord: ClimbRecord) {
+        navigationItem.title = climbRecord.mountain.name
+        
+        mainView.setData(climbRecord: climbRecord)
+        
+        applySnapshot(images: climbRecord.images)
+        mainView.pageControl.numberOfPages = climbRecord.images.count
     }
     
     private func setupNavItem() {
-        navigationItem.title = climbRecord.mountain.name
         navigationItem.backButtonTitle = " "
     }
     
@@ -104,6 +135,13 @@ extension ClimbRecordDetailViewController: UICollectionViewDelegate {
         return UICollectionViewDiffableDataSource<Section, String>(collectionView: mainView.imageCollectionView) { collectionView, indexPath, item in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
         }
+    }
+    
+    private func applySnapshot(images: [String]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, String>()
+        snapshot.appendSections(Section.allCases)
+        snapshot.appendItems(images)
+        dataSource.apply(snapshot, animatingDifferences: true)
     }
 }
 
