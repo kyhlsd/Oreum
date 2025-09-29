@@ -37,14 +37,14 @@ final class ClimbRecordDetailView: BaseView {
         return pageControl
     }()
     
-    private let recordView = BoxView(title: "기록")
+    private let infoView = BoxView(title: "정보")
     
+    private let addressView = ItemView(icon: AppIcon.address, subtitle: "주소")
     private let dateView = ItemView(icon: AppIcon.date, subtitle: "날짜")
-    private let timeView = ItemView(icon: AppIcon.clock, subtitle: "소요시간")
-    private let stepView = ItemView(icon: AppIcon.footprints, subtitle: "걸음수")
     private let heightView = ItemView(icon: AppIcon.mountain, subtitle: "높이")
     
     private let reviewView = BoxView(title: "나의 후기")
+    
     let commentTextView = {
         let textView = UITextView(usingTextLayoutManager: false)
         textView.textContainerInset = .zero
@@ -113,12 +113,12 @@ final class ClimbRecordDetailView: BaseView {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
         
-        [imageCollectionView, pageControl, recordView, reviewView, timelineButton, deleteButton].forEach {
+        [imageCollectionView, pageControl, infoView, reviewView, timelineButton, deleteButton].forEach {
             contentView.addSubview($0)
         }
         
-        [dateView, timeView, stepView, heightView].forEach {
-            recordView.addSubview($0)
+        [addressView, dateView, heightView].forEach {
+            infoView.addSubview($0)
         }
         
         [commentTextView, ratingView, editButton, saveButton, cancelButton].forEach {
@@ -145,45 +145,35 @@ final class ClimbRecordDetailView: BaseView {
             make.centerX.equalTo(imageCollectionView)
         }
         
-        recordView.snp.makeConstraints { make in
+        infoView.snp.makeConstraints { make in
             make.top.equalTo(imageCollectionView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
         }
         
-        let itemHeight = 48
+        addressView.snp.makeConstraints { make in
+            make.top.equalTo(infoView.lineView.snp.bottom).offset(AppSpacing.compact)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
+            make.height.equalTo(48)
+        }
         
         dateView.snp.makeConstraints { make in
-            make.top.equalTo(recordView.lineView.snp.bottom).offset(AppSpacing.compact)
-            make.leading.equalToSuperview().offset(AppSpacing.compact)
-            make.trailing.equalTo(recordView.snp.centerX).inset(AppSpacing.compact / 2)
-            make.height.equalTo(itemHeight)
-        }
-        
-        timeView.snp.makeConstraints { make in
-            make.top.equalTo(recordView.lineView.snp.bottom).offset(AppSpacing.compact)
-            make.leading.equalTo(recordView.snp.centerX).offset(AppSpacing.compact / 2)
-            make.trailing.equalToSuperview().inset(AppSpacing.compact)
-            make.height.equalTo(itemHeight)
-        }
-        
-        stepView.snp.makeConstraints { make in
-            make.top.equalTo(dateView.snp.bottom).offset(AppSpacing.compact)
-            make.leading.equalToSuperview().offset(AppSpacing.compact)
-            make.trailing.equalTo(recordView.snp.centerX).inset(AppSpacing.compact / 2)
-            make.height.equalTo(itemHeight)
+            make.top.equalTo(addressView.snp.bottom).offset(AppSpacing.compact)
+            make.leading.equalToSuperview().inset(AppSpacing.compact)
+            make.trailing.equalTo(infoView.snp.centerX).inset(AppSpacing.small / 2)
+            make.height.equalTo(addressView)
             make.bottom.equalToSuperview().inset(AppSpacing.compact)
         }
         
         heightView.snp.makeConstraints { make in
-            make.top.equalTo(dateView.snp.bottom).offset(AppSpacing.compact)
-            make.leading.equalTo(recordView.snp.centerX).offset(AppSpacing.compact / 2)
+            make.top.equalTo(addressView.snp.bottom).offset(AppSpacing.compact)
+            make.leading.equalTo(infoView.snp.centerX).offset(AppSpacing.small / 2)
             make.trailing.equalToSuperview().inset(AppSpacing.compact)
-            make.height.equalTo(itemHeight)
+            make.height.equalTo(addressView)
             make.bottom.equalToSuperview().inset(AppSpacing.compact)
         }
         
         reviewView.snp.makeConstraints { make in
-            make.top.equalTo(recordView.snp.bottom).offset(AppSpacing.regular)
+            make.top.equalTo(infoView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
         }
         
@@ -245,8 +235,7 @@ extension ClimbRecordDetailView {
             dateView.setTitle(title: "기록 없음")
         }
 
-        timeView.setTitle(title: climbRecord.totalDuration)
-        stepView.setTitle(title: climbRecord.step)
+        addressView.setTitle(title: climbRecord.mountain.address)
         heightView.setTitle(title: climbRecord.mountain.height.formatted() + "m")
         
         setReview(rating: climbRecord.score, comment: climbRecord.comment)

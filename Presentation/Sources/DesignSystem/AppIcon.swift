@@ -20,6 +20,7 @@ enum AppIcon {
     static let date = UIImage(systemName: "calendar")         // 날짜
     static let clock = UIImage(systemName: "clock")           // 시간
     static let footprints = UIImage(systemName: "figure.walk")// 걸음
+    static let address = UIImage(systemName: "mappin")// 걸음
     static let star = UIImage(systemName: "star.fill")                    // 별점
     static let timeline = UIImage(systemName: "chart.xyaxis.line")        // 그래프
     static let play = UIImage(systemName: "play.circle.fill")             // 재생

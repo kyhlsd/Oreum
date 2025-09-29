@@ -16,6 +16,7 @@ public struct ClimbRecord: Hashable {
     public var comment: String
     public var isBookmarked: Bool
     
+    // TODO: ViewModel로 옮기기
     public var totalDuration: String {
         guard let first = timeLog.first?.time,
               let last = timeLog.last?.time else {
