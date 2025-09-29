@@ -11,6 +11,7 @@ import Domain
 protocol RecordSceneFlowCoordinatorDependencies {
     func makeClimbRecordListViewController() -> ClimbRecordListViewController
     func makeClimbRecordDetailViewController(climbRecord: ClimbRecord) -> ClimbRecordDetailViewController
+    func makeActivityLogViewController(climbRecord: ClimbRecord) -> ActivityLogViewController
 }
 
 public final class RecordSceneFlowCoordinator: Coordinator {
@@ -37,6 +38,10 @@ public final class RecordSceneFlowCoordinator: Coordinator {
             let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord)
             detailVC.popVC = { [weak self] in
                 self?.navigationController.popViewController(animated: true)
+            }
+            detailVC.pushVC = { [weak self] climbRecord in
+                guard let self else { return }
+                navigationController.pushViewController(dependencies.makeActivityLogViewController(climbRecord: climbRecord), animated: true)
             }
             detailVC.viewModel.delegate = listVC.viewModel
             

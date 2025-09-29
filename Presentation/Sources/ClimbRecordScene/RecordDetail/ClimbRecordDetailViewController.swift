@@ -12,6 +12,7 @@ import Domain
 final class ClimbRecordDetailViewController: UIViewController {
     
     var popVC: (() -> Void)?
+    var pushVC: ((ClimbRecord) -> Void)?
     
     private let mainView = ClimbRecordDetailView()
     let viewModel: ClimbRecordDetailViewModel
@@ -84,6 +85,12 @@ final class ClimbRecordDetailViewController: UIViewController {
             }
             .store(in: &cancellables)
         
+        output.pushVC
+            .sink { [weak self] climbRecord in
+                self?.pushVC?(climbRecord)
+            }
+            .store(in: &cancellables)
+        
         output.errorMessage
             .sink { errorMessage in
                 print(errorMessage)
@@ -115,10 +122,6 @@ final class ClimbRecordDetailViewController: UIViewController {
         keyboardObserver.didKeyboardHeightChange = { [weak self] height in
             self?.mainView.adjustForKeyboard(height: height)
         }
-    }
-    
-    @objc private func dismissKeyboard() {
-        view.endEditing(true)
     }
 }
 

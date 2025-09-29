@@ -21,6 +21,7 @@ public final class RecordSceneDIContainer {
 
 extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     
+    // MARK: - ViewControllers
     func makeClimbRecordListViewController() -> ClimbRecordListViewController {
         return ClimbRecordListViewController(viewModel: makeClimbRecordListViewModel())
     }
@@ -29,6 +30,11 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
         return ClimbRecordDetailViewController(viewModel: makeClimbRecordDetailViewModel(climbRecord: climbRecord))
     }
     
+    func makeActivityLogViewController(climbRecord: ClimbRecord) -> ActivityLogViewController {
+        return ActivityLogViewController(viewModel: makeActivityLogViewModel(climbRecord: climbRecord))
+    }
+    
+    // MARK: - ViewModels
     private func makeClimbRecordListViewModel() -> ClimbRecordListViewModel {
         return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase())
     }
@@ -37,6 +43,11 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
         return ClimbRecordDetailViewModel(updateUseCase: makeUpdateUseCase(), deleteUseCase: makeDeleteClimbRecordUseCase(), climbRecord: climbRecord)
     }
     
+    private func makeActivityLogViewModel(climbRecord: ClimbRecord) -> ActivityLogViewModel {
+        return ActivityLogViewModel()
+    }
+    
+    // MARK: - UseCases
     private func makeFetchClimbRecordsUseCase() -> FetchClimbRecordUseCase {
         return FetchClimbRecordUseCaseImpl(repository: climbRecordRepository)
     }
@@ -53,6 +64,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
         return DeleteClimbRecordUseCaseImpl(repository: climbRecordRepository)
     }
     
+    // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
         return ClimbRecordRepositoryImpl()
     }

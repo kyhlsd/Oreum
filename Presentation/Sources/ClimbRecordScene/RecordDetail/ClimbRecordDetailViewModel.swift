@@ -43,6 +43,7 @@ final class ClimbRecordDetailViewModel {
         let resetReview: AnyPublisher<(Int, String), Never>
         let presentCancellableAlert: AnyPublisher<(String, String), Never>
         let popVC: AnyPublisher<Void, Never>
+        let pushVC: AnyPublisher<ClimbRecord, Never>
         let errorMessage: AnyPublisher<String, Never>
     }
     
@@ -51,6 +52,7 @@ final class ClimbRecordDetailViewModel {
         let resetReviewSubject = PassthroughSubject<(Int, String), Never>()
         let presentCancellableAlertSubject = PassthroughSubject<(String, String), Never>()
         let popVCSubject = PassthroughSubject<Void, Never>()
+        let pushVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let errorMesssageSubject = PassthroughSubject<String, Never>()
         
         input.editButtonTapped
@@ -93,8 +95,9 @@ final class ClimbRecordDetailViewModel {
         
         input.timelineButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink {
-                
+            .sink { [weak self] in
+                guard let self else { return }
+                pushVCSubject.send(climbRecord)
             }
             .store(in: &cancellables)
         
@@ -127,6 +130,7 @@ final class ClimbRecordDetailViewModel {
             resetReview: resetReviewSubject.eraseToAnyPublisher(),
             presentCancellableAlert: presentCancellableAlertSubject.eraseToAnyPublisher(),
             popVC: popVCSubject.eraseToAnyPublisher(),
+            pushVC: pushVCSubject.eraseToAnyPublisher(),
             errorMessage: errorMesssageSubject.eraseToAnyPublisher()
         )
     }
