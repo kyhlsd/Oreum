@@ -18,7 +18,7 @@ public struct ClimbRecord: Hashable {
 }
 
 extension ClimbRecord {
-    public static let dummy: [ClimbRecord] = [
+    public static let dummy = [
         ClimbRecord(
             id: UUID().uuidString,
             mountain: Mountain.dummy[0],
