@@ -36,7 +36,6 @@ final class ClimbRecordListViewController: UIViewController {
 
         bind()
         setupNavItem()
-        
         setupDelegates()
     }
     
@@ -100,6 +99,7 @@ final class ClimbRecordListViewController: UIViewController {
 
 // MARK: - UISearchBarDelegate
 extension ClimbRecordListViewController: UISearchBarDelegate {
+    
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         mainView.setSearchBarBorder(isFirstResponder: true)
     }

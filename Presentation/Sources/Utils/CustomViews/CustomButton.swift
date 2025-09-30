@@ -21,10 +21,16 @@ final class CustomButton: UIButton {
     
     private func setup(title: String, image: UIImage?, foreground: UIColor, background: UIColor, hasBorder: Bool) {
         var config = UIButton.Configuration.plain()
-        config.image = image?.applyingSymbolConfiguration(.init(pointSize: 12))
+        
+        if let image = image {
+            let coloredImage = image.withTintColor(foreground, renderingMode: .alwaysOriginal)
+            config.image = coloredImage.applyingSymbolConfiguration(.init(pointSize: 12))
+        }
+        config.baseForegroundColor = nil
         config.imagePadding = AppSpacing.small
-        config.baseForegroundColor = foreground
-        config.attributedTitle = AttributedString(title, attributes: AttributeContainer([.font: AppFont.button]))
+        
+        config.attributedTitle = AttributedString(title, attributes: AttributeContainer([.font: AppFont.button, .foregroundColor: foreground]))
+        
         configuration = config
         backgroundColor = background
         layer.cornerRadius = AppRadius.radius
@@ -32,6 +38,10 @@ final class CustomButton: UIButton {
         if hasBorder {
             layer.borderColor = foreground.cgColor
             layer.borderWidth = 1.0
+        }
+        
+        configurationUpdateHandler = { [weak self] button in
+            self?.alpha = button.isEnabled ? 1.0 : 0.5
         }
     }
 }

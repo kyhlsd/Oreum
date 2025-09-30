@@ -23,9 +23,9 @@ enum AppIcon {
     static let address = UIImage(systemName: "mappin")// 걸음
     static let star = UIImage(systemName: "star.fill")                    // 별점
     static let timeline = UIImage(systemName: "chart.xyaxis.line")        // 그래프
-    static let play = UIImage(systemName: "play.circle.fill")             // 재생
-    static let pause = UIImage(systemName: "pause.circle.fill")           // 일시정지
-    static let square = UIImage(systemName: "stop.circle.fill")           // 정지
+    static let play = UIImage(systemName: "play")             // 재생
+    static let pause = UIImage(systemName: "pause")           // 일시정지
+    static let square = UIImage(systemName: "stop")           // 정지
     static let arrowLeft = UIImage(systemName: "arrow.left")              // 뒤로가기
     static let chevronLeft = UIImage(systemName: "chevron.left")          // 좌측 화살표
     static let x = UIImage(systemName: "xmark")                           // 닫기

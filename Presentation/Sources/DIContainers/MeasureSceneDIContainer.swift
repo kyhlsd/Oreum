@@ -12,6 +12,19 @@ public final class MeasureSceneDIContainer {
     public init() {}
     
     public func makeMeasureSceneFlowCoordinator(navigationController: UINavigationController) -> MeasureSceneFlowCoordinator {
-        return MeasureSceneFlowCoordinator(navigationController: navigationController)
+        return MeasureSceneFlowCoordinator(navigationController: navigationController, dependencies: self)
+    }
+}
+
+extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
+    
+    // MARK: - ViewControllers
+    func makeMeasureViewController() -> MeasureViewController {
+        return MeasureViewController(viewModel: makeMeasureViewModel())
+    }
+    
+    // MARK: - ViewModels
+    private func makeMeasureViewModel() -> MeasureViewModel {
+        return MeasureViewModel()
     }
 }

@@ -14,7 +14,7 @@ final class ItemView: BaseView {
     
     private let subtitleLabel = UILabel.create(color: AppColor.subText, font: AppFont.description)
     
-    init(subtitle: String) {
+    init(title: String? = nil, subtitle: String? = nil) {
         super.init(frame: .zero)
         subtitleLabel.text = subtitle
     }
@@ -23,9 +23,17 @@ final class ItemView: BaseView {
         titleLabel.text = title
     }
     
+    func setSubtitle(subtitle: String?) {
+        subtitleLabel.text = subtitle
+    }
+    
+    func setAlignment(_ alignment: NSTextAlignment) {
+        titleLabel.textAlignment = alignment
+        subtitleLabel.textAlignment = alignment
+    }
+    
     override func setupView() {
-        titleLabel.textAlignment = .center
-        subtitleLabel.textAlignment = .center
+        setAlignment(.center)
     }
     
     override func setupHierarchy() {
