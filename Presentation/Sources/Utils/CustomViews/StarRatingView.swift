@@ -82,7 +82,7 @@ final class StarRatingView: BaseView {
     }
     
     override func setupView() {
-        for i in 0...4 {
+        for _ in 0...4 {
             let star = UIButton()
             star.tintColor = .systemGray
             

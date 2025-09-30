@@ -39,9 +39,9 @@ final class ClimbRecordDetailView: BaseView {
     
     private let infoView = BoxView(title: "정보")
     
-    private let addressView = ItemView(icon: AppIcon.address, subtitle: "주소")
-    private let dateView = ItemView(icon: AppIcon.date, subtitle: "날짜")
-    private let heightView = ItemView(icon: AppIcon.mountain, subtitle: "높이")
+    private let addressView = ImageItemView(icon: AppIcon.address, subtitle: "주소")
+    private let dateView = ImageItemView(icon: AppIcon.date, subtitle: "날짜")
+    private let heightView = ImageItemView(icon: AppIcon.mountain, subtitle: "높이")
     
     private let reviewView = BoxView(title: "나의 후기")
     

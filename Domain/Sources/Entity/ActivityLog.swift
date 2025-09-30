@@ -35,19 +35,29 @@ extension ActivityLog {
         let calendar = Calendar.current
         let startDate = calendar.date(from: components) ?? Date()
         
-        // 5분 간격으로 40개의 로그 생성
-        return (0..<40).map { i in
+        var result: [ActivityLog] = []
+        
+        result.append(ActivityLog(
+            id: UUID().uuidString,
+            time: startDate,
+            step: 0,
+            distance: 0
+        ))
+        
+        for i in 1..<40 {
             let logDate = startDate.addingTimeInterval(TimeInterval(i * 5 * 60))
+            let step = Int.random(in: 0...1000)
+            let distance = Int.random(in: 0...500)
             
-            let randomStep = Int.random(in: 500...5000)
-            let randomDistance = Int.random(in: 400...4000)
-            
-            return ActivityLog(
+            result.append(ActivityLog(
                 id: UUID().uuidString,
                 time: logDate,
-                step: randomStep,
-                distance: randomDistance
-            )
+                step: step,
+                distance: distance
+            ))
         }
+        
+        return result
     }
+    
 }

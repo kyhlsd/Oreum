@@ -11,9 +11,13 @@ enum AppFormatter {
     
     static let dateFormatter = {
         let formatter = DateFormatter()
-        // ex) 24년 9월 2일
         formatter.dateFormat = "yy년 M월 d일"
         return formatter
     }()
     
+    static let timeFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
 }

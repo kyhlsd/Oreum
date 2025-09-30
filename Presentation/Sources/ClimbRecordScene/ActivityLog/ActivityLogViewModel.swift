@@ -6,10 +6,13 @@
 //
 
 import Foundation
+import Domain
 
 final class ActivityLogViewModel {
     
-    init() {
-        
+    private(set) var climbRecord: ClimbRecord
+    
+    init(climbRecord: ClimbRecord) {
+        self.climbRecord = climbRecord
     }
 }

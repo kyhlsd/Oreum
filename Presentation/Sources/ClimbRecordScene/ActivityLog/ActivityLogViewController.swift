@@ -37,7 +37,7 @@ final class ActivityLogViewController: UIViewController {
     }
     
     private func bind() {
-        
+        mainView.setData(climbRecord: viewModel.climbRecord)
     }
     
     private func setupNavItem() {
