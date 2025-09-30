@@ -44,7 +44,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeActivityLogViewModel(climbRecord: ClimbRecord) -> ActivityLogViewModel {
-        return ActivityLogViewModel(climbRecord: climbRecord)
+        return ActivityLogViewModel(activityStatUseCase: makeActivityStatUseCase(), climbRecord: climbRecord)
     }
     
     // MARK: - UseCases
@@ -62,6 +62,10 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     
     private func makeDeleteClimbRecordUseCase() -> DeleteClimbRecordUseCase {
         return DeleteClimbRecordUseCaseImpl(repository: climbRecordRepository)
+    }
+    
+    private func makeActivityStatUseCase() -> ActivityStatUseCase {
+        return ActivityStatUseCaseImpl()
     }
     
     // MARK: - Repositories

@@ -6,14 +6,12 @@
 //
 
 import UIKit
-import Combine
 import Domain
 
 final class ActivityLogViewController: UIViewController {
     
     private let mainView = ActivityLogView()
     private let viewModel: ActivityLogViewModel
-    private var cancellables = Set<AnyCancellable>()
     
     init(viewModel: ActivityLogViewModel) {
         self.viewModel = viewModel
@@ -37,7 +35,12 @@ final class ActivityLogViewController: UIViewController {
     }
     
     private func bind() {
-        mainView.setData(climbRecord: viewModel.climbRecord)
+        let input = ActivityLogViewModel.Input()
+        let output = viewModel.transform(input: input)
+        
+        mainView.setMountainName(name: output.mountainName)
+        mainView.setStat(activityStat: output.activityStat)
+        mainView.setActivityLogs(activityLogs: output.activityLogs)
     }
     
     private func setupNavItem() {

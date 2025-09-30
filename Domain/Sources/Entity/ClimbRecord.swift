@@ -15,33 +15,6 @@ public struct ClimbRecord: Hashable {
     public var score: Int
     public var comment: String
     public var isBookmarked: Bool
-    
-    // TODO: ViewModel로 옮기기
-    public var totalDuration: String {
-        guard let first = timeLog.first?.time,
-              let last = timeLog.last?.time else {
-            return "기록 없음"
-        }
-        
-        let interval = last.timeIntervalSince(first)
-        let totalMinutes = Int(interval) / 60
-        let hours = totalMinutes / 60
-        let minutes = totalMinutes % 60
-        
-        if hours > 0 {
-            return "\(hours)시간 \(minutes)분"
-        } else {
-            return "\(minutes)분"
-        }
-    }
-    
-    public var step: String {
-        guard let last = timeLog.last?.step else {
-            return "기록 없음"
-        }
-        
-        return last.formatted()
-    }
 }
 
 extension ClimbRecord {

@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import Combine
 import Domain
 import SnapKit
 
@@ -217,54 +216,41 @@ final class ActivityLogView: BaseView {
 // MARK: - Binding Methods
 extension ActivityLogView {
     
-    func setData(climbRecord: ClimbRecord) {
-        titleLabel.text = climbRecord.mountain.name
-        if let date = climbRecord.timeLog.first?.time {
-            dateLabel.text = AppFormatter.dateFormatter.string(from: date)
-        }
-        
-        summaryTimeView.setTitle(title: climbRecord.totalDuration)
-        let totalDistance = climbRecord.timeLog.last?.distance.formatted() ?? "0"
-        summaryDistanceView.setTitle(title: totalDistance + "m")
-        let totalStep = climbRecord.timeLog.last?.step.formatted() ?? "0"
-        summaryStepView.setTitle(title: totalStep)
-        
-        if let startDate = climbRecord.timeLog.first?.time {
-            startTimeView.setTitle(title: AppFormatter.timeFormatter.string(from: startDate))
-        }
-        if let endDate = climbRecord.timeLog.last?.time {
-            endTimeView.setTitle(title: AppFormatter.timeFormatter.string(from: endDate))
-        }
-        totalTimeView.setTitle(title: climbRecord.totalDuration)
-        
-        let restAndExercise = calculateRestAndExerciseTime(from: climbRecord.timeLog)
-        let restTime = formatMinutes(restAndExercise.restMinutes)
-        let exerciseTime = formatMinutes(restAndExercise.exerciseMinutes)
-        restTimeView.setTitle(title: restTime)
-        exerciseTimeView.setTitle(title: exerciseTime)
-        
-        distanceChartView.setLogs(logs: climbRecord.timeLog)
-        
-        stepChartView.setLogs(logs: climbRecord.timeLog)
+    func setMountainName(name: String) {
+        titleLabel.text = name
     }
-}
-
-// MARK: - Calculate Methods
-extension ActivityLogView {
     
-    private func calculateRestAndExerciseTime(from logs: [ActivityLog]) -> (restMinutes: Int, exerciseMinutes: Int) {
-        var restMinutes = 0
-        var exerciseMinutes = 0
-        
-        for log in logs {
-            if log.distance < 100 {
-                restMinutes += 5
-            } else {
-                exerciseMinutes += 5
-            }
+    func setStat(activityStat: ActivityStat) {
+        if let startTime = activityStat.startTime {
+            dateLabel.text = AppFormatter.dateFormatter.string(from: startTime)
+        } else {
+            dateLabel.text = "기록 없음"
         }
         
-        return (restMinutes, exerciseMinutes)
+        summaryTimeView.setTitle(title: formatMinutes(activityStat.totalTimeMinutes))
+        summaryDistanceView.setTitle(title: activityStat.totalDistance.formatted() + "m")
+        summaryStepView.setTitle(title: activityStat.totalSteps.formatted())
+        
+        if let startTime = activityStat.startTime {
+            startTimeView.setTitle(title: AppFormatter.timeFormatter.string(from: startTime))
+        } else {
+            startTimeView.setTitle(title: "기록 없음")
+        }
+        
+        if let endTime = activityStat.endTime {
+            endTimeView.setTitle(title: AppFormatter.timeFormatter.string(from: endTime))
+        } else {
+            endTimeView.setTitle(title: "기록 없음")
+        }
+        
+        totalTimeView.setTitle(title: formatMinutes(activityStat.totalTimeMinutes))
+        exerciseTimeView.setTitle(title: formatMinutes(activityStat.exerciseMinutes))
+        restTimeView.setTitle(title: formatMinutes(activityStat.restMinutes))
+    }
+    
+    func setActivityLogs(activityLogs: [ActivityLog]) {
+        distanceChartView.setLogs(logs: activityLogs)
+        stepChartView.setLogs(logs: activityLogs)
     }
     
     private func formatMinutes(_ minutes: Int) -> String {
