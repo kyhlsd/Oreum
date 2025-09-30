@@ -9,7 +9,7 @@ import UIKit
 
 public final class SearchSceneFlowCoordinator: Coordinator {
     
-    let navigationController: UINavigationController
+    public let navigationController: UINavigationController
     
     public init(navigationController: UINavigationController) {
         self.navigationController = navigationController
@@ -17,6 +17,8 @@ public final class SearchSceneFlowCoordinator: Coordinator {
     
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "검색", image: AppIcon.search, tag: 3)
+        navigationController.navigationBar.tintColor = AppColor.primary
+        
         let vc = UIViewController()
         vc.view.backgroundColor = .white
         navigationController.pushViewController(vc, animated: false)

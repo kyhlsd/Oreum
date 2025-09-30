@@ -6,12 +6,14 @@
 //
 
 import UIKit
+import Presentation
 
 final class AppFlowCoordinator {
     
     private let window: UIWindow
     private let tabBarController: UITabBarController
     private let appDIContainer: AppDIContainer
+    private var childCoordinators = [Coordinator]()
     
     init(window: UIWindow, tabBarController: UITabBarController, appDIContainer: AppDIContainer) {
         self.window = window
@@ -34,6 +36,11 @@ final class AppFlowCoordinator {
         let measureFlow = measureDIContainer.makeMeasureSceneFlowCoordinator(navigationController: measureNav)
         let mapFlow = mapDIContainer.makeMapSceneFlowCoordinator(navigationController: mapNav)
         let searchFlow = searchDIContainer.makeSearchSceneFlowCoordinator(navigationController: searchNav)
+        
+        childCoordinators.append(recordFlow)
+        childCoordinators.append(measureFlow)
+        childCoordinators.append(mapFlow)
+        childCoordinators.append(searchFlow)
         
         recordFlow.start()
         measureFlow.start()

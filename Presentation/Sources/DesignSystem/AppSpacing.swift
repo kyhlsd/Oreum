@@ -8,7 +8,7 @@
 import UIKit
 
 enum AppSpacing {
-    // 일반적인 패딩 (16pt)
+    // 일반적인 패딩 (20pt)
     static let regular: CGFloat = 16
     
     // 작은 카드나 컴팩트한 요소 (12pt)

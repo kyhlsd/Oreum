@@ -9,7 +9,7 @@ import UIKit
 
 public final class MeasureSceneFlowCoordinator: Coordinator {
     
-    let navigationController: UINavigationController
+    public let navigationController: UINavigationController
     
     public init(navigationController: UINavigationController) {
         self.navigationController = navigationController
@@ -17,6 +17,8 @@ public final class MeasureSceneFlowCoordinator: Coordinator {
     
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "측정", image: AppIcon.activity, tag: 1)
+        navigationController.navigationBar.tintColor = AppColor.primary
+        
         let vc = UIViewController()
         vc.view.backgroundColor = .white
         navigationController.pushViewController(vc, animated: false)

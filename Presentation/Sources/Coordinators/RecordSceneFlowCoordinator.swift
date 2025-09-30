@@ -6,20 +6,49 @@
 //
 
 import UIKit
+import Domain
+
+protocol RecordSceneFlowCoordinatorDependencies {
+    func makeClimbRecordListViewController() -> ClimbRecordListViewController
+    func makeClimbRecordDetailViewController(climbRecord: ClimbRecord) -> ClimbRecordDetailViewController
+    func makeActivityLogViewController(climbRecord: ClimbRecord) -> ActivityLogViewController
+}
 
 public final class RecordSceneFlowCoordinator: Coordinator {
     
-    let navigationController: UINavigationController
+    public let navigationController: UINavigationController
+    private let dependencies: RecordSceneFlowCoordinatorDependencies
     
-    public init(navigationController: UINavigationController) {
+    init(
+        navigationController: UINavigationController,
+        dependencies: RecordSceneFlowCoordinatorDependencies
+    ) {
         self.navigationController = navigationController
+        self.dependencies = dependencies
     }
     
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "기록", image: AppIcon.bookOpen, tag: 0)
-        let vc = UIViewController()
-        vc.view.backgroundColor = .white
-        navigationController.pushViewController(vc, animated: false)
+        navigationController.navigationBar.tintColor = AppColor.primary
+        
+        let listVC = dependencies.makeClimbRecordListViewController()
+        listVC.pushVC = { [weak self] climbRecord in
+            guard let self else { return }
+            
+            let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord)
+            detailVC.popVC = { [weak self] in
+                self?.navigationController.popViewController(animated: true)
+            }
+            detailVC.pushVC = { [weak self] climbRecord in
+                guard let self else { return }
+                navigationController.pushViewController(dependencies.makeActivityLogViewController(climbRecord: climbRecord), animated: true)
+            }
+            detailVC.viewModel.delegate = listVC.viewModel
+            
+            self.navigationController.pushViewController(detailVC, animated: true)
+        }
+        
+        navigationController.pushViewController(listVC, animated: false)
     }
     
 }
