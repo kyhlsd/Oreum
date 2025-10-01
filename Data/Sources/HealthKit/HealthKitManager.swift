@@ -37,12 +37,12 @@ public final class HealthKitManager {
 
             let typesToRead: Set<HKObjectType> = [stepType, distanceType]
 
-            self.healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
+            self.healthStore.requestAuthorization(toShare: nil, read: typesToRead) { [weak self] success, error in
                 if let error = error {
                     promise(.failure(error))
                 } else {
                     // 권한 요청 후 실제로 데이터를 읽을 수 있는지 확인
-                    self.testHealthKitAccess { hasAccess in
+                    self?.testHealthKitAccess { hasAccess in
                         promise(.success(hasAccess))
                     }
                 }

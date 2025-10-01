@@ -40,6 +40,7 @@ final class MeasureViewModel: BaseViewModel {
         let startMeasuring: AnyPublisher<Void, Never>
         let cancelMeasuring: AnyPublisher<Void, Never>
         let stopMeasuring: AnyPublisher<Void, Never>
+        let didBecomeActive: AnyPublisher<Void, Never>
     }
 
     struct Output {
@@ -63,7 +64,12 @@ final class MeasureViewModel: BaseViewModel {
         let updateMeasuringStateSubject = CurrentValueSubject<Bool, Never>(false)
         let clearSearchBarSubject = PassthroughSubject<Void, Never>()
 
-        let permissionAuthorized = input.checkPermissionTrigger
+        let permissionCheckTrigger = Publishers.Merge(
+            input.checkPermissionTrigger,
+            input.didBecomeActive
+        )
+
+        let permissionAuthorized = permissionCheckTrigger
             .flatMap { [weak self] _ -> AnyPublisher<Bool, Never> in
                 guard let self = self else {
                     return Just(false).eraseToAnyPublisher()
@@ -72,7 +78,7 @@ final class MeasureViewModel: BaseViewModel {
                     .catch { _ in Just(false) }
                     .eraseToAnyPublisher()
             }
-            .share()
+            .removeDuplicates()
             .eraseToAnyPublisher()
 
         let searchResults = input.searchTrigger

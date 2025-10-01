@@ -37,12 +37,16 @@ final class MeasureViewController: UIViewController, BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        bind()
         setupNavItem()
         setupDelegates()
-        bind()
     }
 
     func bind() {
+        let didBecomeActive = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .map { _ in () }
+            .eraseToAnyPublisher()
+        
         let input = MeasureViewModel.Input(
             checkPermissionTrigger: Just(()).eraseToAnyPublisher(),
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
@@ -50,7 +54,8 @@ final class MeasureViewController: UIViewController, BaseViewController {
             cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher(),
             startMeasuring: mainView.startButton.tap.eraseToAnyPublisher(),
             cancelMeasuring: mainView.cancelMeasuringButton.tap.eraseToAnyPublisher(),
-            stopMeasuring: mainView.stopButton.tap.eraseToAnyPublisher()
+            stopMeasuring: mainView.stopButton.tap.eraseToAnyPublisher(),
+            didBecomeActive: didBecomeActive
         )
 
         let output = viewModel.transform(input: input)
