@@ -12,10 +12,24 @@ import Domain
 final class MeasureViewModel: BaseViewModel {
 
     private let fetchMountainsUseCase: FetchMountainInfosUseCase
+    private let requestHealthKitAuthorizationUseCase: RequestHealthKitAuthorizationUseCase
+    private let startTrackingActivityUseCase: StartTrackingActivityUseCase
+    private let getActivityLogsUseCase: GetActivityLogsUseCase
+    private let stopTrackingActivityUseCase: StopTrackingActivityUseCase
     private var cancellables = Set<AnyCancellable>()
 
-    init(fetchMountainsUseCase: FetchMountainInfosUseCase) {
+    init(
+        fetchMountainsUseCase: FetchMountainInfosUseCase,
+        requestHealthKitAuthorizationUseCase: RequestHealthKitAuthorizationUseCase,
+        startTrackingActivityUseCase: StartTrackingActivityUseCase,
+        getActivityLogsUseCase: GetActivityLogsUseCase,
+        stopTrackingActivityUseCase: StopTrackingActivityUseCase
+    ) {
         self.fetchMountainsUseCase = fetchMountainsUseCase
+        self.requestHealthKitAuthorizationUseCase = requestHealthKitAuthorizationUseCase
+        self.startTrackingActivityUseCase = startTrackingActivityUseCase
+        self.getActivityLogsUseCase = getActivityLogsUseCase
+        self.stopTrackingActivityUseCase = stopTrackingActivityUseCase
     }
 
     struct Input {
@@ -86,25 +100,65 @@ final class MeasureViewModel: BaseViewModel {
 
         input.startMeasuring
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink {
+            .sink { [weak self] in
+                guard let self = self else { return }
                 updateMeasuringStateSubject.send(true)
+
+                // HealthKit 권한 요청 후 트래킹 시작
+                self.requestHealthKitAuthorizationUseCase.execute()
+                    .sink(receiveCompletion: { completion in
+                        if case .failure(let error) = completion {
+                            print("❌ HealthKit authorization failed: \(error)")
+                        }
+                    }, receiveValue: { [weak self] authorized in
+                        if authorized {
+                            self?.startTrackingActivityUseCase.execute(startDate: Date())
+                            print("✅ Activity tracking started")
+                        } else {
+                            print("❌ HealthKit authorization denied")
+                        }
+                    })
+                    .store(in: &self.cancellables)
             }
             .store(in: &cancellables)
 
         input.cancelMeasuring
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink {
+            .sink { [weak self] in
+                guard let self = self else { return }
                 updateMeasuringStateSubject.send(false)
+
+                // 트래킹 중지 (데이터 저장 안 함)
+                self.stopTrackingActivityUseCase.execute()
+                print("✅ Activity tracking canceled")
             }
             .store(in: &cancellables)
 
         input.stopMeasuring
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink {
+            .sink { [weak self] in
+                guard let self = self else { return }
                 updateMeasuringStateSubject.send(false)
                 clearMountainSelectionSubject.send()
                 updateStartButtonIsEnabledSubject.send(false)
                 clearSearchBarSubject.send()
+
+                // ActivityLog 배열 가져오기 및 출력
+                self.getActivityLogsUseCase.execute()
+                    .sink(receiveCompletion: { completion in
+                        if case .failure(let error) = completion {
+                            print("❌ Failed to get activity logs: \(error)")
+                        }
+                    }, receiveValue: { [weak self] logs in
+                        print("✅ Activity logs (\(logs.count) entries):")
+                        for log in logs {
+                            print("  - Time: \(log.time), Steps: \(log.step), Distance: \(log.distance)m")
+                        }
+
+                        // 트래킹 중지
+                        self?.stopTrackingActivityUseCase.execute()
+                    })
+                    .store(in: &self.cancellables)
             }
             .store(in: &cancellables)
 

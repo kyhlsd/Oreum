@@ -18,13 +18,33 @@ public final class MeasureSceneDIContainer {
     }
 
     // MARK: - Repositories
-    private func makeTempMountainRepository() -> MountainInfoRepository {
+    private func makeMountainInfoRepository() -> MountainInfoRepository {
         return DummyMountainInfoRepositoryImpl()
+    }
+    
+    private func makeTrackActivityRepository() -> TrackActivityRepository {
+        return DefaultTrackActivityRepositoryImpl()
     }
 
     // MARK: - UseCases
     private func makeFetchMountainsUseCase() -> FetchMountainInfosUseCase {
-        return FetchMountainInfosUseCaseImpl(repository: makeTempMountainRepository())
+        return FetchMountainInfosUseCaseImpl(repository: makeMountainInfoRepository())
+    }
+
+    private func makeRequestHealthKitAuthorizationUseCase() -> RequestHealthKitAuthorizationUseCase {
+        return RequestHealthKitAuthorizationUseCaseImpl(repository: makeTrackActivityRepository())
+    }
+
+    private func makeStartTrackingActivityUseCase() -> StartTrackingActivityUseCase {
+        return StartTrackingActivityUseCaseImpl(repository: makeTrackActivityRepository())
+    }
+
+    private func makeGetActivityLogsUseCase() -> GetActivityLogsUseCase {
+        return GetActivityLogsUseCaseImpl(repository: makeTrackActivityRepository())
+    }
+
+    private func makeStopTrackingActivityUseCase() -> StopTrackingActivityUseCase {
+        return StopTrackingActivityUseCaseImpl(repository: makeTrackActivityRepository())
     }
 }
 
@@ -37,6 +57,12 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
 
     // MARK: - ViewModels
     private func makeMeasureViewModel() -> MeasureViewModel {
-        return MeasureViewModel(fetchMountainsUseCase: makeFetchMountainsUseCase())
+        return MeasureViewModel(
+            fetchMountainsUseCase: makeFetchMountainsUseCase(),
+            requestHealthKitAuthorizationUseCase: makeRequestHealthKitAuthorizationUseCase(),
+            startTrackingActivityUseCase: makeStartTrackingActivityUseCase(),
+            getActivityLogsUseCase: makeGetActivityLogsUseCase(),
+            stopTrackingActivityUseCase: makeStopTrackingActivityUseCase()
+        )
     }
 }

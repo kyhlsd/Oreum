@@ -28,7 +28,9 @@ let project = Project(
                     "UIUserInterfaceStyle": "Light",
                     "UISupportedInterfaceOrientations": [
                         "UIInterfaceOrientationPortrait"
-                    ]
+                    ],
+                    "NSHealthShareUsageDescription": "등산 기록을 위해 걸음 수와 이동 거리 데이터를 사용합니다.",
+                    "NSHealthUpdateUsageDescription": "등산 활동 데이터를 저장하기 위해 HealthKit 접근이 필요합니다."
                 ],
             ),
             sources: ["Oreum/Sources/**"],

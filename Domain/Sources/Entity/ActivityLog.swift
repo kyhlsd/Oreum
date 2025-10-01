@@ -12,6 +12,13 @@ public struct ActivityLog: Hashable {
     public let time: Date
     public let step: Int
     public let distance: Int
+    
+    public init(id: String, time: Date, step: Int, distance: Int) {
+        self.id = id
+        self.time = time
+        self.step = step
+        self.distance = distance
+    }
 }
 
 extension ActivityLog {
