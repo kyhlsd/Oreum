@@ -483,20 +483,20 @@ extension MeasureView {
         searchBar.text = ""
     }
 
-    func showPermissionRequiredView() {
-        permissionRequiredView.isHidden = false
-        selectLabel.isHidden = true
-        searchBar.isHidden = true
-        mountainBoxView.isHidden = true
-        stackView.isHidden = true
+    func updatePermissionRequiredViewIsHidden(_ authorized: Bool) {
+        if authorized {
+            permissionRequiredView.isHidden = true
+            selectLabel.isHidden = false
+            searchBar.isHidden = false
+            mountainBoxView.isHidden = false
+            stackView.isHidden = false
+        } else {
+            permissionRequiredView.isHidden = false
+            selectLabel.isHidden = true
+            searchBar.isHidden = true
+            mountainBoxView.isHidden = true
+            stackView.isHidden = true
+        }
     }
-
-    func hidePermissionRequiredView() {
-        permissionRequiredView.isHidden = true
-        selectLabel.isHidden = false
-        searchBar.isHidden = false
-        mountainBoxView.isHidden = false
-        stackView.isHidden = false
-    }
-
+    
 }

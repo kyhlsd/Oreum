@@ -32,11 +32,8 @@ final class MeasureViewModel: BaseViewModel {
         self.stopTrackingActivityUseCase = stopTrackingActivityUseCase
     }
 
-    func requestInitialPermission() -> AnyPublisher<Bool, Error> {
-        return requestHealthKitAuthorizationUseCase.execute()
-    }
-
     struct Input {
+        let checkPermissionTrigger: AnyPublisher<Void, Never>
         let searchTrigger: AnyPublisher<String, Never>
         let selectMountain: AnyPublisher<MountainInfo, Never>
         let cancelMountain: AnyPublisher<Void, Never>
@@ -46,6 +43,7 @@ final class MeasureViewModel: BaseViewModel {
     }
 
     struct Output {
+        let permissionAuthorized: AnyPublisher<Bool, Never>
         let searchResults: AnyPublisher<[MountainInfo], Never>
         let updateMountainLabelsTrigger: AnyPublisher<(String, String), Never>
         let clearMountainSelectionTrigger: AnyPublisher<Void, Never>
@@ -64,6 +62,18 @@ final class MeasureViewModel: BaseViewModel {
         let updateSearchResultsSubject = PassthroughSubject<Int, Never>()
         let updateMeasuringStateSubject = CurrentValueSubject<Bool, Never>(false)
         let clearSearchBarSubject = PassthroughSubject<Void, Never>()
+
+        let permissionAuthorized = input.checkPermissionTrigger
+            .flatMap { [weak self] _ -> AnyPublisher<Bool, Never> in
+                guard let self = self else {
+                    return Just(false).eraseToAnyPublisher()
+                }
+                return self.requestHealthKitAuthorizationUseCase.execute()
+                    .catch { _ in Just(false) }
+                    .eraseToAnyPublisher()
+            }
+            .share()
+            .eraseToAnyPublisher()
 
         let searchResults = input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
@@ -166,7 +176,8 @@ final class MeasureViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        return Output(searchResults: searchResults,
+        return Output(permissionAuthorized: permissionAuthorized,
+                      searchResults: searchResults,
                       updateMountainLabelsTrigger: updateMountainLabelsSubject.eraseToAnyPublisher(),
                       clearMountainSelectionTrigger: clearMountainSelectionSubject.eraseToAnyPublisher(),
                       updateStartButtonIsEnabledTrigger: updateStartButtonIsEnabledSubject

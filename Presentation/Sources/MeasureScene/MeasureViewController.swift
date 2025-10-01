@@ -16,7 +16,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
-    
+
     private let searchTriggerSubject = PassthroughSubject<String, Never>()
     private let selectMountainSubject = PassthroughSubject<MountainInfo, Never>()
 
@@ -39,46 +39,12 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
         setupNavItem()
         setupDelegates()
-        checkPermissionAndBind()
-    }
-
-    private func checkPermissionAndBind() {
-        viewModel.requestInitialPermission()
-            .sink(receiveCompletion: { [weak self] completion in
-                if case .failure(let error) = completion {
-                    print("❌ Permission request failed: \(error)")
-                    self?.mainView.showPermissionRequiredView()
-                    self?.bindOpenSettingsButton()
-                }
-            }, receiveValue: { [weak self] authorized in
-                print("✅ Permission authorized: \(authorized)")
-                if authorized {
-                    self?.mainView.hidePermissionRequiredView()
-                    self?.bind()
-                } else {
-                    self?.mainView.showPermissionRequiredView()
-                    self?.bindOpenSettingsButton()
-                }
-            })
-            .store(in: &cancellables)
-    }
-
-    private func bindOpenSettingsButton() {
-        mainView.openSettingsButton.tap
-            .sink { [weak self] in
-                self?.openSettings()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func openSettings() {
-        if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(settingsURL)
-        }
+        bind()
     }
 
     func bind() {
         let input = MeasureViewModel.Input(
+            checkPermissionTrigger: Just(()).eraseToAnyPublisher(),
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             selectMountain: selectMountainSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher(),
@@ -88,6 +54,13 @@ final class MeasureViewController: UIViewController, BaseViewController {
         )
 
         let output = viewModel.transform(input: input)
+
+        output.permissionAuthorized
+            .sink { [weak self] authorized in
+                print("✅ Permission authorized: \(authorized)")
+                self?.mainView.updatePermissionRequiredViewIsHidden(authorized)
+            }
+            .store(in: &cancellables)
 
         output.searchResults
             .sink { [weak self] mountains in
@@ -135,6 +108,14 @@ final class MeasureViewController: UIViewController, BaseViewController {
         output.clearSearchBarTrigger
             .sink { [weak self] in
                 self?.mainView.clearSearchBar()
+            }
+            .store(in: &cancellables)
+        
+        mainView.openSettingsButton.tap
+            .sink {
+                if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(settingsURL)
+                }
             }
             .store(in: &cancellables)
 
