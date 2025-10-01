@@ -38,4 +38,6 @@ enum AppIcon {
     static let wind = UIImage(systemName: "wind")                         // 바람
     static let sunrise = UIImage(systemName: "sunrise.fill")              // 일출
     static let sunset = UIImage(systemName: "sunset.fill")                // 일몰
+    static let exclamation = UIImage(systemName: "exclamationmark.triangle.fill") // 주의
+    static let gear = UIImage(systemName: "gearshape.fill") // 설정
 }

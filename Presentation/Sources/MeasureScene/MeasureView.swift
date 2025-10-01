@@ -159,8 +159,37 @@ final class MeasureView: BaseView {
     }()
 
     let cancelMeasuringButton = CustomButton(title: "측정 취소", image: AppIcon.x, foreground: AppColor.dangerText, background: AppColor.danger)
-    
+
     let stopButton = CustomButton(title: "측정 종료", image: AppIcon.stop, foreground: .white, background: AppColor.primary)
+
+    // MARK: - Permission Required View
+    private let permissionRequiredView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.cardBackground
+        view.layer.cornerRadius = AppRadius.radius
+        view.clipsToBounds = true
+        view.isHidden = true
+        return view
+    }()
+
+    private let permissionIconView = {
+        let imageView = UIImageView()
+        imageView.image = AppIcon.exclamation
+        imageView.tintColor = AppColor.primary
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    private let permissionTitleLabel = UILabel.create("'건강' 권한 필요", color: AppColor.primaryText, font: AppFont.titleL)
+
+    private let permissionMessageLabel = {
+        let label = UILabel.create("측정 기능을 사용하려면\n 설정에서 데이터 접근을 허용해주세요.\n(설정 - 앱 - 건강 - 데이터 접근 및 기기)", color: AppColor.subText, font: AppFont.body)
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        return label
+    }()
+
+    let openSettingsButton = CustomButton(title: "설정에서 권한 허용", image: AppIcon.gear, foreground: .white, background: AppColor.primary)
 
     // MARK: - Setups
     override func setupView() {
@@ -172,20 +201,24 @@ final class MeasureView: BaseView {
     }
     
     override func setupHierarchy() {
-        [selectLabel, searchBar, mountainBoxView, stackView, searchResultsOverlay].forEach {
+        [selectLabel, searchBar, mountainBoxView, stackView, searchResultsOverlay, permissionRequiredView].forEach {
             addSubview($0)
         }
-        
+
         [searchResultsTableView, emptyStateLabel].forEach {
             searchResultsOverlay.addSubview($0)
         }
-        
+
         [startButton, measuringBoxView, measuringButtonsStackView].forEach {
             stackView.addArrangedSubview($0)
         }
-        
+
         [mountainInfoView, placeholderLabel, cancelButton].forEach {
             mountainBoxView.addSubview($0)
+        }
+
+        [permissionIconView, permissionTitleLabel, permissionMessageLabel, openSettingsButton].forEach {
+            permissionRequiredView.addSubview($0)
         }
         
         [timeLabel, timeSubLabel, distanceContainer, stepsContainer, horizontalLineView, verticalLineView].forEach {
@@ -327,6 +360,33 @@ final class MeasureView: BaseView {
             make.center.equalToSuperview()
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
         }
+
+        permissionRequiredView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(24)
+        }
+
+        permissionIconView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(40)
+            make.centerX.equalToSuperview()
+            make.size.equalTo(60)
+        }
+
+        permissionTitleLabel.snp.makeConstraints { make in
+            make.top.equalTo(permissionIconView.snp.bottom).offset(AppSpacing.regular)
+            make.centerX.equalToSuperview()
+        }
+
+        permissionMessageLabel.snp.makeConstraints { make in
+            make.top.equalTo(permissionTitleLabel.snp.bottom).offset(AppSpacing.small)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
+        }
+
+        openSettingsButton.snp.makeConstraints { make in
+            make.top.equalTo(permissionMessageLabel.snp.bottom).offset(24)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
+            make.bottom.equalToSuperview().offset(-40)
+        }
     }
 }
 
@@ -421,6 +481,22 @@ extension MeasureView {
 
     func clearSearchBar() {
         searchBar.text = ""
+    }
+
+    func showPermissionRequiredView() {
+        permissionRequiredView.isHidden = false
+        selectLabel.isHidden = true
+        searchBar.isHidden = true
+        mountainBoxView.isHidden = true
+        stackView.isHidden = true
+    }
+
+    func hidePermissionRequiredView() {
+        permissionRequiredView.isHidden = true
+        selectLabel.isHidden = false
+        searchBar.isHidden = false
+        mountainBoxView.isHidden = false
+        stackView.isHidden = false
     }
 
 }

@@ -32,6 +32,10 @@ final class MeasureViewModel: BaseViewModel {
         self.stopTrackingActivityUseCase = stopTrackingActivityUseCase
     }
 
+    func requestInitialPermission() -> AnyPublisher<Bool, Error> {
+        return requestHealthKitAuthorizationUseCase.execute()
+    }
+
     struct Input {
         let searchTrigger: AnyPublisher<String, Never>
         let selectMountain: AnyPublisher<MountainInfo, Never>

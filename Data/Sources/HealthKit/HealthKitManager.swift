@@ -41,10 +41,60 @@ public final class HealthKitManager {
                 if let error = error {
                     promise(.failure(error))
                 } else {
-                    promise(.success(success))
+                    // 권한 요청 후 실제로 데이터를 읽을 수 있는지 확인
+                    self.testHealthKitAccess { hasAccess in
+                        promise(.success(hasAccess))
+                    }
                 }
             }
-        }.eraseToAnyPublisher()
+        }
+        .receive(on: DispatchQueue.main)
+        .eraseToAnyPublisher()
+    }
+
+    // 실제로 HealthKit 데이터에 접근할 수 있는지 테스트
+    private func testHealthKitAccess(completion: @escaping (Bool) -> Void) {
+        let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
+        let distanceType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!
+        let now = Date()
+        let startOfDay = Calendar.current.startOfDay(for: now)
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: .strictStartDate)
+
+        var stepAccessGranted = false
+        var distanceAccessGranted = false
+        var stepsCompleted = false
+        var distanceCompleted = false
+
+        // 걸음 수 쿼리
+        let stepQuery = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
+            if error != nil {
+                stepAccessGranted = false
+            } else {
+                stepAccessGranted = true
+            }
+            stepsCompleted = true
+
+            if distanceCompleted {
+                completion(stepAccessGranted && distanceAccessGranted)
+            }
+        }
+
+        // 거리 쿼리
+        let distanceQuery = HKStatisticsQuery(quantityType: distanceType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
+            if error != nil {
+                distanceAccessGranted = false
+            } else {
+                distanceAccessGranted = true
+            }
+            distanceCompleted = true
+
+            if stepsCompleted {
+                completion(stepAccessGranted && distanceAccessGranted)
+            }
+        }
+
+        healthStore.execute(stepQuery)
+        healthStore.execute(distanceQuery)
     }
 
     // MARK: - Start Tracking
@@ -87,7 +137,7 @@ public final class HealthKitManager {
             var fetchError: Error?
 
             // 각 구간에 대해 걸음 수와 거리 가져오기
-            for (index, interval) in intervals.enumerated() {
+            for interval in intervals {
                 group.enter()
 
                 self.fetchStepsAndDistance(from: interval.start, to: interval.end) { steps, distance, error in

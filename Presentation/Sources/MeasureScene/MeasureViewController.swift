@@ -37,9 +37,44 @@ final class MeasureViewController: UIViewController, BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        bind()
         setupNavItem()
         setupDelegates()
+        checkPermissionAndBind()
+    }
+
+    private func checkPermissionAndBind() {
+        viewModel.requestInitialPermission()
+            .sink(receiveCompletion: { [weak self] completion in
+                if case .failure(let error) = completion {
+                    print("❌ Permission request failed: \(error)")
+                    self?.mainView.showPermissionRequiredView()
+                    self?.bindOpenSettingsButton()
+                }
+            }, receiveValue: { [weak self] authorized in
+                print("✅ Permission authorized: \(authorized)")
+                if authorized {
+                    self?.mainView.hidePermissionRequiredView()
+                    self?.bind()
+                } else {
+                    self?.mainView.showPermissionRequiredView()
+                    self?.bindOpenSettingsButton()
+                }
+            })
+            .store(in: &cancellables)
+    }
+
+    private func bindOpenSettingsButton() {
+        mainView.openSettingsButton.tap
+            .sink { [weak self] in
+                self?.openSettings()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func openSettings() {
+        if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(settingsURL)
+        }
     }
 
     func bind() {
