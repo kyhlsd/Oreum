@@ -35,6 +35,7 @@ let project = Project(
             ),
             sources: ["Oreum/Sources/**"],
             resources: ["Oreum/Resources/**"],
+            entitlements: .file(path: "Oreum/Oreum.entitlements"),
             dependencies: [
                 .target(name: "Presentation"),
                 .target(name: "Domain"),
