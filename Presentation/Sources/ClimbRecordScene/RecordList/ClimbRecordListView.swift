@@ -102,10 +102,6 @@ extension ClimbRecordListView {
         bookmarkButton.setImage(isOnlyBookmarked ? AppIcon.bookmarkFill : AppIcon.bookmark, for: .normal)
     }
     
-    var getCellBookmarkTap: AnyPublisher<String, Never> {
-        return cellBookmarkTapSubject.eraseToAnyPublisher()
-    }
-    
     func toggleCellBookmarked(row: Int) {
         recordCollectionView.reloadItems(at: [IndexPath(item: row, section: 0)])
     }

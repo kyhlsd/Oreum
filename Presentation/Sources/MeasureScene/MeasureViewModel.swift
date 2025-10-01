@@ -21,6 +21,7 @@ final class MeasureViewModel: BaseViewModel {
     struct Input {
         let searchTrigger: AnyPublisher<String, Never>
         let selectMountain: AnyPublisher<MountainInfo, Never>
+        let cancelMountain: AnyPublisher<Void, Never>
     }
 
     struct Output {
@@ -29,7 +30,7 @@ final class MeasureViewModel: BaseViewModel {
         let updateMountainBoxIsHiddenTrigger: AnyPublisher<Bool, Never>
         let updateStartButtonIsEnabledTrigger: AnyPublisher<Bool, Never>
         let updateSearchResultsOverlayIsHiddenTrigger: AnyPublisher<Bool, Never>
-        let updateSearchResultsTrigger: AnyPublisher<(count: Int, isEmpty: Bool), Never>
+        let updateSearchResultsTrigger: AnyPublisher<Int, Never>
     }
 
     func transform(input: Input) -> Output {
@@ -37,7 +38,7 @@ final class MeasureViewModel: BaseViewModel {
         let updateMountainBoxIsHiddenSubject = CurrentValueSubject<Bool, Never>(true)
         let updateStartButtonIsEnabledSubject = CurrentValueSubject<Bool, Never>(false)
         let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
-        let updateSearchResultsSubject = PassthroughSubject<(count: Int, isEmpty: Bool), Never>()
+        let updateSearchResultsSubject = PassthroughSubject<Int, Never>()
 
         let searchResults = input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
@@ -54,9 +55,8 @@ final class MeasureViewModel: BaseViewModel {
 
         searchResults
             .sink { results in
-                let isEmpty = results.isEmpty
                 updateSearchResultsOverlayIsHiddenSubject.send(false)
-                updateSearchResultsSubject.send((count: results.count, isEmpty: isEmpty))
+                updateSearchResultsSubject.send(results.count)
             }
             .store(in: &cancellables)
 
@@ -67,6 +67,13 @@ final class MeasureViewModel: BaseViewModel {
                 updateMountainBoxIsHiddenSubject.send(false)
                 updateStartButtonIsEnabledSubject.send(true)
                 updateSearchResultsOverlayIsHiddenSubject.send(true)
+            }
+            .store(in: &cancellables)
+
+        input.cancelMountain
+            .sink {
+                updateMountainBoxIsHiddenSubject.send(true)
+                updateStartButtonIsEnabledSubject.send(false)
             }
             .store(in: &cancellables)
 

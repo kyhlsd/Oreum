@@ -44,7 +44,7 @@ final class ClimbRecordListViewController: UIViewController {
             viewDidLoad: Just(()).eraseToAnyPublisher(),
             searchText: mainView.searchBar.textDidChange,
             bookmarkButtonTapped: mainView.bookmarkButton.tap,
-            cellBookmarkButtonTapped: mainView.getCellBookmarkTap
+            cellBookmarkButtonTapped: mainView.cellBookmarkTapSubject.eraseToAnyPublisher()
         )
         
         let output = viewModel.transform(input: input)

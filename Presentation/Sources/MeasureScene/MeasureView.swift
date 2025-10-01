@@ -67,7 +67,16 @@ final class MeasureView: BaseView {
         view.setAlignment(.left)
         return view
     }()
-    
+
+    let cancelButton = {
+        let button = UIButton()
+        let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+        let image = UIImage(systemName: "xmark", withConfiguration: config)
+        button.setImage(image, for: .normal)
+        button.tintColor = AppColor.subText
+        return button
+    }()
+
     // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
@@ -83,6 +92,7 @@ final class MeasureView: BaseView {
             stackView.addArrangedSubview($0)
         }
         mountainBoxView.addSubview(mountainInfoView)
+        mountainBoxView.addSubview(cancelButton)
 
         addSubview(searchResultsOverlay)
         searchResultsOverlay.addSubview(searchResultsTableView)
@@ -106,7 +116,14 @@ final class MeasureView: BaseView {
         }
 
         mountainInfoView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(AppSpacing.compact)
+            make.verticalEdges.leading.equalToSuperview().inset(AppSpacing.compact)
+            make.trailing.equalTo(cancelButton.snp.leading).offset(-AppSpacing.small)
+        }
+
+        cancelButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(AppSpacing.compact)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(24)
         }
 
         startButton.snp.makeConstraints { make in
@@ -137,7 +154,8 @@ extension MeasureView {
         searchResultsOverlay.isHidden = isHidden
     }
 
-    func updateSearchResults(count: Int, isEmpty: Bool) {
+    func updateSearchResults(count: Int) {
+        let isEmpty = count == 0
         emptyStateLabel.isHidden = !isEmpty
         searchResultsTableView.isHidden = isEmpty
 

@@ -45,7 +45,8 @@ final class MeasureViewController: UIViewController, BaseViewController {
     func bind() {
         let input = MeasureViewModel.Input(
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
-            selectMountain: selectMountainSubject.eraseToAnyPublisher()
+            selectMountain: selectMountainSubject.eraseToAnyPublisher(),
+            cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher()
         )
 
         let output = viewModel.transform(input: input)
@@ -81,8 +82,8 @@ final class MeasureViewController: UIViewController, BaseViewController {
             .store(in: &cancellables)
 
         output.updateSearchResultsTrigger
-            .sink { [weak self] (count, isEmpty) in
-                self?.mainView.updateSearchResults(count: count, isEmpty: isEmpty)
+            .sink { [weak self] count in
+                self?.mainView.updateSearchResults(count: count)
             }
             .store(in: &cancellables)
     }
