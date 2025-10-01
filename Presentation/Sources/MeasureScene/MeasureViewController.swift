@@ -65,10 +65,10 @@ final class MeasureViewController: UIViewController, BaseViewController {
                 self?.mainView.updateMountainLabelTexts(name: name, address: address)
             }
             .store(in: &cancellables)
-        
-        output.updateMountainBoxIsHiddenTrigger
-            .sink { [weak self] isHidden in
-                self?.mainView.updateMountainBoxIsHidden(isHidden)
+
+        output.clearMountainSelectionTrigger
+            .sink { [weak self] in
+                self?.mainView.clearMountainSelection()
             }
             .store(in: &cancellables)
         
@@ -109,7 +109,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
     private func setNavItem(isMeasuring: Bool) {
         navigationItem.leftBarButtonItem?.isHidden = isMeasuring
-        navigationItem.title = isMeasuring ? "측정 중" : " "
+        navigationItem.title = isMeasuring ? "측정 중" : nil
     }
 
     private func setupNavItem() {

@@ -65,7 +65,13 @@ final class MeasureView: BaseView {
         view.setAlignment(.left)
         return view
     }()
-    
+
+    private let placeholderLabel = {
+        let label = UILabel.create("검색으로 산을 선택해주세요", color: AppColor.subText, font: AppFont.body)
+        label.textAlignment = .center
+        return label
+    }()
+
     let cancelButton = {
         let button = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 12)
@@ -160,10 +166,13 @@ final class MeasureView: BaseView {
     override func setupView() {
         backgroundColor = AppColor.background
         updateSearchBarBorder(isFirstResponder: false)
+        mountainInfoView.isHidden = true
+        placeholderLabel.isHidden = false
+        cancelButton.isHidden = true
     }
     
     override func setupHierarchy() {
-        [selectLabel, searchBar, stackView, searchResultsOverlay].forEach {
+        [selectLabel, searchBar, mountainBoxView, stackView, searchResultsOverlay].forEach {
             addSubview($0)
         }
         
@@ -171,11 +180,11 @@ final class MeasureView: BaseView {
             searchResultsOverlay.addSubview($0)
         }
         
-        [mountainBoxView, startButton, measuringBoxView, measuringButtonsStackView].forEach {
+        [startButton, measuringBoxView, measuringButtonsStackView].forEach {
             stackView.addArrangedSubview($0)
         }
         
-        [mountainInfoView, cancelButton].forEach {
+        [mountainInfoView, placeholderLabel, cancelButton].forEach {
             mountainBoxView.addSubview($0)
         }
         
@@ -206,15 +215,29 @@ final class MeasureView: BaseView {
             make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
             make.height.equalTo(40)
         }
-
-        stackView.snp.makeConstraints { make in
+        
+        mountainBoxView.snp.makeConstraints { make in
             make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
+        }
+
+        stackView.snp.makeConstraints { make in
+            make.top.equalTo(mountainBoxView.snp.bottom).offset(AppSpacing.regular)
+            make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
+        }
+
+        mountainBoxView.snp.makeConstraints { make in
+            make.height.equalTo(60)
         }
 
         mountainInfoView.snp.makeConstraints { make in
             make.verticalEdges.leading.equalToSuperview().inset(AppSpacing.compact)
             make.trailing.equalTo(cancelButton.snp.leading).offset(-AppSpacing.small)
+        }
+
+        placeholderLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
         }
 
         cancelButton.snp.makeConstraints { make in
@@ -337,38 +360,57 @@ extension MeasureView {
     func updateMountainLabelTexts(name: String, address: String) {
         mountainInfoView.setTitle(title: name)
         mountainInfoView.setSubtitle(subtitle: address)
+        mountainInfoView.isHidden = false
+        placeholderLabel.isHidden = true
+        cancelButton.isHidden = false
     }
 
     func updateSearchBarBorder(isFirstResponder: Bool) {
         searchBar.setBorder(isFirstResponder)
     }
 
-    func updateSelectViewsIsEnabled(_ isEnabled: Bool) {
-        selectLabel.isEnabled = isEnabled
-
-        searchBar.searchTextField.leftView?.tintColor = isEnabled ? AppColor.mossGreen : .systemGray.withAlphaComponent(0.5)
-        if #available(iOS 16.4, *) {
-            searchBar.isEnabled = isEnabled
-        } else {
-            searchBar.isUserInteractionEnabled = isEnabled
-            searchBar.alpha = isEnabled ? 1.0 : 0.5
-        }
-    }
-
     func updateStartButtonIsEnabled(_ isEnabled: Bool) {
         startButton.isEnabled = isEnabled
     }
 
-    func updateMountainBoxIsHidden(_ isHidden: Bool) {
-        mountainBoxView.isHidden = isHidden
+    func clearMountainSelection() {
+        mountainInfoView.isHidden = true
+        placeholderLabel.isHidden = false
+        cancelButton.isHidden = true
     }
 
     func updateMeasuringState(isMeasuring: Bool) {
-        cancelButton.isHidden = isMeasuring
-        startButton.isHidden = isMeasuring
-        measuringBoxView.isHidden = !isMeasuring
-        measuringButtonsStackView.isHidden = !isMeasuring
-        updateSelectViewsIsEnabled(!isMeasuring)
+        if isMeasuring {
+            startButton.isHidden = true
+            measuringBoxView.isHidden = false
+            measuringButtonsStackView.isHidden = false
+            cancelButton.isEnabled = false
+            mountainBoxView.alpha = 0.5
+            selectLabel.isEnabled = false
+            searchBar.searchTextField.leftView?.tintColor = .systemGray.withAlphaComponent(0.5)
+            if #available(iOS 16.4, *) {
+                searchBar.isEnabled = false
+            } else {
+                searchBar.isUserInteractionEnabled = false
+                searchBar.alpha = 0.5
+            }
+            searchBar.searchTextField.clearButtonMode = .never
+        } else {
+            startButton.isHidden = false
+            measuringBoxView.isHidden = true
+            measuringButtonsStackView.isHidden = true
+            cancelButton.isEnabled = true
+            mountainBoxView.alpha = 1.0
+            selectLabel.isEnabled = true
+            searchBar.searchTextField.leftView?.tintColor = AppColor.mossGreen
+            if #available(iOS 16.4, *) {
+                searchBar.isEnabled = true
+            } else {
+                searchBar.isUserInteractionEnabled = true
+                searchBar.alpha = 1.0
+            }
+            searchBar.searchTextField.clearButtonMode = .always
+        }
     }
 
     func updateMeasuringData(time: String, distance: String, steps: String) {

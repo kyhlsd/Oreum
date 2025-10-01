@@ -30,7 +30,7 @@ final class MeasureViewModel: BaseViewModel {
     struct Output {
         let searchResults: AnyPublisher<[MountainInfo], Never>
         let updateMountainLabelsTrigger: AnyPublisher<(String, String), Never>
-        let updateMountainBoxIsHiddenTrigger: AnyPublisher<Bool, Never>
+        let clearMountainSelectionTrigger: AnyPublisher<Void, Never>
         let updateStartButtonIsEnabledTrigger: AnyPublisher<Bool, Never>
         let updateSearchResultsOverlayIsHiddenTrigger: AnyPublisher<Bool, Never>
         let updateSearchResultsTrigger: AnyPublisher<Int, Never>
@@ -40,7 +40,7 @@ final class MeasureViewModel: BaseViewModel {
 
     func transform(input: Input) -> Output {
         let updateMountainLabelsSubject = PassthroughSubject<(String, String), Never>()
-        let updateMountainBoxIsHiddenSubject = CurrentValueSubject<Bool, Never>(true)
+        let clearMountainSelectionSubject = PassthroughSubject<Void, Never>()
         let updateStartButtonIsEnabledSubject = CurrentValueSubject<Bool, Never>(false)
         let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
         let updateSearchResultsSubject = PassthroughSubject<Int, Never>()
@@ -71,7 +71,6 @@ final class MeasureViewModel: BaseViewModel {
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { mountainInfo in
                 updateMountainLabelsSubject.send((mountainInfo.name, mountainInfo.address))
-                updateMountainBoxIsHiddenSubject.send(false)
                 updateStartButtonIsEnabledSubject.send(true)
                 updateSearchResultsOverlayIsHiddenSubject.send(true)
             }
@@ -80,7 +79,7 @@ final class MeasureViewModel: BaseViewModel {
         input.cancelMountain
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink {
-                updateMountainBoxIsHiddenSubject.send(true)
+                clearMountainSelectionSubject.send()
                 updateStartButtonIsEnabledSubject.send(false)
             }
             .store(in: &cancellables)
@@ -103,7 +102,7 @@ final class MeasureViewModel: BaseViewModel {
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink {
                 updateMeasuringStateSubject.send(false)
-                updateMountainBoxIsHiddenSubject.send(true)
+                clearMountainSelectionSubject.send()
                 updateStartButtonIsEnabledSubject.send(false)
                 clearSearchBarSubject.send()
             }
@@ -111,9 +110,7 @@ final class MeasureViewModel: BaseViewModel {
 
         return Output(searchResults: searchResults,
                       updateMountainLabelsTrigger: updateMountainLabelsSubject.eraseToAnyPublisher(),
-                      updateMountainBoxIsHiddenTrigger: updateMountainBoxIsHiddenSubject
-            .removeDuplicates()
-            .eraseToAnyPublisher(),
+                      clearMountainSelectionTrigger: clearMountainSelectionSubject.eraseToAnyPublisher(),
                       updateStartButtonIsEnabledTrigger: updateStartButtonIsEnabledSubject
             .removeDuplicates()
             .eraseToAnyPublisher(),
