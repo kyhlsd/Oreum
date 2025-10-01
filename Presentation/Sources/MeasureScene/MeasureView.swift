@@ -15,7 +15,7 @@ final class MeasureView: BaseView {
 
     let searchBar = CustomSearchBar()
 
-    let searchResultsOverlay: UIView = {
+    let searchResultsOverlay = {
         let view = UIView()
         view.backgroundColor = AppColor.background
         view.layer.cornerRadius = AppRadius.radius
@@ -28,7 +28,7 @@ final class MeasureView: BaseView {
         return view
     }()
 
-    let searchResultsTableView: UITableView = {
+    let searchResultsTableView = {
         let tableView = UITableView()
         tableView.backgroundColor = AppColor.background
         tableView.separatorStyle = .singleLine
@@ -106,7 +106,7 @@ final class MeasureView: BaseView {
         }
 
         searchResultsOverlay.snp.makeConstraints { make in
-            make.top.equalTo(searchBar.snp.bottom).offset(8)
+            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.small)
             make.horizontalEdges.equalTo(searchBar)
             make.height.equalTo(300)
         }

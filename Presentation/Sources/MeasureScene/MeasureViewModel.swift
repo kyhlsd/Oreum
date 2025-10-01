@@ -38,6 +38,7 @@ final class MeasureViewModel: BaseViewModel {
         let searchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
         
         let searchResults = input.searchTrigger
+            .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .flatMap { [weak self] keyword -> AnyPublisher<[MountainInfo], Never> in
                 guard let self = self else {
                     return Just([]).eraseToAnyPublisher()
@@ -46,7 +47,6 @@ final class MeasureViewModel: BaseViewModel {
                     .catch { _ in Just([]) }
                     .eraseToAnyPublisher()
             }
-            .removeDuplicates()
             .share()
             .eraseToAnyPublisher()
         
@@ -75,7 +75,6 @@ final class MeasureViewModel: BaseViewModel {
             .removeDuplicates()
             .eraseToAnyPublisher(),
                       setSearchResultsOverlayIsHiddenTrigger: searchResultsOverlayIsHiddenSubject
-            .removeDuplicates()
             .eraseToAnyPublisher()
         )
     }

@@ -43,10 +43,6 @@ final class MeasureViewController: UIViewController, BaseViewController {
     }
 
     func bind() {
-//        mainView.setSelectViewsEnabled(true)
-//        mainView.setStartButtonEnabled(false)
-//        mainView.setMountainBoxIsHidden(true)
-
         let input = MeasureViewModel.Input(
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             selectMountain: selectMountainSubject.eraseToAnyPublisher()
