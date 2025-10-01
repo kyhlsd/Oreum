@@ -24,8 +24,8 @@ enum AppIcon {
     static let star = UIImage(systemName: "star.fill")                    // 별점
     static let timeline = UIImage(systemName: "chart.xyaxis.line")        // 그래프
     static let play = UIImage(systemName: "play")             // 재생
-    static let pause = UIImage(systemName: "pause")           // 일시정지
-    static let square = UIImage(systemName: "stop")           // 정지
+    static let pause = UIImage(systemName: "pause.fill")           // 일시정지
+    static let stop = UIImage(systemName: "stop")           // 정지
     static let arrowLeft = UIImage(systemName: "arrow.left")              // 뒤로가기
     static let chevronLeft = UIImage(systemName: "chevron.left")          // 좌측 화살표
     static let x = UIImage(systemName: "xmark")                           // 닫기

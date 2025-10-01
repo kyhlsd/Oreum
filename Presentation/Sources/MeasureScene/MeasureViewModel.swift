@@ -22,6 +22,9 @@ final class MeasureViewModel: BaseViewModel {
         let searchTrigger: AnyPublisher<String, Never>
         let selectMountain: AnyPublisher<MountainInfo, Never>
         let cancelMountain: AnyPublisher<Void, Never>
+        let startMeasuring: AnyPublisher<Void, Never>
+        let cancelMeasuring: AnyPublisher<Void, Never>
+        let stopMeasuring: AnyPublisher<Void, Never>
     }
 
     struct Output {
@@ -31,6 +34,8 @@ final class MeasureViewModel: BaseViewModel {
         let updateStartButtonIsEnabledTrigger: AnyPublisher<Bool, Never>
         let updateSearchResultsOverlayIsHiddenTrigger: AnyPublisher<Bool, Never>
         let updateSearchResultsTrigger: AnyPublisher<Int, Never>
+        let updateMeasuringStateTrigger: AnyPublisher<Bool, Never>
+        let clearSearchBarTrigger: AnyPublisher<Void, Never>
     }
 
     func transform(input: Input) -> Output {
@@ -39,6 +44,8 @@ final class MeasureViewModel: BaseViewModel {
         let updateStartButtonIsEnabledSubject = CurrentValueSubject<Bool, Never>(false)
         let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
         let updateSearchResultsSubject = PassthroughSubject<Int, Never>()
+        let updateMeasuringStateSubject = CurrentValueSubject<Bool, Never>(false)
+        let clearSearchBarSubject = PassthroughSubject<Void, Never>()
 
         let searchResults = input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
@@ -71,9 +78,34 @@ final class MeasureViewModel: BaseViewModel {
             .store(in: &cancellables)
 
         input.cancelMountain
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink {
                 updateMountainBoxIsHiddenSubject.send(true)
                 updateStartButtonIsEnabledSubject.send(false)
+            }
+            .store(in: &cancellables)
+
+        input.startMeasuring
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink {
+                updateMeasuringStateSubject.send(true)
+            }
+            .store(in: &cancellables)
+
+        input.cancelMeasuring
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink {
+                updateMeasuringStateSubject.send(false)
+            }
+            .store(in: &cancellables)
+
+        input.stopMeasuring
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink {
+                updateMeasuringStateSubject.send(false)
+                updateMountainBoxIsHiddenSubject.send(true)
+                updateStartButtonIsEnabledSubject.send(false)
+                clearSearchBarSubject.send()
             }
             .store(in: &cancellables)
 
@@ -87,7 +119,11 @@ final class MeasureViewModel: BaseViewModel {
             .eraseToAnyPublisher(),
                       updateSearchResultsOverlayIsHiddenTrigger: updateSearchResultsOverlayIsHiddenSubject
             .eraseToAnyPublisher(),
-                      updateSearchResultsTrigger: updateSearchResultsSubject.eraseToAnyPublisher()
+                      updateSearchResultsTrigger: updateSearchResultsSubject.eraseToAnyPublisher(),
+                      updateMeasuringStateTrigger: updateMeasuringStateSubject
+            .removeDuplicates()
+            .eraseToAnyPublisher(),
+                      clearSearchBarTrigger: clearSearchBarSubject.eraseToAnyPublisher()
         )
     }
 }

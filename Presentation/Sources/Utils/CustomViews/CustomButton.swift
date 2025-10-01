@@ -44,4 +44,17 @@ final class CustomButton: UIButton {
             self?.alpha = button.isEnabled ? 1.0 : 0.5
         }
     }
+
+    func updateButton(title: String, image: UIImage?, foreground: UIColor) {
+        var config = configuration ?? UIButton.Configuration.plain()
+
+        if let image = image {
+            let coloredImage = image.withTintColor(foreground, renderingMode: .alwaysOriginal)
+            config.image = coloredImage.applyingSymbolConfiguration(.init(pointSize: 12))
+        }
+
+        config.attributedTitle = AttributedString(title, attributes: AttributeContainer([.font: AppFont.button, .foregroundColor: foreground]))
+
+        configuration = config
+    }
 }

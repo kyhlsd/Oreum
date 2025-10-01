@@ -27,6 +27,14 @@ final class ItemView: BaseView {
         subtitleLabel.text = subtitle
     }
     
+    func setTitleFont(_ font: UIFont) {
+        titleLabel.font = font
+    }
+    
+    func setSubTitleFont(_ font: UIFont) {
+        subtitleLabel.font = font
+    }
+    
     func setAlignment(_ alignment: NSTextAlignment) {
         titleLabel.textAlignment = alignment
         subtitleLabel.textAlignment = alignment

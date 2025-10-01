@@ -46,7 +46,10 @@ final class MeasureViewController: UIViewController, BaseViewController {
         let input = MeasureViewModel.Input(
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             selectMountain: selectMountainSubject.eraseToAnyPublisher(),
-            cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher()
+            cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher(),
+            startMeasuring: mainView.startButton.tap.eraseToAnyPublisher(),
+            cancelMeasuring: mainView.cancelMeasuringButton.tap.eraseToAnyPublisher(),
+            stopMeasuring: mainView.stopButton.tap.eraseToAnyPublisher()
         )
 
         let output = viewModel.transform(input: input)
@@ -86,6 +89,22 @@ final class MeasureViewController: UIViewController, BaseViewController {
                 self?.mainView.updateSearchResults(count: count)
             }
             .store(in: &cancellables)
+
+        output.updateMeasuringStateTrigger
+            .sink { [weak self] isMeasuring in
+                self?.mainView.updateMeasuringState(isMeasuring: isMeasuring)
+                self?.setNavItem(isMeasuring: isMeasuring)
+            }
+            .store(in: &cancellables)
+
+        output.clearSearchBarTrigger
+            .sink { [weak self] in
+                self?.mainView.clearSearchBar()
+            }
+            .store(in: &cancellables)
+
+        // Temp
+        mainView.updateMeasuringData(time: "00:00:00", distance: "0.0 km", steps: "0")
     }
 
     private func setNavItem(isMeasuring: Bool) {

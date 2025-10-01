@@ -59,23 +59,102 @@ final class MeasureView: BaseView {
         view.clipsToBounds = true
         return view
     }()
-
-    private let startButton = CustomButton(title: "측정 시작", image: AppIcon.play, foreground: .white, background: AppColor.primary)
-
+    
     private let mountainInfoView = {
         let view = ItemView()
         view.setAlignment(.left)
         return view
     }()
-
+    
     let cancelButton = {
         let button = UIButton()
-        let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+        let config = UIImage.SymbolConfiguration(pointSize: 12)
         let image = UIImage(systemName: "xmark", withConfiguration: config)
         button.setImage(image, for: .normal)
         button.tintColor = AppColor.subText
         return button
     }()
+
+    let startButton = CustomButton(title: "측정 시작", image: AppIcon.play, foreground: .white, background: AppColor.primary)
+
+    // MARK: - After Start Measuring
+    private let measuringBoxView: UIView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.boxBackground
+        view.layer.cornerRadius = AppRadius.radius
+        view.layer.borderWidth = 1
+        view.layer.borderColor = AppColor.border.cgColor
+        view.clipsToBounds = true
+        view.isHidden = true
+        return view
+    }()
+
+    private let timeLabel = {
+        let label = UILabel.create(color: AppColor.primaryText, font: .systemFont(ofSize: 32, weight: .medium))
+        label.textAlignment = .center
+        return label
+    }()
+    
+    private let timeSubLabel = UILabel.create("경과 시간", color:AppColor.subText, font: AppFont.label)
+
+    private let distanceContainer = UIView()
+
+    private let distanceIconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = AppIcon.address
+        imageView.tintColor = AppColor.primary
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+    
+    private let distanceView = {
+        let view = ItemView(subtitle: "이동 거리")
+        view.setTitleFont(AppFont.titleL)
+        view.setSubTitleFont(AppFont.body)
+        return view
+    }()
+
+    private let stepsContainer = UIView()
+
+    private let stepsIconView = {
+        let imageView = UIImageView()
+        imageView.image = AppIcon.footprints
+        imageView.tintColor = AppColor.primary
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+    
+    private let stepsView = {
+        let view = ItemView(subtitle: "걸음 수")
+        view.setTitleFont(AppFont.titleL)
+        view.setSubTitleFont(AppFont.body)
+        return view
+    }()
+
+    private let measuringButtonsStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.spacing = AppSpacing.regular
+        stackView.distribution = .fillEqually
+        stackView.isHidden = true
+        return stackView
+    }()
+    
+    private let horizontalLineView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.border
+        return view
+    }()
+    
+    private let verticalLineView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.border
+        return view
+    }()
+
+    let cancelMeasuringButton = CustomButton(title: "측정 취소", image: AppIcon.x, foreground: AppColor.dangerText, background: AppColor.danger)
+    
+    let stopButton = CustomButton(title: "측정 종료", image: AppIcon.stop, foreground: .white, background: AppColor.primary)
 
     // MARK: - Setups
     override func setupView() {
@@ -84,19 +163,37 @@ final class MeasureView: BaseView {
     }
     
     override func setupHierarchy() {
-        [selectLabel, searchBar, stackView].forEach {
+        [selectLabel, searchBar, stackView, searchResultsOverlay].forEach {
             addSubview($0)
         }
-
-        [mountainBoxView, startButton].forEach {
+        
+        [searchResultsTableView, emptyStateLabel].forEach {
+            searchResultsOverlay.addSubview($0)
+        }
+        
+        [mountainBoxView, startButton, measuringBoxView, measuringButtonsStackView].forEach {
             stackView.addArrangedSubview($0)
         }
-        mountainBoxView.addSubview(mountainInfoView)
-        mountainBoxView.addSubview(cancelButton)
+        
+        [mountainInfoView, cancelButton].forEach {
+            mountainBoxView.addSubview($0)
+        }
+        
+        [timeLabel, timeSubLabel, distanceContainer, stepsContainer, horizontalLineView, verticalLineView].forEach {
+            measuringBoxView.addSubview($0)
+        }
 
-        addSubview(searchResultsOverlay)
-        searchResultsOverlay.addSubview(searchResultsTableView)
-        searchResultsOverlay.addSubview(emptyStateLabel)
+        [distanceIconView, distanceView].forEach {
+            distanceContainer.addSubview($0)
+        }
+
+        [stepsIconView, stepsView].forEach {
+            stepsContainer.addSubview($0)
+        }
+
+        [cancelMeasuringButton, stopButton].forEach {
+            measuringButtonsStackView.addArrangedSubview($0)
+        }
     }
     
     override func setupLayout() {
@@ -123,10 +220,73 @@ final class MeasureView: BaseView {
         cancelButton.snp.makeConstraints { make in
             make.trailing.equalToSuperview().inset(AppSpacing.compact)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(24)
+            make.size.equalTo(24)
         }
 
         startButton.snp.makeConstraints { make in
+            make.height.equalTo(44)
+        }
+
+        timeLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(AppSpacing.regular)
+            make.centerX.equalToSuperview()
+        }
+        
+        timeSubLabel.snp.makeConstraints { make in
+            make.top.equalTo(timeLabel.snp.bottom)
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(horizontalLineView.snp.centerY).offset(-AppSpacing.compact)
+        }
+
+        distanceContainer.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(AppSpacing.compact)
+            make.trailing.equalTo(snp.centerX).offset(-AppSpacing.compact / 2)
+            make.verticalEdges.equalTo(verticalLineView)
+        }
+
+        distanceIconView.snp.makeConstraints { make in
+            make.trailing.equalTo(distanceView.snp.leading).offset(-AppSpacing.small)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(20)
+        }
+
+        distanceView.snp.makeConstraints { make in
+            make.center.verticalEdges.equalToSuperview()
+        }
+
+        stepsContainer.snp.makeConstraints { make in
+            make.leading.equalTo(snp.centerX).offset(AppSpacing.compact / 2)
+            make.trailing.equalToSuperview().inset(AppSpacing.compact)
+            make.verticalEdges.equalTo(verticalLineView)
+        }
+
+        stepsIconView.snp.makeConstraints { make in
+            make.trailing.equalTo(stepsView.snp.leading).offset(-AppSpacing.small)
+            make.centerY.equalTo(stepsView)
+            make.size.equalTo(20)
+        }
+
+        stepsView.snp.makeConstraints { make in
+            make.center.verticalEdges.equalToSuperview()
+        }
+        
+        horizontalLineView.snp.makeConstraints { make in
+            make.height.equalTo(1)
+            make.width.equalToSuperview()
+        }
+        
+        verticalLineView.snp.makeConstraints { make in
+            make.width.equalTo(1)
+            make.centerX.equalToSuperview()
+            make.top.equalTo(horizontalLineView.snp.centerY).offset(AppSpacing.compact)
+            make.bottom.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        cancelMeasuringButton.snp.makeConstraints { make in
+            make.height.equalTo(44)
+        }
+
+        stopButton.snp.makeConstraints { make in
             make.height.equalTo(44)
         }
 
@@ -201,6 +361,24 @@ extension MeasureView {
 
     func updateMountainBoxIsHidden(_ isHidden: Bool) {
         mountainBoxView.isHidden = isHidden
+    }
+
+    func updateMeasuringState(isMeasuring: Bool) {
+        cancelButton.isHidden = isMeasuring
+        startButton.isHidden = isMeasuring
+        measuringBoxView.isHidden = !isMeasuring
+        measuringButtonsStackView.isHidden = !isMeasuring
+        updateSelectViewsIsEnabled(!isMeasuring)
+    }
+
+    func updateMeasuringData(time: String, distance: String, steps: String) {
+        timeLabel.text = time
+        distanceView.setTitle(title: distance)
+        stepsView.setTitle(title: steps)
+    }
+
+    func clearSearchBar() {
+        searchBar.text = ""
     }
 
 }
