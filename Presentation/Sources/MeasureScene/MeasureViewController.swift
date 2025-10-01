@@ -56,27 +56,33 @@ final class MeasureViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
-        output.setMountainLabelTrigger
+        output.updateMountainLabelsTrigger
             .sink { [weak self] (name, address) in
-                self?.mainView.setMountainLabelTexts(name: name, address: address)
+                self?.mainView.updateMountainLabelTexts(name: name, address: address)
             }
             .store(in: &cancellables)
         
-        output.setMountainBoxIsHiddenTrigger
+        output.updateMountainBoxIsHiddenTrigger
             .sink { [weak self] isHidden in
-                self?.mainView.setMountainBoxIsHidden(isHidden)
+                self?.mainView.updateMountainBoxIsHidden(isHidden)
             }
             .store(in: &cancellables)
         
-        output.setStartButtonEnabledTrigger
+        output.updateStartButtonIsEnabledTrigger
             .sink { [weak self] isEnabled in
-                self?.mainView.setStartButtonEnabled(isEnabled)
+                self?.mainView.updateStartButtonIsEnabled(isEnabled)
             }
             .store(in: &cancellables)
         
-        output.setSearchResultsOverlayIsHiddenTrigger
+        output.updateSearchResultsOverlayIsHiddenTrigger
             .sink { [weak self] isHidden in
-                self?.mainView.setSearchResultsOverlayIsHidden(isHidden)
+                self?.mainView.updateSearchResultsOverlayIsHidden(isHidden)
+            }
+            .store(in: &cancellables)
+
+        output.updateSearchResultsTrigger
+            .sink { [weak self] (count, isEmpty) in
+                self?.mainView.updateSearchResults(count: count, isEmpty: isEmpty)
             }
             .store(in: &cancellables)
     }
@@ -104,12 +110,12 @@ final class MeasureViewController: UIViewController, BaseViewController {
 extension MeasureViewController: UISearchBarDelegate {
 
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-        mainView.setSearchBarBorder(isFirstResponder: true)
+        mainView.updateSearchBarBorder(isFirstResponder: true)
     }
 
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        mainView.setSearchBarBorder(isFirstResponder: false)
-        mainView.setSearchResultsOverlayIsHidden(true)
+        mainView.updateSearchBarBorder(isFirstResponder: false)
+        mainView.updateSearchResultsOverlayIsHidden(true)
     }
 
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
@@ -148,6 +154,6 @@ extension MeasureViewController: UITableViewDelegate {
         var snapshot = NSDiffableDataSourceSnapshot<Section, MountainInfo>()
         snapshot.appendSections([.main])
         snapshot.appendItems(mountains)
-        dataSource.apply(snapshot, animatingDifferences: true)
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 }

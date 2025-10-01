@@ -25,18 +25,20 @@ final class MeasureViewModel: BaseViewModel {
 
     struct Output {
         let searchResults: AnyPublisher<[MountainInfo], Never>
-        let setMountainLabelTrigger: AnyPublisher<(String, String), Never>
-        let setMountainBoxIsHiddenTrigger: AnyPublisher<Bool, Never>
-        let setStartButtonEnabledTrigger: AnyPublisher<Bool, Never>
-        let setSearchResultsOverlayIsHiddenTrigger: AnyPublisher<Bool, Never>
+        let updateMountainLabelsTrigger: AnyPublisher<(String, String), Never>
+        let updateMountainBoxIsHiddenTrigger: AnyPublisher<Bool, Never>
+        let updateStartButtonIsEnabledTrigger: AnyPublisher<Bool, Never>
+        let updateSearchResultsOverlayIsHiddenTrigger: AnyPublisher<Bool, Never>
+        let updateSearchResultsTrigger: AnyPublisher<(count: Int, isEmpty: Bool), Never>
     }
 
     func transform(input: Input) -> Output {
-        let mountainLabelSubject = PassthroughSubject<(String, String), Never>()
-        let mountainBoxIsHiddenSubject = CurrentValueSubject<Bool, Never>(true)
-        let startButtonEnabledSubject = CurrentValueSubject<Bool, Never>(false)
-        let searchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
-        
+        let updateMountainLabelsSubject = PassthroughSubject<(String, String), Never>()
+        let updateMountainBoxIsHiddenSubject = CurrentValueSubject<Bool, Never>(true)
+        let updateStartButtonIsEnabledSubject = CurrentValueSubject<Bool, Never>(false)
+        let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
+        let updateSearchResultsSubject = PassthroughSubject<(count: Int, isEmpty: Bool), Never>()
+
         let searchResults = input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .flatMap { [weak self] keyword -> AnyPublisher<[MountainInfo], Never> in
@@ -49,33 +51,36 @@ final class MeasureViewModel: BaseViewModel {
             }
             .share()
             .eraseToAnyPublisher()
-        
+
         searchResults
             .sink { results in
-                searchResultsOverlayIsHiddenSubject.send(results.isEmpty)
+                let isEmpty = results.isEmpty
+                updateSearchResultsOverlayIsHiddenSubject.send(false)
+                updateSearchResultsSubject.send((count: results.count, isEmpty: isEmpty))
             }
             .store(in: &cancellables)
 
         input.selectMountain
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { mountainInfo in
-                mountainLabelSubject.send((mountainInfo.name, mountainInfo.address))
-                mountainBoxIsHiddenSubject.send(false)
-                startButtonEnabledSubject.send(true)
-                searchResultsOverlayIsHiddenSubject.send(true)
+                updateMountainLabelsSubject.send((mountainInfo.name, mountainInfo.address))
+                updateMountainBoxIsHiddenSubject.send(false)
+                updateStartButtonIsEnabledSubject.send(true)
+                updateSearchResultsOverlayIsHiddenSubject.send(true)
             }
             .store(in: &cancellables)
 
         return Output(searchResults: searchResults,
-                      setMountainLabelTrigger: mountainLabelSubject.eraseToAnyPublisher(),
-                      setMountainBoxIsHiddenTrigger: mountainBoxIsHiddenSubject
+                      updateMountainLabelsTrigger: updateMountainLabelsSubject.eraseToAnyPublisher(),
+                      updateMountainBoxIsHiddenTrigger: updateMountainBoxIsHiddenSubject
             .removeDuplicates()
             .eraseToAnyPublisher(),
-                      setStartButtonEnabledTrigger: startButtonEnabledSubject
+                      updateStartButtonIsEnabledTrigger: updateStartButtonIsEnabledSubject
             .removeDuplicates()
             .eraseToAnyPublisher(),
-                      setSearchResultsOverlayIsHiddenTrigger: searchResultsOverlayIsHiddenSubject
-            .eraseToAnyPublisher()
+                      updateSearchResultsOverlayIsHiddenTrigger: updateSearchResultsOverlayIsHiddenSubject
+            .eraseToAnyPublisher(),
+                      updateSearchResultsTrigger: updateSearchResultsSubject.eraseToAnyPublisher()
         )
     }
 }

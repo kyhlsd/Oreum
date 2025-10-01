@@ -38,6 +38,13 @@ final class MeasureView: BaseView {
         return tableView
     }()
 
+    private let emptyStateLabel = {
+        let label = UILabel.create("검색 결과가 없습니다", color: AppColor.subText, font: AppFont.body)
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
+
     private let stackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
@@ -64,7 +71,7 @@ final class MeasureView: BaseView {
     // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
-        setSearchBarBorder(isFirstResponder: false)
+        updateSearchBarBorder(isFirstResponder: false)
     }
     
     override func setupHierarchy() {
@@ -79,6 +86,7 @@ final class MeasureView: BaseView {
 
         addSubview(searchResultsOverlay)
         searchResultsOverlay.addSubview(searchResultsTableView)
+        searchResultsOverlay.addSubview(emptyStateLabel)
     }
     
     override func setupLayout() {
@@ -108,11 +116,16 @@ final class MeasureView: BaseView {
         searchResultsOverlay.snp.makeConstraints { make in
             make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.small)
             make.horizontalEdges.equalTo(searchBar)
-            make.height.equalTo(300)
+            make.height.equalTo(300).priority(.low)
         }
 
         searchResultsTableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
+        }
+
+        emptyStateLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
         }
     }
 }
@@ -120,20 +133,39 @@ final class MeasureView: BaseView {
 // MARK: - Binding Methods
 extension MeasureView {
 
-    func setSearchResultsOverlayIsHidden(_ isHidden: Bool) {
+    func updateSearchResultsOverlayIsHidden(_ isHidden: Bool) {
         searchResultsOverlay.isHidden = isHidden
     }
 
-    func setMountainLabelTexts(name: String, address: String) {
+    func updateSearchResults(count: Int, isEmpty: Bool) {
+        emptyStateLabel.isHidden = !isEmpty
+        searchResultsTableView.isHidden = isEmpty
+
+        let height: CGFloat
+        if isEmpty {
+            height = 60
+        } else {
+            let cellHeight = 60.0
+            height = min(CGFloat(count) * cellHeight, 300)
+        }
+
+        searchResultsOverlay.snp.remakeConstraints { make in
+            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.small)
+            make.horizontalEdges.equalTo(searchBar)
+            make.height.equalTo(height)
+        }
+    }
+
+    func updateMountainLabelTexts(name: String, address: String) {
         mountainInfoView.setTitle(title: name)
         mountainInfoView.setSubtitle(subtitle: address)
     }
 
-    func setSearchBarBorder(isFirstResponder: Bool) {
+    func updateSearchBarBorder(isFirstResponder: Bool) {
         searchBar.setBorder(isFirstResponder)
     }
 
-    func setSelectViewsEnabled(_ isEnabled: Bool) {
+    func updateSelectViewsIsEnabled(_ isEnabled: Bool) {
         selectLabel.isEnabled = isEnabled
 
         searchBar.searchTextField.leftView?.tintColor = isEnabled ? AppColor.mossGreen : .systemGray.withAlphaComponent(0.5)
@@ -145,11 +177,11 @@ extension MeasureView {
         }
     }
 
-    func setStartButtonEnabled(_ isEnabled: Bool) {
+    func updateStartButtonIsEnabled(_ isEnabled: Bool) {
         startButton.isEnabled = isEnabled
     }
 
-    func setMountainBoxIsHidden(_ isHidden: Bool) {
+    func updateMountainBoxIsHidden(_ isHidden: Bool) {
         mountainBoxView.isHidden = isHidden
     }
 
