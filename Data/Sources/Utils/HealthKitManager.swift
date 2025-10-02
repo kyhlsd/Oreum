@@ -16,6 +16,13 @@ public final class HealthKitManager {
 
     private let healthStore = HKHealthStore()
     private var startDate: Date?
+    private var stepObserverQuery: HKObserverQuery?
+    private var distanceObserverQuery: HKObserverQuery?
+    private let healthKitUpdateSubject = PassthroughSubject<Void, Never>()
+
+    public var healthKitUpdatePublisher: AnyPublisher<Void, Never> {
+        healthKitUpdateSubject.eraseToAnyPublisher()
+    }
 
     private init() {}
 
@@ -101,7 +108,77 @@ public final class HealthKitManager {
     public func startTracking(startDate: Date) {
         self.startDate = startDate
         UserDefaultHelper.startDate = startDate.timeIntervalSince1970
+        startObservingHealthKitChanges()
         print("✅ Tracking started at: \(startDate)")
+    }
+
+    // MARK: - Observe HealthKit Changes
+    private func startObservingHealthKitChanges() {
+        let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
+        let distanceType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!
+
+        // Step Observer
+        stepObserverQuery = HKObserverQuery(sampleType: stepType, predicate: nil) { [weak self] _, completionHandler, error in
+            if let error = error {
+                print("❌ Step observer error: \(error)")
+            } else {
+                print("✅ Step data changed")
+                self?.healthKitUpdateSubject.send()
+            }
+            completionHandler()
+        }
+
+        // Distance Observer
+        distanceObserverQuery = HKObserverQuery(sampleType: distanceType, predicate: nil) { [weak self] _, completionHandler, error in
+            if let error = error {
+                print("❌ Distance observer error: \(error)")
+            } else {
+                print("✅ Distance data changed")
+                self?.healthKitUpdateSubject.send()
+            }
+            completionHandler()
+        }
+
+        if let stepQuery = stepObserverQuery {
+            healthStore.execute(stepQuery)
+        }
+        if let distanceQuery = distanceObserverQuery {
+            healthStore.execute(distanceQuery)
+        }
+
+        // Background delivery 활성화
+        healthStore.enableBackgroundDelivery(for: stepType, frequency: .immediate) { success, error in
+            if success {
+                print("✅ Background delivery enabled for steps")
+            } else {
+                print("❌ Failed to enable background delivery for steps: \(String(describing: error))")
+            }
+        }
+
+        healthStore.enableBackgroundDelivery(for: distanceType, frequency: .immediate) { success, error in
+            if success {
+                print("✅ Background delivery enabled for distance")
+            } else {
+                print("❌ Failed to enable background delivery for distance: \(String(describing: error))")
+            }
+        }
+    }
+
+    private func stopObservingHealthKitChanges() {
+        if let stepQuery = stepObserverQuery {
+            healthStore.stop(stepQuery)
+            stepObserverQuery = nil
+        }
+        if let distanceQuery = distanceObserverQuery {
+            healthStore.stop(distanceQuery)
+            distanceObserverQuery = nil
+        }
+
+        let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
+        let distanceType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!
+
+        healthStore.disableBackgroundDelivery(for: stepType) { _, _ in }
+        healthStore.disableBackgroundDelivery(for: distanceType) { _, _ in }
     }
 
     // MARK: - Get Activity Data
@@ -164,7 +241,9 @@ public final class HealthKitManager {
                     promise(.success(logs))
                 }
             }
-        }.eraseToAnyPublisher()
+        }
+        .receive(on: DispatchQueue.main)
+        .eraseToAnyPublisher()
     }
 
     // MARK: - Fetch Steps and Distance for Interval
@@ -214,6 +293,7 @@ public final class HealthKitManager {
 
     // MARK: - Stop Tracking
     public func stopTracking() {
+        stopObservingHealthKitChanges()
         UserDefaultHelper.clearStartDate()
         startDate = nil
         print("✅ Tracking stopped")
@@ -223,5 +303,26 @@ public final class HealthKitManager {
     public func isTracking() -> AnyPublisher<Bool, Never> {
         let isTracking = (UserDefaultHelper.startDate ?? 0) > 0
         return Just(isTracking).eraseToAnyPublisher()
+    }
+
+    // MARK: - Get Current Activity Data
+    public func getCurrentActivityData() -> AnyPublisher<(time: TimeInterval, steps: Int, distance: Int), Error> {
+        return Future { promise in
+            guard let startTimestamp = UserDefaultHelper.startDate, startTimestamp > 0 else {
+                promise(.failure(NSError(domain: "No tracking session found", code: -1)))
+                return
+            }
+
+            let startDate = Date(timeIntervalSince1970: startTimestamp)
+            let endDate = Date()
+            let elapsedTime = endDate.timeIntervalSince(startDate)
+
+            self.fetchStepsAndDistance(from: startDate, to: endDate) { steps, distance, error in
+                // 에러가 발생해도 시간은 표시
+                promise(.success((time: elapsedTime, steps: steps, distance: distance)))
+            }
+        }
+        .receive(on: DispatchQueue.main)
+        .eraseToAnyPublisher()
     }
 }

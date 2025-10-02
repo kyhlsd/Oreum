@@ -11,3 +11,15 @@ import Combine
 public protocol GetTrackingStatusUseCase {
     func execute() -> AnyPublisher<Bool, Never>
 }
+
+public final class GetTrackingStatusUseCaseImpl: GetTrackingStatusUseCase {
+    private let repository: TrackActivityRepository
+
+    public init(repository: TrackActivityRepository) {
+        self.repository = repository
+    }
+
+    public func execute() -> AnyPublisher<Bool, Never> {
+        return repository.isTracking()
+    }
+}

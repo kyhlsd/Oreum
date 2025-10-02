@@ -14,4 +14,6 @@ public protocol TrackActivityRepository {
     func getActivityLogs() -> AnyPublisher<[ActivityLog], Error>
     func stopTracking()
     func isTracking() -> AnyPublisher<Bool, Never>
+    func getCurrentActivityData() -> AnyPublisher<(time: TimeInterval, steps: Int, distance: Int), Error>
+    var dataUpdatePublisher: AnyPublisher<Void, Never> { get }
 }

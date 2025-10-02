@@ -103,6 +103,13 @@ final class MeasureView: BaseView {
     
     private let timeSubLabel = UILabel.create("경과 시간", color:AppColor.subText, font: AppFont.label)
 
+    private let updateInfoLabel = {
+        let label = UILabel.create("데이터 업데이트는 약간의 지연이 있습니다", color: AppColor.subText, font: AppFont.description)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        return label
+    }()
+
     private let distanceContainer = UIView()
 
     private let distanceIconView: UIImageView = {
@@ -221,7 +228,7 @@ final class MeasureView: BaseView {
             permissionRequiredView.addSubview($0)
         }
         
-        [timeLabel, timeSubLabel, distanceContainer, stepsContainer, horizontalLineView, verticalLineView].forEach {
+        [timeLabel, timeSubLabel, updateInfoLabel, distanceContainer, stepsContainer, horizontalLineView, verticalLineView].forEach {
             measuringBoxView.addSubview($0)
         }
 
@@ -290,6 +297,11 @@ final class MeasureView: BaseView {
         
         timeSubLabel.snp.makeConstraints { make in
             make.top.equalTo(timeLabel.snp.bottom)
+            make.centerX.equalToSuperview()
+        }
+
+        updateInfoLabel.snp.makeConstraints { make in
+            make.top.equalTo(timeSubLabel.snp.bottom).offset(AppSpacing.small)
             make.centerX.equalToSuperview()
             make.bottom.equalTo(horizontalLineView.snp.centerY).offset(-AppSpacing.compact)
         }

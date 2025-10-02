@@ -69,11 +69,10 @@ final class MeasureViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
-        // trackingStatus와 updateMeasuringStateTrigger를 병합하여 처리
-        let measuringState = Publishers.Merge(output.trackingStatus, output.updateMeasuringStateTrigger)
-
-        Publishers.CombineLatest(output.permissionAuthorized, measuringState)
+        // updateMeasuringStateTrigger는 이미 trackingStatus와 병합된 상태
+        Publishers.CombineLatest(output.permissionAuthorized, output.updateMeasuringStateTrigger)
             .sink { [weak self] authorized, isMeasuring in
+                print("🔍 ViewController - authorized: \(authorized), isMeasuring: \(isMeasuring)")
                 guard authorized else { return }
                 print("✅ Measuring state: \(isMeasuring)")
                 self?.mainView.updateMeasuringState(isMeasuring: isMeasuring)
@@ -122,7 +121,14 @@ final class MeasureViewController: UIViewController, BaseViewController {
                 self?.mainView.clearSearchBar()
             }
             .store(in: &cancellables)
-        
+
+        output.updateActivityDataTrigger
+            .sink { [weak self] time, distance, steps in
+                print(time, distance, steps)
+                self?.mainView.updateMeasuringData(time: time, distance: distance, steps: steps)
+            }
+            .store(in: &cancellables)
+
         mainView.openSettingsButton.tap
             .sink {
                 if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
@@ -130,9 +136,6 @@ final class MeasureViewController: UIViewController, BaseViewController {
                 }
             }
             .store(in: &cancellables)
-
-        // Temp
-        mainView.updateMeasuringData(time: "00:00:00", distance: "0.0 km", steps: "0")
     }
 
     private func setNavItem(isMeasuring: Bool) {

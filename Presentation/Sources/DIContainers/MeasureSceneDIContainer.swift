@@ -31,8 +31,8 @@ public final class MeasureSceneDIContainer {
         return FetchMountainInfosUseCaseImpl(repository: makeMountainInfoRepository())
     }
 
-    private func makeRequestHealthKitAuthorizationUseCase() -> RequestHealthKitAuthorizationUseCase {
-        return RequestHealthKitAuthorizationUseCaseImpl(repository: makeTrackActivityRepository())
+    private func makeRequestTrackActivityAuthorizationUseCase() -> RequestTrackActivityAuthorizationUseCase {
+        return RequestTrackActivityAuthorizationUseCaseImpl(repository: makeTrackActivityRepository())
     }
 
     private func makeStartTrackingActivityUseCase() -> StartTrackingActivityUseCase {
@@ -50,6 +50,14 @@ public final class MeasureSceneDIContainer {
     private func makeGetTrackingStatusUseCase() -> GetTrackingStatusUseCase {
         return GetTrackingStatusUseCaseImpl(repository: makeTrackActivityRepository())
     }
+
+    private func makeGetCurrentActivityDataUseCase() -> GetCurrentActivityDataUseCase {
+        return GetCurrentActivityDataUseCaseImpl(repository: makeTrackActivityRepository())
+    }
+
+    private func makeObserveActivityDataUpdatesUseCase() -> ObserveActivityDataUpdatesUseCase {
+        return ObserveActivityDataUpdatesUseCaseImpl(repository: makeTrackActivityRepository())
+    }
 }
 
 extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
@@ -63,11 +71,13 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
     private func makeMeasureViewModel() -> MeasureViewModel {
         return MeasureViewModel(
             fetchMountainsUseCase: makeFetchMountainsUseCase(),
-            requestHealthKitAuthorizationUseCase: makeRequestHealthKitAuthorizationUseCase(),
+            requestTrackActivityAuthorizationUseCase: makeRequestTrackActivityAuthorizationUseCase(),
             startTrackingActivityUseCase: makeStartTrackingActivityUseCase(),
             getActivityLogsUseCase: makeGetActivityLogsUseCase(),
             stopTrackingActivityUseCase: makeStopTrackingActivityUseCase(),
-            getTrackingStatusUseCase: makeGetTrackingStatusUseCase()
+            getTrackingStatusUseCase: makeGetTrackingStatusUseCase(),
+            getCurrentActivityDataUseCase: makeGetCurrentActivityDataUseCase(),
+            observeActivityDataUpdatesUseCase: makeObserveActivityDataUpdatesUseCase()
         )
     }
 }

@@ -36,4 +36,12 @@ public final class DefaultTrackActivityRepositoryImpl: TrackActivityRepository {
     public func isTracking() -> AnyPublisher<Bool, Never> {
         return healthKitManager.isTracking()
     }
+
+    public func getCurrentActivityData() -> AnyPublisher<(time: TimeInterval, steps: Int, distance: Int), Error> {
+        return healthKitManager.getCurrentActivityData()
+    }
+
+    public var dataUpdatePublisher: AnyPublisher<Void, Never> {
+        return healthKitManager.healthKitUpdatePublisher
+    }
 }
