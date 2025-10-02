@@ -8,7 +8,7 @@
 import Foundation
 
 public protocol StartTrackingActivityUseCase {
-    func execute(startDate: Date)
+    func execute(startDate: Date, mountain: Mountain)
 }
 
 public final class StartTrackingActivityUseCaseImpl: StartTrackingActivityUseCase {
@@ -18,7 +18,7 @@ public final class StartTrackingActivityUseCaseImpl: StartTrackingActivityUseCas
         self.repository = repository
     }
 
-    public func execute(startDate: Date) {
-        repository.startTracking(startDate: startDate)
+    public func execute(startDate: Date, mountain: Mountain) {
+        repository.startTracking(startDate: startDate, mountain: mountain)
     }
 }

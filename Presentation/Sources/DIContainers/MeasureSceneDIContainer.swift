@@ -58,6 +58,10 @@ public final class MeasureSceneDIContainer {
     private func makeObserveActivityDataUpdatesUseCase() -> ObserveActivityDataUpdatesUseCase {
         return ObserveActivityDataUpdatesUseCaseImpl(repository: makeTrackActivityRepository())
     }
+
+    private func makeGetClimbingMountainUseCase() -> GetClimbingMountainUseCase {
+        return GetClimbingMountainUseCaseImpl(repository: makeTrackActivityRepository())
+    }
 }
 
 extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
@@ -70,14 +74,15 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
     // MARK: - ViewModels
     private func makeMeasureViewModel() -> MeasureViewModel {
         return MeasureViewModel(
-            fetchMountainsUseCase: makeFetchMountainsUseCase(),
+            fetchMountainInfosUseCase: makeFetchMountainsUseCase(),
             requestTrackActivityAuthorizationUseCase: makeRequestTrackActivityAuthorizationUseCase(),
             startTrackingActivityUseCase: makeStartTrackingActivityUseCase(),
             getActivityLogsUseCase: makeGetActivityLogsUseCase(),
             stopTrackingActivityUseCase: makeStopTrackingActivityUseCase(),
             getTrackingStatusUseCase: makeGetTrackingStatusUseCase(),
             getCurrentActivityDataUseCase: makeGetCurrentActivityDataUseCase(),
-            observeActivityDataUpdatesUseCase: makeObserveActivityDataUpdatesUseCase()
+            observeActivityDataUpdatesUseCase: makeObserveActivityDataUpdatesUseCase(),
+            getClimbingMountainUseCase: makeGetClimbingMountainUseCase()
         )
     }
 }

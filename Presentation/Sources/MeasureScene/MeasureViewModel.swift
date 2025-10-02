@@ -11,7 +11,7 @@ import Domain
 
 final class MeasureViewModel: BaseViewModel {
 
-    private let fetchMountainsUseCase: FetchMountainInfosUseCase
+    private let fetchMountainInfosUseCase: FetchMountainInfosUseCase
     private let requestTrackActivityAuthorizationUseCase: RequestTrackActivityAuthorizationUseCase
     private let startTrackingActivityUseCase: StartTrackingActivityUseCase
     private let getActivityLogsUseCase: GetActivityLogsUseCase
@@ -19,22 +19,25 @@ final class MeasureViewModel: BaseViewModel {
     private let getTrackingStatusUseCase: GetTrackingStatusUseCase
     private let getCurrentActivityDataUseCase: GetCurrentActivityDataUseCase
     private let observeActivityDataUpdatesUseCase: ObserveActivityDataUpdatesUseCase
+    private let getClimbingMountainUseCase: GetClimbingMountainUseCase
     private var cancellables = Set<AnyCancellable>()
     private var timeUpdateTimer: Timer?
     private var currentSteps: Int = 0
     private var currentDistance: Int = 0
+    private var selectedMountain: Mountain?
 
     init(
-        fetchMountainsUseCase: FetchMountainInfosUseCase,
+        fetchMountainInfosUseCase: FetchMountainInfosUseCase,
         requestTrackActivityAuthorizationUseCase: RequestTrackActivityAuthorizationUseCase,
         startTrackingActivityUseCase: StartTrackingActivityUseCase,
         getActivityLogsUseCase: GetActivityLogsUseCase,
         stopTrackingActivityUseCase: StopTrackingActivityUseCase,
         getTrackingStatusUseCase: GetTrackingStatusUseCase,
         getCurrentActivityDataUseCase: GetCurrentActivityDataUseCase,
-        observeActivityDataUpdatesUseCase: ObserveActivityDataUpdatesUseCase
+        observeActivityDataUpdatesUseCase: ObserveActivityDataUpdatesUseCase,
+        getClimbingMountainUseCase: GetClimbingMountainUseCase
     ) {
-        self.fetchMountainsUseCase = fetchMountainsUseCase
+        self.fetchMountainInfosUseCase = fetchMountainInfosUseCase
         self.requestTrackActivityAuthorizationUseCase = requestTrackActivityAuthorizationUseCase
         self.startTrackingActivityUseCase = startTrackingActivityUseCase
         self.getActivityLogsUseCase = getActivityLogsUseCase
@@ -42,6 +45,7 @@ final class MeasureViewModel: BaseViewModel {
         self.getTrackingStatusUseCase = getTrackingStatusUseCase
         self.getCurrentActivityDataUseCase = getCurrentActivityDataUseCase
         self.observeActivityDataUpdatesUseCase = observeActivityDataUpdatesUseCase
+        self.getClimbingMountainUseCase = getClimbingMountainUseCase
     }
 
     struct Input {
@@ -68,6 +72,7 @@ final class MeasureViewModel: BaseViewModel {
         let updateMeasuringStateTrigger: AnyPublisher<Bool, Never>
         let clearSearchBarTrigger: AnyPublisher<Void, Never>
         let updateActivityDataTrigger: AnyPublisher<(time: String, distance: String, steps: String), Never>
+        let restoreMountainInfoTrigger: AnyPublisher<(String, String)?, Never>
     }
 
     func transform(input: Input) -> Output {
@@ -114,13 +119,27 @@ final class MeasureViewModel: BaseViewModel {
 
         let trackingStatus = trackingStatusSubject.eraseToAnyPublisher()
 
+        // tracking 중이면 저장된 산 정보를 함께 전달
+        let restoreMountainInfo = trackingStatus
+            .map { [weak self] isTracking -> (String, String)? in
+                guard isTracking else { return nil }
+                let mountain = self?.getClimbingMountainUseCase.execute()
+                print("🔍 Saved mountain: \(mountain?.name ?? "nil")")
+                if let mountain = mountain {
+                    print("🔍 Restoring mountain info: \(mountain.name), \(mountain.address)")
+                    return (mountain.name, mountain.address)
+                }
+                return nil
+            }
+            .eraseToAnyPublisher()
+
         let searchResults = input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .flatMap { [weak self] keyword -> AnyPublisher<[MountainInfo], Never> in
                 guard let self else {
                     return Just([]).eraseToAnyPublisher()
                 }
-                return self.fetchMountainsUseCase.execute(keyword: keyword)
+                return self.fetchMountainInfosUseCase.execute(keyword: keyword)
                     .catch { _ in Just([]) }
                     .eraseToAnyPublisher()
             }
@@ -136,7 +155,9 @@ final class MeasureViewModel: BaseViewModel {
 
         input.selectMountain
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink { mountainInfo in
+            .sink { [weak self] mountainInfo in
+                let mountain = mountainInfo.toMountain(mountainInfo)
+                self?.selectedMountain = mountain
                 updateMountainLabelsSubject.send((mountainInfo.name, mountainInfo.address))
                 updateStartButtonIsEnabledSubject.send(true)
                 updateSearchResultsOverlayIsHiddenSubject.send(true)
@@ -145,7 +166,8 @@ final class MeasureViewModel: BaseViewModel {
 
         input.cancelMountain
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink {
+            .sink { [weak self] in
+                self?.selectedMountain = nil
                 clearMountainSelectionSubject.send()
                 updateStartButtonIsEnabledSubject.send(false)
             }
@@ -155,8 +177,10 @@ final class MeasureViewModel: BaseViewModel {
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
                 guard let self else { return }
+                guard let mountain = self.selectedMountain else { return }
+
                 updateMeasuringStateSubject.send(true)
-                self.startTrackingActivityUseCase.execute(startDate: Date())
+                self.startTrackingActivityUseCase.execute(startDate: Date(), mountain: mountain)
                 self.startActivityDataTimer(updateActivityDataSubject: updateActivityDataSubject)
             }
             .store(in: &cancellables)
@@ -168,8 +192,8 @@ final class MeasureViewModel: BaseViewModel {
                 updateMeasuringStateSubject.send(false)
                 self.stopActivityDataTimer()
 
-                // 트래킹 중지 (데이터 저장 안 함)
-                self.stopTrackingActivityUseCase.execute()
+                // 트래킹 중지 (데이터 저장 안 함, UserDefaults clear)
+                self.stopTrackingActivityUseCase.execute(clearData: true)
                 print("✅ Activity tracking canceled")
             }
             .store(in: &cancellables)
@@ -196,8 +220,8 @@ final class MeasureViewModel: BaseViewModel {
                     print("  - Time: \(log.time), Steps: \(log.step), Distance: \(log.distance)m")
                 }
 
-                // 트래킹 중지
-                self?.stopTrackingActivityUseCase.execute()
+                // 트래킹 중지 및 UserDefaults clear
+                self?.stopTrackingActivityUseCase.execute(clearData: true)
             }
             .store(in: &cancellables)
 
@@ -231,7 +255,8 @@ final class MeasureViewModel: BaseViewModel {
             updateSearchResultsTrigger: updateSearchResultsSubject.eraseToAnyPublisher(),
             updateMeasuringStateTrigger: combinedMeasuringState,
             clearSearchBarTrigger: clearSearchBarSubject.eraseToAnyPublisher(),
-            updateActivityDataTrigger: updateActivityDataSubject.eraseToAnyPublisher()
+            updateActivityDataTrigger: updateActivityDataSubject.eraseToAnyPublisher(),
+            restoreMountainInfoTrigger: restoreMountainInfo
         )
     }
 

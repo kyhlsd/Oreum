@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Mountain: Hashable {
+public struct Mountain: Hashable, Codable {
     public let id: String
     public let name: String
     public let address: String

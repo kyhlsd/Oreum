@@ -8,7 +8,7 @@
 import Foundation
 
 public protocol StopTrackingActivityUseCase {
-    func execute()
+    func execute(clearData: Bool)
 }
 
 public final class StopTrackingActivityUseCaseImpl: StopTrackingActivityUseCase {
@@ -18,7 +18,10 @@ public final class StopTrackingActivityUseCaseImpl: StopTrackingActivityUseCase 
         self.repository = repository
     }
 
-    public func execute() {
+    public func execute(clearData: Bool = true) {
         repository.stopTracking()
+        if clearData {
+            repository.clearTrackingData()
+        }
     }
 }

@@ -17,7 +17,7 @@ public struct MountainInfo: Hashable {
     public let detail: String
     public let referenceDate: Date
     public let designationCriteria: String?
-    
+
     public init(id: String, name: String, address: String, height: Int, admin: String, adminNumber: String, detail: String, referenceDate: Date, designationCriteria: String?) {
         self.id = id
         self.name = name

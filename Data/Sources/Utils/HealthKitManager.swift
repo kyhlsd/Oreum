@@ -107,7 +107,6 @@ public final class HealthKitManager {
     // MARK: - Start Tracking
     public func startTracking(startDate: Date) {
         self.startDate = startDate
-        UserDefaultHelper.startDate = startDate.timeIntervalSince1970
         startObservingHealthKitChanges()
         print("✅ Tracking started at: \(startDate)")
     }
@@ -182,20 +181,13 @@ public final class HealthKitManager {
     }
 
     // MARK: - Get Activity Data
-    public func getActivityLogs() -> AnyPublisher<[ActivityLog], Error> {
+    public func getActivityLogs(startDate: Date) -> AnyPublisher<[ActivityLog], Error> {
         return Future { [weak self] promise in
             guard let self else {
                 promise(.failure(NSError(domain: "HealthKitManager", code: -1)))
                 return
             }
 
-            // UserDefaults에서 시작 시간 복원
-            guard let startTimestamp = UserDefaultHelper.startDate, startTimestamp > 0 else {
-                promise(.failure(NSError(domain: "No tracking session found", code: -1)))
-                return
-            }
-
-            let startDate = Date(timeIntervalSince1970: startTimestamp)
             let endDate = Date()
 
             // 5분 간격으로 데이터 구간 생성
@@ -294,26 +286,22 @@ public final class HealthKitManager {
     // MARK: - Stop Tracking
     public func stopTracking() {
         stopObservingHealthKitChanges()
-        UserDefaultHelper.clearStartDate()
         startDate = nil
         print("✅ Tracking stopped")
     }
 
     // MARK: - Check Tracking Status
-    public func isTracking() -> AnyPublisher<Bool, Never> {
-        let isTracking = (UserDefaultHelper.startDate ?? 0) > 0
-        return Just(isTracking).eraseToAnyPublisher()
+    public func isTracking() -> Bool {
+        return startDate != nil
     }
 
     // MARK: - Get Current Activity Data
-    public func getCurrentActivityData() -> AnyPublisher<(time: TimeInterval, steps: Int, distance: Int), Error> {
-        return Future { promise in
-            guard let startTimestamp = UserDefaultHelper.startDate, startTimestamp > 0 else {
-                promise(.failure(NSError(domain: "No tracking session found", code: -1)))
+    public func getCurrentActivityData(startDate: Date) -> AnyPublisher<(time: TimeInterval, steps: Int, distance: Int), Error> {
+        return Future { [weak self] promise in
+            guard let self else {
+                promise(.failure(NSError(domain: "HealthKitManager", code: -1)))
                 return
             }
-
-            let startDate = Date(timeIntervalSince1970: startTimestamp)
             let endDate = Date()
             let elapsedTime = endDate.timeIntervalSince(startDate)
 

@@ -92,6 +92,15 @@ final class MeasureViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        output.restoreMountainInfoTrigger
+            .sink { [weak self] mountainInfo in
+                if let (name, address) = mountainInfo {
+                    print("🔍 ViewController received restoreMountainInfo: \(name), \(address)")
+                    self?.mainView.updateMountainLabelTexts(name: name, address: address)
+                }
+            }
+            .store(in: &cancellables)
+
         output.clearMountainSelectionTrigger
             .sink { [weak self] in
                 self?.mainView.clearMountainSelection()
