@@ -71,7 +71,7 @@ final class MeasureViewModel: BaseViewModel {
 
         let permissionAuthorized = permissionCheckTrigger
             .flatMap { [weak self] _ -> AnyPublisher<Bool, Never> in
-                guard let self = self else {
+                guard let self else {
                     return Just(false).eraseToAnyPublisher()
                 }
                 return self.requestHealthKitAuthorizationUseCase.execute()
@@ -123,22 +123,7 @@ final class MeasureViewModel: BaseViewModel {
             .sink { [weak self] in
                 guard let self = self else { return }
                 updateMeasuringStateSubject.send(true)
-
-                // HealthKit 권한 요청 후 트래킹 시작
-                self.requestHealthKitAuthorizationUseCase.execute()
-                    .sink(receiveCompletion: { completion in
-                        if case .failure(let error) = completion {
-                            print("❌ HealthKit authorization failed: \(error)")
-                        }
-                    }, receiveValue: { [weak self] authorized in
-                        if authorized {
-                            self?.startTrackingActivityUseCase.execute(startDate: Date())
-                            print("✅ Activity tracking started")
-                        } else {
-                            print("❌ HealthKit authorization denied")
-                        }
-                    })
-                    .store(in: &self.cancellables)
+                startTrackingActivityUseCase.execute(startDate: Date())
             }
             .store(in: &cancellables)
 
@@ -156,29 +141,28 @@ final class MeasureViewModel: BaseViewModel {
 
         input.stopMeasuring
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink { [weak self] in
+            .flatMap { [weak self] _ -> AnyPublisher<[ActivityLog], Never> in
+                guard let self else { return Just([]).eraseToAnyPublisher() }
+                return getActivityLogsUseCase.execute()
+                    .catch { error -> Just<[ActivityLog]> in
+                        print("❌ Failed to get activity logs: \(error)")
+                        return Just([])
+                    }.eraseToAnyPublisher()
+            }
+            .sink { [weak self] logs in
                 guard let self = self else { return }
                 updateMeasuringStateSubject.send(false)
                 clearMountainSelectionSubject.send()
                 updateStartButtonIsEnabledSubject.send(false)
                 clearSearchBarSubject.send()
 
-                // ActivityLog 배열 가져오기 및 출력
-                self.getActivityLogsUseCase.execute()
-                    .sink(receiveCompletion: { completion in
-                        if case .failure(let error) = completion {
-                            print("❌ Failed to get activity logs: \(error)")
-                        }
-                    }, receiveValue: { [weak self] logs in
-                        print("✅ Activity logs (\(logs.count) entries):")
-                        for log in logs {
-                            print("  - Time: \(log.time), Steps: \(log.step), Distance: \(log.distance)m")
-                        }
+                print("✅ Activity logs (\(logs.count) entries):")
+                for log in logs {
+                    print("  - Time: \(log.time), Steps: \(log.step), Distance: \(log.distance)m")
+                }
 
-                        // 트래킹 중지
-                        self?.stopTrackingActivityUseCase.execute()
-                    })
-                    .store(in: &self.cancellables)
+                // 트래킹 중지
+                stopTrackingActivityUseCase.execute()
             }
             .store(in: &cancellables)
 
