@@ -7,6 +7,7 @@
 
 import UIKit
 import Domain
+import Data
 
 public final class RecordSceneDIContainer {
     
@@ -70,6 +71,6 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
-        return ClimbRecordRepositoryImpl()
+        return DummyClimbRecordRepositoryImpl.shared
     }
 }

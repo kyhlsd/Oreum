@@ -36,16 +36,21 @@ final class ClimbRecordListViewController: UIViewController {
 
         bind()
         setupNavItem()
-        
         setupDelegates()
     }
     
     private func bind() {
+        let climbRecordDidSave = NotificationCenter.default
+            .publisher(for: .climbRecordDidSave)
+            .map { _ in () }
+            .eraseToAnyPublisher()
+
         let input = ClimbRecordListViewModel.Input(
             viewDidLoad: Just(()).eraseToAnyPublisher(),
             searchText: mainView.searchBar.textDidChange,
             bookmarkButtonTapped: mainView.bookmarkButton.tap,
-            cellBookmarkButtonTapped: mainView.getCellBookmarkTap
+            cellBookmarkButtonTapped: mainView.cellBookmarkTapSubject.eraseToAnyPublisher(),
+            climbRecordDidSave: climbRecordDidSave
         )
         
         let output = viewModel.transform(input: input)
@@ -100,6 +105,7 @@ final class ClimbRecordListViewController: UIViewController {
 
 // MARK: - UISearchBarDelegate
 extension ClimbRecordListViewController: UISearchBarDelegate {
+    
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         mainView.setSearchBarBorder(isFirstResponder: true)
     }

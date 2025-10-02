@@ -13,19 +13,7 @@ final class ClimbRecordListView: BaseView {
 
     let cellBookmarkTapSubject = PassthroughSubject<String, Never>()
     
-    let searchBar = {
-        let searchBar = UISearchBar()
-        searchBar.placeholder = "산 이름 검색하세요"
-        searchBar.searchTextField.font = AppFont.input
-        searchBar.searchTextField.textColor = AppColor.inputText
-        searchBar.searchTextField.leftView?.tintColor = AppColor.mossGreen
-        searchBar.backgroundImage = UIImage()
-        searchBar.searchTextField.subviews.first?.isHidden = true
-        searchBar.layer.borderWidth = 2.0
-        searchBar.layer.cornerRadius = AppRadius.radius
-        searchBar.returnKeyType = .search
-        return searchBar
-    }()
+    let searchBar = CustomSearchBar()
     
     let bookmarkButton = {
         let button = UIButton()
@@ -108,14 +96,13 @@ extension ClimbRecordListView {
     
     func reloadData() {
         recordCollectionView.reloadData()
+        if recordCollectionView.numberOfItems(inSection: 0) > 0 {
+            recordCollectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: false)
+        }
     }
     
     func setBookmarkImage(isOnlyBookmarked: Bool) {
         bookmarkButton.setImage(isOnlyBookmarked ? AppIcon.bookmarkFill : AppIcon.bookmark, for: .normal)
-    }
-    
-    var getCellBookmarkTap: AnyPublisher<String, Never> {
-        return cellBookmarkTapSubject.eraseToAnyPublisher()
     }
     
     func toggleCellBookmarked(row: Int) {
@@ -123,7 +110,6 @@ extension ClimbRecordListView {
     }
     
     func setSearchBarBorder(isFirstResponder: Bool) {
-        let color = isFirstResponder ? AppColor.focusRing : UIColor.clear
-        searchBar.layer.borderColor = color.cgColor
+        searchBar.setBorder(isFirstResponder)
     }
 }

@@ -15,10 +15,20 @@ public struct ClimbRecord: Hashable {
     public var score: Int
     public var comment: String
     public var isBookmarked: Bool
+    
+    public init(id: String, mountain: Mountain, timeLog: [ActivityLog], images: [String], score: Int, comment: String, isBookmarked: Bool) {
+        self.id = id
+        self.mountain = mountain
+        self.timeLog = timeLog
+        self.images = images
+        self.score = score
+        self.comment = comment
+        self.isBookmarked = isBookmarked
+    }
 }
 
 extension ClimbRecord {
-    public static let dummy: [ClimbRecord] = [
+    public static let dummy = [
         ClimbRecord(
             id: UUID().uuidString,
             mountain: Mountain.dummy[0],

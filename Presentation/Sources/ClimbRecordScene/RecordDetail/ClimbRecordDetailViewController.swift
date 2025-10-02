@@ -125,7 +125,7 @@ final class ClimbRecordDetailViewController: UIViewController {
     }
 }
 
-// MARK: - CollectionViewDelegate
+// MARK: - CollectionViewDelegate + SubMethods
 extension ClimbRecordDetailViewController: UICollectionViewDelegate {
     
     private enum Section: CaseIterable {

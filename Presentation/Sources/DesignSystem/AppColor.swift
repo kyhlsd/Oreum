@@ -14,6 +14,7 @@ enum AppColor {
     static let popoverBackground = UIColor(hex: "#ffffff")
     static let sidebarBackground = UIColor(hex: "#f8faf9")
     static let tabBarBackground = UIColor(hex: "#ffffff")
+    static let cardBackground = UIColor(hex: "#e8f3ea").withAlphaComponent(0.7)
     
     // MARK: - Text
     static let primaryText = UIColor(hex: "#1a2319")   // 메인 텍스트

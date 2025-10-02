@@ -29,6 +29,7 @@ final class ClimbRecordListViewModel {
         let searchText: AnyPublisher<String, Never>
         let bookmarkButtonTapped: AnyPublisher<Void, Never>
         let cellBookmarkButtonTapped: AnyPublisher<String, Never>
+        let climbRecordDidSave: AnyPublisher<Void, Never>
     }
     
     struct Output {
@@ -42,21 +43,39 @@ final class ClimbRecordListViewModel {
     func transform(input: Input) -> Output {
         let guideTextSubject = CurrentValueSubject<String, Never>(baseGuideText)
         let errorMessageSubject = PassthroughSubject<String, Never>()
-        
-        let searchText = input.viewDidLoad
+
+        let searchTextSubject = CurrentValueSubject<String, Never>("")
+
+        input.viewDidLoad
             .map { "" }
             .merge(with: input.searchText)
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .removeDuplicates()
-        
-        let isOnlyBookmarked = input.bookmarkButtonTapped
+            .sink { searchTextSubject.send($0) }
+            .store(in: &cancellables)
+
+        let searchText = searchTextSubject.eraseToAnyPublisher()
+
+        let isOnlyBookmarkedSubject = CurrentValueSubject<Bool, Never>(false)
+
+        input.bookmarkButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .scan(false) { last, _ in !last }
-            .prepend(false)
-            .share()
-            .eraseToAnyPublisher()
-        
-        Publishers.CombineLatest(searchText, isOnlyBookmarked)
+            .sink { isOnlyBookmarkedSubject.send($0) }
+            .store(in: &cancellables)
+
+        let isOnlyBookmarked = isOnlyBookmarkedSubject.eraseToAnyPublisher()
+
+        // climbRecordDidSave는 debounce 없이 즉시 fetch (현재 검색어와 북마크 상태 유지)
+        let immediateRefresh = input.climbRecordDidSave
+            .map { _ in (searchTextSubject.value, isOnlyBookmarkedSubject.value) }
+
+        let fetchTrigger = Publishers.Merge(
+            Publishers.CombineLatest(searchText, isOnlyBookmarked),
+            immediateRefresh
+        )
+
+        fetchTrigger
             .flatMap { [fetchUseCase] keyword, isOnlyBookmarked in
                 fetchUseCase.execute(keyword: keyword, isOnlyBookmarked: isOnlyBookmarked)
                     .catch { error -> Just<[ClimbRecord]> in
