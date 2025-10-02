@@ -33,5 +33,7 @@ public final class DefaultTrackActivityRepositoryImpl: TrackActivityRepository {
         healthKitManager.stopTracking()
     }
 
-
+    public func isTracking() -> AnyPublisher<Bool, Never> {
+        return healthKitManager.isTracking()
+    }
 }

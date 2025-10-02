@@ -13,4 +13,5 @@ public protocol TrackActivityRepository {
     func startTracking(startDate: Date)
     func getActivityLogs() -> AnyPublisher<[ActivityLog], Error>
     func stopTracking()
+    func isTracking() -> AnyPublisher<Bool, Never>
 }

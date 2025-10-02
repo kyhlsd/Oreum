@@ -100,7 +100,7 @@ public final class HealthKitManager {
     // MARK: - Start Tracking
     public func startTracking(startDate: Date) {
         self.startDate = startDate
-        UserDefaults.standard.set(startDate.timeIntervalSince1970, forKey: "trackingStartDate")
+        UserDefaultHelper.startDate = startDate.timeIntervalSince1970
         print("✅ Tracking started at: \(startDate)")
     }
 
@@ -113,8 +113,7 @@ public final class HealthKitManager {
             }
 
             // UserDefaults에서 시작 시간 복원
-            let startTimestamp = UserDefaults.standard.double(forKey: "trackingStartDate")
-            guard startTimestamp > 0 else {
+            guard let startTimestamp = UserDefaultHelper.startDate, startTimestamp > 0 else {
                 promise(.failure(NSError(domain: "No tracking session found", code: -1)))
                 return
             }
@@ -215,8 +214,14 @@ public final class HealthKitManager {
 
     // MARK: - Stop Tracking
     public func stopTracking() {
-        UserDefaults.standard.removeObject(forKey: "trackingStartDate")
+        UserDefaultHelper.clearStartDate()
         startDate = nil
         print("✅ Tracking stopped")
+    }
+
+    // MARK: - Check Tracking Status
+    public func isTracking() -> AnyPublisher<Bool, Never> {
+        let isTracking = (UserDefaultHelper.startDate ?? 0) > 0
+        return Just(isTracking).eraseToAnyPublisher()
     }
 }

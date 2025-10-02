@@ -46,9 +46,10 @@ final class MeasureViewController: UIViewController, BaseViewController {
         let didBecomeActive = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             .map { _ in () }
             .eraseToAnyPublisher()
-        
+
         let input = MeasureViewModel.Input(
             checkPermissionTrigger: Just(()).eraseToAnyPublisher(),
+            checkTrackingStatusTrigger: Just(()).eraseToAnyPublisher(),
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             selectMountain: selectMountainSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher(),
@@ -60,10 +61,23 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
         let output = viewModel.transform(input: input)
 
+        // Permission check가 먼저 완료된 후 tracking status 체크
         output.permissionAuthorized
             .sink { [weak self] authorized in
                 print("✅ Permission authorized: \(authorized)")
                 self?.mainView.updatePermissionRequiredViewIsHidden(authorized)
+            }
+            .store(in: &cancellables)
+
+        // trackingStatus와 updateMeasuringStateTrigger를 병합하여 처리
+        let measuringState = Publishers.Merge(output.trackingStatus, output.updateMeasuringStateTrigger)
+
+        Publishers.CombineLatest(output.permissionAuthorized, measuringState)
+            .sink { [weak self] authorized, isMeasuring in
+                guard authorized else { return }
+                print("✅ Measuring state: \(isMeasuring)")
+                self?.mainView.updateMeasuringState(isMeasuring: isMeasuring)
+                self?.setNavItem(isMeasuring: isMeasuring)
             }
             .store(in: &cancellables)
 
@@ -100,13 +114,6 @@ final class MeasureViewController: UIViewController, BaseViewController {
         output.updateSearchResultsTrigger
             .sink { [weak self] count in
                 self?.mainView.updateSearchResults(count: count)
-            }
-            .store(in: &cancellables)
-
-        output.updateMeasuringStateTrigger
-            .sink { [weak self] isMeasuring in
-                self?.mainView.updateMeasuringState(isMeasuring: isMeasuring)
-                self?.setNavItem(isMeasuring: isMeasuring)
             }
             .store(in: &cancellables)
 

@@ -46,6 +46,10 @@ public final class MeasureSceneDIContainer {
     private func makeStopTrackingActivityUseCase() -> StopTrackingActivityUseCase {
         return StopTrackingActivityUseCaseImpl(repository: makeTrackActivityRepository())
     }
+
+    private func makeGetTrackingStatusUseCase() -> GetTrackingStatusUseCase {
+        return GetTrackingStatusUseCaseImpl(repository: makeTrackActivityRepository())
+    }
 }
 
 extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
@@ -62,7 +66,8 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
             requestHealthKitAuthorizationUseCase: makeRequestHealthKitAuthorizationUseCase(),
             startTrackingActivityUseCase: makeStartTrackingActivityUseCase(),
             getActivityLogsUseCase: makeGetActivityLogsUseCase(),
-            stopTrackingActivityUseCase: makeStopTrackingActivityUseCase()
+            stopTrackingActivityUseCase: makeStopTrackingActivityUseCase(),
+            getTrackingStatusUseCase: makeGetTrackingStatusUseCase()
         )
     }
 }

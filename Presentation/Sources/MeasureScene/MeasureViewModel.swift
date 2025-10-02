@@ -16,6 +16,7 @@ final class MeasureViewModel: BaseViewModel {
     private let startTrackingActivityUseCase: StartTrackingActivityUseCase
     private let getActivityLogsUseCase: GetActivityLogsUseCase
     private let stopTrackingActivityUseCase: StopTrackingActivityUseCase
+    private let getTrackingStatusUseCase: GetTrackingStatusUseCase
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -23,17 +24,20 @@ final class MeasureViewModel: BaseViewModel {
         requestHealthKitAuthorizationUseCase: RequestHealthKitAuthorizationUseCase,
         startTrackingActivityUseCase: StartTrackingActivityUseCase,
         getActivityLogsUseCase: GetActivityLogsUseCase,
-        stopTrackingActivityUseCase: StopTrackingActivityUseCase
+        stopTrackingActivityUseCase: StopTrackingActivityUseCase,
+        getTrackingStatusUseCase: GetTrackingStatusUseCase
     ) {
         self.fetchMountainsUseCase = fetchMountainsUseCase
         self.requestHealthKitAuthorizationUseCase = requestHealthKitAuthorizationUseCase
         self.startTrackingActivityUseCase = startTrackingActivityUseCase
         self.getActivityLogsUseCase = getActivityLogsUseCase
         self.stopTrackingActivityUseCase = stopTrackingActivityUseCase
+        self.getTrackingStatusUseCase = getTrackingStatusUseCase
     }
 
     struct Input {
         let checkPermissionTrigger: AnyPublisher<Void, Never>
+        let checkTrackingStatusTrigger: AnyPublisher<Void, Never>
         let searchTrigger: AnyPublisher<String, Never>
         let selectMountain: AnyPublisher<MountainInfo, Never>
         let cancelMountain: AnyPublisher<Void, Never>
@@ -45,6 +49,7 @@ final class MeasureViewModel: BaseViewModel {
 
     struct Output {
         let permissionAuthorized: AnyPublisher<Bool, Never>
+        let trackingStatus: AnyPublisher<Bool, Never>
         let searchResults: AnyPublisher<[MountainInfo], Never>
         let updateMountainLabelsTrigger: AnyPublisher<(String, String), Never>
         let clearMountainSelectionTrigger: AnyPublisher<Void, Never>
@@ -61,7 +66,7 @@ final class MeasureViewModel: BaseViewModel {
         let updateStartButtonIsEnabledSubject = CurrentValueSubject<Bool, Never>(false)
         let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
         let updateSearchResultsSubject = PassthroughSubject<Int, Never>()
-        let updateMeasuringStateSubject = CurrentValueSubject<Bool, Never>(false)
+        let updateMeasuringStateSubject = PassthroughSubject<Bool, Never>()
         let clearSearchBarSubject = PassthroughSubject<Void, Never>()
 
         let permissionCheckTrigger = Publishers.Merge(
@@ -79,6 +84,16 @@ final class MeasureViewModel: BaseViewModel {
                     .eraseToAnyPublisher()
             }
             .removeDuplicates()
+            .eraseToAnyPublisher()
+
+        let trackingStatus = input.checkTrackingStatusTrigger
+            .flatMap { [weak self] _ -> AnyPublisher<Bool, Never> in
+                guard let self else {
+                    return Just(false).eraseToAnyPublisher()
+                }
+                return self.getTrackingStatusUseCase.execute()
+            }
+            .share()
             .eraseToAnyPublisher()
 
         let searchResults = input.searchTrigger
@@ -163,20 +178,25 @@ final class MeasureViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        return Output(permissionAuthorized: permissionAuthorized,
-                      searchResults: searchResults,
-                      updateMountainLabelsTrigger: updateMountainLabelsSubject.eraseToAnyPublisher(),
-                      clearMountainSelectionTrigger: clearMountainSelectionSubject.eraseToAnyPublisher(),
-                      updateStartButtonIsEnabledTrigger: updateStartButtonIsEnabledSubject
+        // trackingStatus와 버튼 액션을 병합
+        let combinedMeasuringState = Publishers.Merge(trackingStatus, updateMeasuringStateSubject)
             .removeDuplicates()
-            .eraseToAnyPublisher(),
-                      updateSearchResultsOverlayIsHiddenTrigger: updateSearchResultsOverlayIsHiddenSubject
-            .eraseToAnyPublisher(),
-                      updateSearchResultsTrigger: updateSearchResultsSubject.eraseToAnyPublisher(),
-                      updateMeasuringStateTrigger: updateMeasuringStateSubject
-            .removeDuplicates()
-            .eraseToAnyPublisher(),
-                      clearSearchBarTrigger: clearSearchBarSubject.eraseToAnyPublisher()
+            .eraseToAnyPublisher()
+
+        return Output(
+            permissionAuthorized: permissionAuthorized,
+            trackingStatus: trackingStatus,
+            searchResults: searchResults,
+            updateMountainLabelsTrigger: updateMountainLabelsSubject.eraseToAnyPublisher(),
+            clearMountainSelectionTrigger: clearMountainSelectionSubject.eraseToAnyPublisher(),
+            updateStartButtonIsEnabledTrigger: updateStartButtonIsEnabledSubject
+                .removeDuplicates()
+                .eraseToAnyPublisher(),
+            updateSearchResultsOverlayIsHiddenTrigger: updateSearchResultsOverlayIsHiddenSubject
+                .eraseToAnyPublisher(),
+            updateSearchResultsTrigger: updateSearchResultsSubject.eraseToAnyPublisher(),
+            updateMeasuringStateTrigger: combinedMeasuringState,
+            clearSearchBarTrigger: clearSearchBarSubject.eraseToAnyPublisher()
         )
     }
 }
