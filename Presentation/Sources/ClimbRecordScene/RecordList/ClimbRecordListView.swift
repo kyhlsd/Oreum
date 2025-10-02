@@ -11,8 +11,6 @@ import SnapKit
 
 final class ClimbRecordListView: BaseView {
 
-    let cellBookmarkTapSubject = PassthroughSubject<String, Never>()
-    
     let searchBar = CustomSearchBar()
     
     let bookmarkButton = {

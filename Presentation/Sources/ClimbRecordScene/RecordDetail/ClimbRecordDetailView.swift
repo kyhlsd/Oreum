@@ -94,13 +94,19 @@ final class ClimbRecordDetailView: BaseView {
     private func createLayout() -> UICollectionViewCompositionalLayout {
         let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
         let item = NSCollectionLayoutItem(layoutSize: size)
-        
+
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitems: [item])
-        
+
         let section = NSCollectionLayoutSection(group: group)
         section.contentInsets = .zero
-        section.orthogonalScrollingBehavior = .paging
-        
+        section.orthogonalScrollingBehavior = .groupPaging
+
+        section.visibleItemsInvalidationHandler = { [weak self] visibleItems, point, environment in
+            guard let self = self else { return }
+            let page = Int(round(point.x / environment.container.contentSize.width))
+            self.pageControl.currentPage = page
+        }
+
         return UICollectionViewCompositionalLayout(section: section)
     }
     

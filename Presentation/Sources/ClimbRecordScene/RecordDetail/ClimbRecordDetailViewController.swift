@@ -114,7 +114,6 @@ final class ClimbRecordDetailViewController: UIViewController {
     }
     
     private func setupDelegates() {
-        mainView.imageCollectionView.delegate = self
         mainView.commentTextView.delegate = self
     }
     
@@ -125,25 +124,11 @@ final class ClimbRecordDetailViewController: UIViewController {
     }
 }
 
-// MARK: - CollectionViewDelegate + SubMethods
-extension ClimbRecordDetailViewController: UICollectionViewDelegate {
+// MARK: - CollectionView SubMethods
+extension ClimbRecordDetailViewController {
     
     private enum Section: CaseIterable {
         case main
-    }
-    
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        if scrollView == mainView.imageCollectionView {
-            print("mainView", mainView.imageCollectionView.bounds.width)
-            let width = scrollView.bounds.width
-            print(width)
-            print(scrollView.contentOffset.x)
-            guard width > 0 else { return }
-            print("asdf")
-            
-            let page = Int(round(scrollView.contentOffset.x / width))
-            mainView.pageControl.currentPage = page
-        }
     }
     
     private func createRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, String> {

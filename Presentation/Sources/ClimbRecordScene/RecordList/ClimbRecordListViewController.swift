@@ -12,10 +12,11 @@ import Domain
 final class ClimbRecordListViewController: UIViewController {
 
     var pushVC: ((ClimbRecord) -> Void)?
-    
+
     private let mainView = ClimbRecordListView()
     let viewModel: ClimbRecordListViewModel
     private var cancellables = Set<AnyCancellable>()
+    private let cellBookmarkTapSubject = PassthroughSubject<String, Never>()
     
     init(viewModel: ClimbRecordListViewModel) {
         self.viewModel = viewModel
@@ -49,7 +50,7 @@ final class ClimbRecordListViewController: UIViewController {
             viewDidLoad: Just(()).eraseToAnyPublisher(),
             searchText: mainView.searchBar.textDidChange,
             bookmarkButtonTapped: mainView.bookmarkButton.tap,
-            cellBookmarkButtonTapped: mainView.cellBookmarkTapSubject.eraseToAnyPublisher(),
+            cellBookmarkButtonTapped: cellBookmarkTapSubject.eraseToAnyPublisher(),
             climbRecordDidSave: climbRecordDidSave
         )
         
@@ -124,11 +125,13 @@ extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionV
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(for: indexPath, cellClass: ClimbRecordCollectionViewCell.self)
-        
+
         cell.setImages(row: indexPath.item, total: viewModel.climbRecordList.count)
         cell.setData(viewModel.climbRecordList[indexPath.item])
-        cell.cellBookmarkTapSubject = mainView.cellBookmarkTapSubject
-        
+        cell.bookmarkTapped = { [weak self] recordId in
+            self?.cellBookmarkTapSubject.send(recordId)
+        }
+
         return cell
     }
     

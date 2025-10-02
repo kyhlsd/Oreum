@@ -11,9 +11,9 @@ import Domain
 import SnapKit
 
 final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
-    
+
     private let mountainImageSize = 80
-    weak var cellBookmarkTapSubject: PassthroughSubject<String, Never>?
+    var bookmarkTapped: ((String) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     
     private let upRoadImageView = {
@@ -51,7 +51,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         mountainImageView.image = nil
         upRoadImageView.image = nil
         downRoadImageView.image = nil
-        cellBookmarkTapSubject = nil
+        bookmarkTapped = nil
         cancellables = Set<AnyCancellable>()
     }
     
@@ -77,13 +77,12 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         
         let image = data.isBookmarked ? AppIcon.bookmarkFill : AppIcon.bookmark
         bookmarkButton.setImage(image, for: .normal)
-        
+
         tagStackView.setData(isFirstVisit: isFirstVisit, isFamous: data.mountain.isFamous)
-        
+
         bookmarkButton.tap
             .sink { [weak self] in
-                self?.cellBookmarkTapSubject?.send(data.id)
-                
+                self?.bookmarkTapped?(data.id)
             }
             .store(in: &cancellables)
     }

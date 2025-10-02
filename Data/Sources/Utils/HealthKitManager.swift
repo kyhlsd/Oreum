@@ -195,7 +195,7 @@ public final class HealthKitManager {
             var currentStart = startDate
 
             while currentStart < endDate {
-                let currentEnd = min(currentStart.addingTimeInterval(300), endDate) // 5분 = 300초
+                let currentEnd = min(currentStart.addingTimeInterval(300), endDate)
                 intervals.append((start: currentStart, end: currentEnd))
                 currentStart = currentEnd
             }
@@ -225,7 +225,6 @@ public final class HealthKitManager {
             }
 
             group.notify(queue: .main) {
-                // 초기값 추가 (시작 시간, 걸음수 0, 이동 거리 0)
                 let initialLog = ActivityLog(
                     id: UUID().uuidString,
                     time: startDate,
@@ -245,7 +244,7 @@ public final class HealthKitManager {
                     distance: totalDistance
                 )
 
-                if let error = fetchError {
+                if let fetchError {
                     // 에러가 발생해도 초기값과 종료값은 반환
                     promise(.success([initialLog, finalLog]))
                 } else {
