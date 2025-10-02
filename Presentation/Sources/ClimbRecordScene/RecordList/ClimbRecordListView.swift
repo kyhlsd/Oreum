@@ -30,8 +30,27 @@ final class ClimbRecordListView: BaseView {
         collectionView.backgroundColor = .clear
         collectionView.keyboardDismissMode = .onDrag
         collectionView.register(cellClass: ClimbRecordCollectionViewCell.self)
-        
+
         return collectionView
+    }()
+    
+    private let emptyStateLabel = {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.isHidden = true
+        return label
+    }()
+    
+    private let emptyLabelAttributes = {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 8
+        paragraphStyle.alignment = .center
+        let attributes: [NSAttributedString.Key: Any] = [
+            .paragraphStyle: paragraphStyle,
+            .foregroundColor: AppColor.subText,
+            .font: AppFont.titleS
+        ]
+        return attributes
     }()
  
     private func createLayout() -> UICollectionViewCompositionalLayout {
@@ -54,7 +73,7 @@ final class ClimbRecordListView: BaseView {
     }
     
     override func setupHierarchy() {
-        [searchBar, bookmarkButton, guideLabel, recordCollectionView].forEach {
+        [searchBar, bookmarkButton, guideLabel, recordCollectionView, emptyStateLabel].forEach {
             addSubview($0)
         }
     }
@@ -82,6 +101,11 @@ final class ClimbRecordListView: BaseView {
             make.top.equalTo(guideLabel.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
         }
+
+        emptyStateLabel.snp.makeConstraints { make in
+            make.center.equalTo(safeAreaLayoutGuide)
+            make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
+        }
     }
 }
 
@@ -97,6 +121,15 @@ extension ClimbRecordListView {
         if recordCollectionView.numberOfItems(inSection: 0) > 0 {
             recordCollectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: false)
         }
+    }
+
+    func setEmptyStateHidden(_ isHidden: Bool) {
+        emptyStateLabel.isHidden = isHidden
+        recordCollectionView.isHidden = !isHidden
+    }
+    
+    func setEmptyStateText(_ text: String) {
+        emptyStateLabel.attributedText = NSAttributedString(string: text, attributes: emptyLabelAttributes)
     }
     
     func setBookmarkImage(isOnlyBookmarked: Bool) {

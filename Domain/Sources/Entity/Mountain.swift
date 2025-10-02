@@ -13,6 +13,14 @@ public struct Mountain: Hashable, Codable {
     public let address: String
     public let height: Int
     public let isFamous: Bool
+
+    public init(id: String, name: String, address: String, height: Int, isFamous: Bool) {
+        self.id = id
+        self.name = name
+        self.address = address
+        self.height = height
+        self.isFamous = isFamous
+    }
 }
 
 extension Mountain {

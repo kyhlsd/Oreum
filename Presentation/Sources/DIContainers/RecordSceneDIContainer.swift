@@ -34,7 +34,11 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     func makeActivityLogViewController(climbRecord: ClimbRecord) -> ActivityLogViewController {
         return ActivityLogViewController(viewModel: makeActivityLogViewModel(climbRecord: climbRecord))
     }
-    
+
+    func makeAddClimbRecordViewController() -> AddClimbRecordViewController {
+        return AddClimbRecordViewController(viewModel: makeAddClimbRecordViewModel())
+    }
+
     // MARK: - ViewModels
     private func makeClimbRecordListViewModel() -> ClimbRecordListViewModel {
         return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase())
@@ -47,7 +51,14 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     private func makeActivityLogViewModel(climbRecord: ClimbRecord) -> ActivityLogViewModel {
         return ActivityLogViewModel(activityStatUseCase: makeActivityStatUseCase(), climbRecord: climbRecord)
     }
-    
+
+    private func makeAddClimbRecordViewModel() -> AddClimbRecordViewModel {
+        return AddClimbRecordViewModel(
+            fetchMountainInfosUseCase: makeFetchMountainInfosUseCase(),
+            saveClimbRecordUseCase: makeSaveClimbRecordUseCase()
+        )
+    }
+
     // MARK: - UseCases
     private func makeFetchClimbRecordsUseCase() -> FetchClimbRecordUseCase {
         return FetchClimbRecordUseCaseImpl(repository: climbRecordRepository)
@@ -68,9 +79,21 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     private func makeActivityStatUseCase() -> ActivityStatUseCase {
         return ActivityStatUseCaseImpl()
     }
-    
+
+    private func makeSaveClimbRecordUseCase() -> SaveClimbRecordUseCase {
+        return SaveClimbRecordUseCaseImpl(repository: climbRecordRepository)
+    }
+
+    private func makeFetchMountainInfosUseCase() -> FetchMountainInfosUseCase {
+        return FetchMountainInfosUseCaseImpl(repository: makeMountainInfoRepository())
+    }
+
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
         return DummyClimbRecordRepositoryImpl.shared
+    }
+    
+    private func makeMountainInfoRepository() -> MountainInfoRepository {
+        return DummyMountainInfoRepositoryImpl()
     }
 }

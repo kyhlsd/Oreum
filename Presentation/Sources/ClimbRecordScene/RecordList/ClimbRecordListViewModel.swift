@@ -18,6 +18,7 @@ final class ClimbRecordListViewModel {
     private(set) var climbRecordList = [ClimbRecord]()
     private let baseGuideText = "산을 눌러 자세한 정보를 확인하세요."
     private let reloadDataSubject = PassthroughSubject<Void, Never>()
+    private let emptyText = "+ 버튼으로 이전 기록을 추가하거나,\n측정 탭에서 기록을 측정하여 추가할 수 있습니다"
     
     init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase) {
         self.fetchUseCase = fetchUseCase
@@ -38,11 +39,13 @@ final class ClimbRecordListViewModel {
         let isOnlyBookmarked: AnyPublisher<Bool, Never>
         let bookmarkToggled: AnyPublisher<Int, Never>
         let errorMessage: AnyPublisher<String, Never>
+        let emptyStateText: AnyPublisher<String, Never>
     }
     
     func transform(input: Input) -> Output {
         let guideTextSubject = CurrentValueSubject<String, Never>(baseGuideText)
         let errorMessageSubject = PassthroughSubject<String, Never>()
+        let emptyStateTextSubject = CurrentValueSubject<String, Never>(emptyText)
 
         let searchTextSubject = CurrentValueSubject<String, Never>("")
 
@@ -66,7 +69,6 @@ final class ClimbRecordListViewModel {
 
         let isOnlyBookmarked = isOnlyBookmarkedSubject.eraseToAnyPublisher()
 
-        // climbRecordDidSave는 debounce 없이 즉시 fetch (현재 검색어와 북마크 상태 유지)
         let immediateRefresh = input.climbRecordDidSave
             .map { _ in (searchTextSubject.value, isOnlyBookmarkedSubject.value) }
 
@@ -82,18 +84,27 @@ final class ClimbRecordListViewModel {
                         errorMessageSubject.send(error.localizedDescription)
                         return Just([])
                     }
-                    .map { ($0, isOnlyBookmarked)}
+                    .map { ($0, keyword, isOnlyBookmarked)}
             }
-            .sink { [weak self] (list, isOnlyBookmarked) in
+            .sink { [weak self] (list, keyword, isOnlyBookmarked) in
                 guard let self else { return }
-                
+
                 climbRecordList = list
-                
+
                 if isOnlyBookmarked {
                     guideTextSubject.send("북마크한 산들 (\(list.count)개)")
                 } else {
                     guideTextSubject.send("\(baseGuideText) (\(list.count)개)")
                 }
+
+                if list.isEmpty {
+                    if keyword.isEmpty {
+                        emptyStateTextSubject.send(emptyText)
+                    } else {
+                        emptyStateTextSubject.send("검색 결과가 없습니다\n다른 키워드로 검색해보세요")
+                    }
+                }
+
                 reloadDataSubject.send(())
             }
             .store(in: &cancellables)
@@ -121,7 +132,8 @@ final class ClimbRecordListViewModel {
             guideText: guideTextSubject.eraseToAnyPublisher(),
             isOnlyBookmarked: isOnlyBookmarked,
             bookmarkToggled: bookmarkToggled,
-            errorMessage: errorMessageSubject.eraseToAnyPublisher()
+            errorMessage: errorMessageSubject.eraseToAnyPublisher(),
+            emptyStateText: emptyStateTextSubject.eraseToAnyPublisher()
         )
     }
 }

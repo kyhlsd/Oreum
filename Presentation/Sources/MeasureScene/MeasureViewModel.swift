@@ -159,7 +159,7 @@ final class MeasureViewModel: BaseViewModel {
         input.selectMountain
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] mountainInfo in
-                let mountain = mountainInfo.toMountain(mountainInfo)
+                let mountain = mountainInfo.toMountain()
                 self?.selectedMountain = mountain
                 updateMountainLabelsSubject.send((mountainInfo.name, mountainInfo.address))
                 updateStartButtonIsEnabledSubject.send(true)

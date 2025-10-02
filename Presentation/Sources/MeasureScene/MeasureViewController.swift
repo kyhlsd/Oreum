@@ -185,7 +185,7 @@ extension MeasureViewController: UISearchBarDelegate {
     
 }
 
-// MARK: - UITableViewDelegate + SubMethods
+// MARK: - UITableView SubMethods
 extension MeasureViewController: UITableViewDelegate {
 
     private enum Section {
@@ -204,7 +204,7 @@ extension MeasureViewController: UITableViewDelegate {
             tableView: mainView.searchResultsTableView
         ) { tableView, indexPath, mountainInfo in
             let cell = tableView.dequeueReusableCell(for: indexPath, cellClass: SearchMountainTableViewCell.self)
-            cell.setData(mountainInfo: mountainInfo)
+            cell.setData(mountain: mountainInfo.toMountain())
             return cell
         }
         return dataSource

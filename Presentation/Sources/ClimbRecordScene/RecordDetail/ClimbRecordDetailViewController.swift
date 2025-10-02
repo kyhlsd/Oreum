@@ -96,7 +96,19 @@ final class ClimbRecordDetailViewController: UIViewController {
                 print(errorMessage)
             }
             .store(in: &cancellables)
-        
+
+        output.timelineButtonEnabled
+            .sink { [weak self] isEnabled in
+                self?.mainView.setTimelineButtonEnabled(isEnabled)
+            }
+            .store(in: &cancellables)
+
+        output.timelineButtonTitle
+            .sink { [weak self] title in
+                self?.mainView.setTimelineButtonTitle(title)
+            }
+            .store(in: &cancellables)
+
         configureView(viewModel.climbRecord)
     }
     

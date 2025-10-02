@@ -45,6 +45,8 @@ final class ClimbRecordDetailViewModel {
         let popVC: AnyPublisher<Void, Never>
         let pushVC: AnyPublisher<ClimbRecord, Never>
         let errorMessage: AnyPublisher<String, Never>
+        let timelineButtonEnabled: AnyPublisher<Bool, Never>
+        let timelineButtonTitle: AnyPublisher<String, Never>
     }
     
     func transform(input: Input) -> Output {
@@ -125,13 +127,19 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
         
+        let hasTimeline = climbRecord.timeLog.count > 1
+        let timelineButtonEnabled = Just(hasTimeline).eraseToAnyPublisher()
+        let timelineButtonTitle = Just(hasTimeline ? "타임라인 보기" : "측정 기록이 없습니다").eraseToAnyPublisher()
+
         return Output(
             recordEditable: recordEditableSubject.eraseToAnyPublisher(),
             resetReview: resetReviewSubject.eraseToAnyPublisher(),
             presentCancellableAlert: presentCancellableAlertSubject.eraseToAnyPublisher(),
             popVC: popVCSubject.eraseToAnyPublisher(),
             pushVC: pushVCSubject.eraseToAnyPublisher(),
-            errorMessage: errorMesssageSubject.eraseToAnyPublisher()
+            errorMessage: errorMesssageSubject.eraseToAnyPublisher(),
+            timelineButtonEnabled: timelineButtonEnabled,
+            timelineButtonTitle: timelineButtonTitle
         )
     }
 }

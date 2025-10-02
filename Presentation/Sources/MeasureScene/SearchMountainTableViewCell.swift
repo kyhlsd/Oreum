@@ -29,8 +29,8 @@ final class SearchMountainTableViewCell: BaseTableViewCell {
         }
     }
 
-    func setData(mountainInfo: MountainInfo) {
-        itemView.setTitle(title: mountainInfo.name)
-        itemView.setSubtitle(subtitle: mountainInfo.address)
+    func setData(mountain: Mountain) {
+        itemView.setTitle(title: mountain.name)
+        itemView.setSubtitle(subtitle: mountain.address)
     }
 }

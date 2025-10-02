@@ -232,26 +232,13 @@ public final class HealthKitManager {
                     distance: 0
                 )
 
-                // 종료 시간의 누적 걸음수와 이동거리 계산
-                let totalSteps = logs.reduce(0) { $0 + $1.step }
-                let totalDistance = logs.reduce(0) { $0 + $1.distance }
-
-                // 종료값 추가 (종료 시간, 누적 걸음수, 누적 이동 거리)
-                let finalLog = ActivityLog(
-                    id: UUID().uuidString,
-                    time: endDate,
-                    step: totalSteps,
-                    distance: totalDistance
-                )
-
                 if let fetchError {
-                    // 에러가 발생해도 초기값과 종료값은 반환
-                    promise(.success([initialLog, finalLog]))
+                    // 에러가 발생해도 초기값은 반환
+                    promise(.success([initialLog]))
                 } else {
                     // 시간 순으로 정렬
                     logs.sort { $0.time < $1.time }
                     logs.insert(initialLog, at: 0)
-                    logs.append(finalLog)
                     promise(.success(logs))
                 }
             }

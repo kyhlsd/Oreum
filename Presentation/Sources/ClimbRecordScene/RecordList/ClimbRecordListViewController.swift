@@ -12,6 +12,7 @@ import Domain
 final class ClimbRecordListViewController: UIViewController {
 
     var pushVC: ((ClimbRecord) -> Void)?
+    var pushAddVC: (() -> Void)?
 
     private let mainView = ClimbRecordListView()
     let viewModel: ClimbRecordListViewModel
@@ -58,7 +59,9 @@ final class ClimbRecordListViewController: UIViewController {
         
         output.reloadData
             .sink { [weak self] in
-                self?.mainView.reloadData()
+                guard let self else { return }
+                self.mainView.reloadData()
+                self.mainView.setEmptyStateHidden(!self.viewModel.climbRecordList.isEmpty)
             }
             .store(in: &cancellables)
         
@@ -85,11 +88,21 @@ final class ClimbRecordListViewController: UIViewController {
                print(errorMessage)
             }
             .store(in: &cancellables)
+
+        output.emptyStateText
+            .sink { [weak self] text in
+                self?.mainView.setEmptyStateText(text)
+            }
+            .store(in: &cancellables)
     }
 
     private func setupNavItem() {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "나의 등산 기록"))
         navigationItem.backButtonTitle = " "
+
+        let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonTapped))
+        addButton.tintColor = AppColor.primary
+        navigationItem.rightBarButtonItem = addButton
     }
     
     private func setupDelegates() {
@@ -97,6 +110,10 @@ final class ClimbRecordListViewController: UIViewController {
         
         mainView.recordCollectionView.delegate = self
         mainView.recordCollectionView.dataSource = self
+    }
+    
+    @objc private func addButtonTapped() {
+        pushAddVC?()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {

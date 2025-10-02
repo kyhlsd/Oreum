@@ -268,4 +268,13 @@ extension ClimbRecordDetailView {
         ratingView.setRating(rating: rating, animated: true)
         commentTextView.text = comment
     }
+
+    func setTimelineButtonEnabled(_ isEnabled: Bool) {
+        timelineButton.isEnabled = isEnabled
+        timelineButton.alpha = isEnabled ? 1.0 : 0.5
+    }
+
+    func setTimelineButtonTitle(_ title: String) {
+        timelineButton.updateButton(title: title, image: AppIcon.timeline, foreground: .white)
+    }
 }

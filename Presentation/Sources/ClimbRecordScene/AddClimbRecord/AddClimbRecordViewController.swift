@@ -1,0 +1,188 @@
+//
+//  AddClimbRecordViewController.swift
+//  Presentation
+//
+//  Created by 김영훈 on 10/2/25.
+//
+
+import UIKit
+import Combine
+import Domain
+
+final class AddClimbRecordViewController: UIViewController {
+
+    var dismissVC: (() -> Void)?
+
+    private let mainView = AddClimbRecordView()
+    let viewModel: AddClimbRecordViewModel
+    private var cancellables = Set<AnyCancellable>()
+    private lazy var dataSource = createDataSource()
+
+    private let searchTriggerSubject = PassthroughSubject<String, Never>()
+    private let mountainSelectedSubject = PassthroughSubject<Mountain, Never>()
+
+    init(viewModel: AddClimbRecordViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        view = mainView
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        bind()
+        setupNavItem()
+        setupDelegates()
+    }
+
+    private func bind() {
+        let input = AddClimbRecordViewModel.Input(
+            searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
+            mountainSelected: mountainSelectedSubject.eraseToAnyPublisher(),
+            cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher(),
+            dateChanged: mainView.datePicker.publisher(for: \.date).eraseToAnyPublisher(),
+            saveButtonTapped: mainView.saveButton.tap
+        )
+
+        let output = viewModel.transform(input: input)
+
+        output.searchResults
+            .sink { [weak self] mountains in
+                self?.applySnapshot(mountains: mountains)
+            }
+            .store(in: &cancellables)
+
+        output.updateMountainLabelsTrigger
+            .sink { [weak self] (name, address) in
+                self?.mainView.updateMountainLabelTexts(name: name, address: address)
+            }
+            .store(in: &cancellables)
+
+        output.clearMountainSelectionTrigger
+            .sink { [weak self] in
+                self?.mainView.clearMountainSelection()
+            }
+            .store(in: &cancellables)
+
+        output.updateSearchResultsOverlayIsHiddenTrigger
+            .sink { [weak self] isHidden in
+                self?.mainView.updateSearchResultsOverlayIsHidden(isHidden)
+            }
+            .store(in: &cancellables)
+
+        output.updateSearchResultsTrigger
+            .sink { [weak self] count in
+                self?.mainView.updateSearchResults(count: count)
+            }
+            .store(in: &cancellables)
+
+        output.clearSearchBarTrigger
+            .sink { [weak self] in
+                self?.mainView.clearSearchBar()
+            }
+            .store(in: &cancellables)
+
+        output.updateStartButtonIsEnabledTrigger
+            .sink { [weak self] isEnabled in
+                self?.mainView.setSaveButtonEnabled(isEnabled)
+            }
+            .store(in: &cancellables)
+
+        output.saveEnabled
+            .sink { [weak self] isEnabled in
+                self?.mainView.setSaveButtonEnabled(isEnabled)
+            }
+            .store(in: &cancellables)
+
+        output.dismiss
+            .sink { [weak self] in
+                self?.dismissVC?()
+            }
+            .store(in: &cancellables)
+
+        output.errorMessage
+            .sink { errorMessage in
+                print(errorMessage)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func setupNavItem() {
+        navigationItem.title = "등산 기록 추가"
+        let cancelButton = UIBarButtonItem(title: "취소", style: .plain, target: self, action: #selector(cancelButtonTapped))
+        cancelButton.tintColor = AppColor.primary
+        navigationItem.leftBarButtonItem = cancelButton
+    }
+
+    @objc private func cancelButtonTapped() {
+        dismissVC?()
+    }
+
+    private func setupDelegates() {
+        mainView.searchBar.delegate = self
+        mainView.searchResultsTableView.delegate = self
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        view.endEditing(true)
+    }
+}
+
+// MARK: - UISearchBarDelegate
+extension AddClimbRecordViewController: UISearchBarDelegate {
+
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        mainView.setSearchBarBorder(isFirstResponder: true)
+    }
+
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        mainView.setSearchBarBorder(isFirstResponder: false)
+        mainView.updateSearchResultsOverlayIsHidden(true)
+    }
+
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        guard let searchText = searchBar.text else { return }
+        searchTriggerSubject.send(searchText)
+    }
+}
+
+// MARK: - UITableView SubMethods
+extension AddClimbRecordViewController: UITableViewDelegate {
+
+    private enum Section {
+        case main
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+
+        guard let mountain = dataSource.itemIdentifier(for: indexPath) else { return }
+        mountainSelectedSubject.send(mountain)
+    }
+
+    private func createDataSource() -> UITableViewDiffableDataSource<Section, Mountain> {
+        let dataSource = UITableViewDiffableDataSource<Section, Mountain>(
+            tableView: mainView.searchResultsTableView
+        ) { tableView, indexPath, mountain in
+            let cell = tableView.dequeueReusableCell(for: indexPath, cellClass: SearchMountainTableViewCell.self)
+            cell.setData(mountain: mountain)
+            return cell
+        }
+        return dataSource
+    }
+
+    private func applySnapshot(mountains: [Mountain]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Mountain>()
+        snapshot.appendSections([.main])
+        snapshot.appendItems(mountains)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+}

@@ -12,6 +12,7 @@ protocol RecordSceneFlowCoordinatorDependencies {
     func makeClimbRecordListViewController() -> ClimbRecordListViewController
     func makeClimbRecordDetailViewController(climbRecord: ClimbRecord) -> ClimbRecordDetailViewController
     func makeActivityLogViewController(climbRecord: ClimbRecord) -> ActivityLogViewController
+    func makeAddClimbRecordViewController() -> AddClimbRecordViewController
 }
 
 public final class RecordSceneFlowCoordinator: Coordinator {
@@ -30,11 +31,11 @@ public final class RecordSceneFlowCoordinator: Coordinator {
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "기록", image: AppIcon.bookOpen, tag: 0)
         navigationController.navigationBar.tintColor = AppColor.primary
-        
+
         let listVC = dependencies.makeClimbRecordListViewController()
         listVC.pushVC = { [weak self] climbRecord in
             guard let self else { return }
-            
+
             let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord)
             detailVC.popVC = { [weak self] in
                 self?.navigationController.popViewController(animated: true)
@@ -44,10 +45,22 @@ public final class RecordSceneFlowCoordinator: Coordinator {
                 navigationController.pushViewController(dependencies.makeActivityLogViewController(climbRecord: climbRecord), animated: true)
             }
             detailVC.viewModel.delegate = listVC.viewModel
-            
+
             self.navigationController.pushViewController(detailVC, animated: true)
         }
-        
+
+        listVC.pushAddVC = { [weak self] in
+            guard let self else { return }
+
+            let addVC = self.dependencies.makeAddClimbRecordViewController()
+            addVC.dismissVC = { [weak self] in
+                self?.navigationController.dismiss(animated: true)
+            }
+
+            let navController = UINavigationController(rootViewController: addVC)
+            self.navigationController.present(navController, animated: true)
+        }
+
         navigationController.pushViewController(listVC, animated: false)
     }
     

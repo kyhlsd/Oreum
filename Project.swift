@@ -41,7 +41,12 @@ let project = Project(
                 .target(name: "Domain"),
                 .target(name: "Data"),
                 .target(name: "Common")
-            ]
+            ],
+            settings: .settings(
+                base: [
+                    "CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION": "YES"
+                ]
+            )
         ),
         
             .target(name: "Domain",
