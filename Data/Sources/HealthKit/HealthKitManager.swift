@@ -22,7 +22,7 @@ public final class HealthKitManager {
     // MARK: - Authorization
     public func requestAuthorization() -> AnyPublisher<Bool, Error> {
         return Future { [weak self] promise in
-            guard let self = self else {
+            guard let self else {
                 promise(.failure(NSError(domain: "HealthKitManager", code: -1)))
                 return
             }
@@ -107,7 +107,7 @@ public final class HealthKitManager {
     // MARK: - Get Activity Data
     public func getActivityLogs() -> AnyPublisher<[ActivityLog], Error> {
         return Future { [weak self] promise in
-            guard let self = self else {
+            guard let self else {
                 promise(.failure(NSError(domain: "HealthKitManager", code: -1)))
                 return
             }

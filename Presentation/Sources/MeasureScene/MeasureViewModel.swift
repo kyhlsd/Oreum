@@ -84,7 +84,7 @@ final class MeasureViewModel: BaseViewModel {
         let searchResults = input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .flatMap { [weak self] keyword -> AnyPublisher<[MountainInfo], Never> in
-                guard let self = self else {
+                guard let self else {
                     return Just([]).eraseToAnyPublisher()
                 }
                 return self.fetchMountainsUseCase.execute(keyword: keyword)
@@ -121,20 +121,18 @@ final class MeasureViewModel: BaseViewModel {
         input.startMeasuring
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
-                guard let self = self else { return }
                 updateMeasuringStateSubject.send(true)
-                startTrackingActivityUseCase.execute(startDate: Date())
+                self?.startTrackingActivityUseCase.execute(startDate: Date())
             }
             .store(in: &cancellables)
 
         input.cancelMeasuring
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
-                guard let self = self else { return }
                 updateMeasuringStateSubject.send(false)
 
                 // 트래킹 중지 (데이터 저장 안 함)
-                self.stopTrackingActivityUseCase.execute()
+                self?.stopTrackingActivityUseCase.execute()
                 print("✅ Activity tracking canceled")
             }
             .store(in: &cancellables)
@@ -150,7 +148,6 @@ final class MeasureViewModel: BaseViewModel {
                     }.eraseToAnyPublisher()
             }
             .sink { [weak self] logs in
-                guard let self = self else { return }
                 updateMeasuringStateSubject.send(false)
                 clearMountainSelectionSubject.send()
                 updateStartButtonIsEnabledSubject.send(false)
@@ -162,7 +159,7 @@ final class MeasureViewModel: BaseViewModel {
                 }
 
                 // 트래킹 중지
-                stopTrackingActivityUseCase.execute()
+                self?.stopTrackingActivityUseCase.execute()
             }
             .store(in: &cancellables)
 
