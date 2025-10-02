@@ -69,5 +69,8 @@ Derived/
 ### Tuist managed dependencies ###
 Tuist/.build
 
+### Claude ###
+/.claude/
+
 ### Secrets ###
 **/Secrets/
