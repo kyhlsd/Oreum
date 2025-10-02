@@ -9,6 +9,7 @@ import Combine
 
 public protocol ClimbRecordRepository {
     func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], Error>
+    func save(record: ClimbRecord) -> AnyPublisher<Void, Error>
     func toggleBookmark(recordID: String) -> AnyPublisher<Void, Error>
     func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Void, any Error>
     func delete(recordID: String) -> AnyPublisher<Void, any Error>

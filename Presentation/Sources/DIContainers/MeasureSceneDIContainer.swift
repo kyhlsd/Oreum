@@ -62,6 +62,15 @@ public final class MeasureSceneDIContainer {
     private func makeGetClimbingMountainUseCase() -> GetClimbingMountainUseCase {
         return GetClimbingMountainUseCaseImpl(repository: makeTrackActivityRepository())
     }
+
+    // MARK: - ClimbRecord Repositories
+    private func makeClimbRecordRepository() -> ClimbRecordRepository {
+        return DummyClimbRecordRepositoryImpl.shared
+    }
+
+    private func makeSaveClimbRecordUseCase() -> SaveClimbRecordUseCase {
+        return SaveClimbRecordUseCaseImpl(repository: makeClimbRecordRepository())
+    }
 }
 
 extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
@@ -82,7 +91,8 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
             getTrackingStatusUseCase: makeGetTrackingStatusUseCase(),
             getCurrentActivityDataUseCase: makeGetCurrentActivityDataUseCase(),
             observeActivityDataUpdatesUseCase: makeObserveActivityDataUpdatesUseCase(),
-            getClimbingMountainUseCase: makeGetClimbingMountainUseCase()
+            getClimbingMountainUseCase: makeGetClimbingMountainUseCase(),
+            saveClimbRecordUseCase: makeSaveClimbRecordUseCase()
         )
     }
 }

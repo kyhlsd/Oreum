@@ -96,6 +96,9 @@ extension ClimbRecordListView {
     
     func reloadData() {
         recordCollectionView.reloadData()
+        if recordCollectionView.numberOfItems(inSection: 0) > 0 {
+            recordCollectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: false)
+        }
     }
     
     func setBookmarkImage(isOnlyBookmarked: Bool) {

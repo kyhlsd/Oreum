@@ -71,6 +71,6 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
-        return DummyClimbRecordRepositoryImpl()
+        return DummyClimbRecordRepositoryImpl.shared
     }
 }

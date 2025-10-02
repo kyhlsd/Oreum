@@ -56,13 +56,15 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     }
     
     final func setData(_ data: ClimbRecord) {
-        // TODO: DTO, model 재정의
-        let mountains = Mountain.dummy
-        let mountain = mountains.filter { $0.id == data.mountain.id }.first!
-        let isFamous = mountain.isFamous
-        let record = ClimbRecord.dummy.filter { $0.mountain.id == data.mountain.id }.first!
-        let isFirstVisit = record.id == data.id
-        let name = mountain.name
+        // TODO: DTO, model 재정의, isFirstVisit 관련 로직
+        let record = ClimbRecord.dummy.filter { $0.mountain.id == data.mountain.id }.first
+        let isFirstVisit: Bool
+        if let record {
+            isFirstVisit = record.id == data.id
+        } else {
+            isFirstVisit = true
+        }
+        let name = data.mountain.name
         
         let date = data.timeLog.first?.time
         mountainImageView.image = getMountainImage(date: date)
@@ -76,7 +78,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         let image = data.isBookmarked ? AppIcon.bookmarkFill : AppIcon.bookmark
         bookmarkButton.setImage(image, for: .normal)
         
-        tagStackView.setData(isFirstVisit: isFirstVisit, isFamous: isFamous)
+        tagStackView.setData(isFirstVisit: isFirstVisit, isFamous: data.mountain.isFamous)
         
         bookmarkButton.tap
             .sink { [weak self] in

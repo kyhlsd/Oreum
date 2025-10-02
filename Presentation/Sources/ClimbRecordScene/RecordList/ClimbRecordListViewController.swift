@@ -40,11 +40,17 @@ final class ClimbRecordListViewController: UIViewController {
     }
     
     private func bind() {
+        let climbRecordDidSave = NotificationCenter.default
+            .publisher(for: .climbRecordDidSave)
+            .map { _ in () }
+            .eraseToAnyPublisher()
+
         let input = ClimbRecordListViewModel.Input(
             viewDidLoad: Just(()).eraseToAnyPublisher(),
             searchText: mainView.searchBar.textDidChange,
             bookmarkButtonTapped: mainView.bookmarkButton.tap,
-            cellBookmarkButtonTapped: mainView.cellBookmarkTapSubject.eraseToAnyPublisher()
+            cellBookmarkButtonTapped: mainView.cellBookmarkTapSubject.eraseToAnyPublisher(),
+            climbRecordDidSave: climbRecordDidSave
         )
         
         let output = viewModel.transform(input: input)

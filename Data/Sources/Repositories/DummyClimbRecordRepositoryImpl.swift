@@ -11,25 +11,39 @@ import Domain
 
 // TODO: Realm
 public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
-    
+
+    public static let shared = DummyClimbRecordRepositoryImpl()
+
     // Dummy data
     private var dummyClimbRecords = ClimbRecord.dummy
-    
-    public init() {}
+
+    private init() {}
     
     public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], any Error> {
         var records = dummyClimbRecords
-        
+
         if !keyword.isEmpty {
-            let id = Mountain.dummy.filter { $0.name.contains(keyword)}.first?.id
-            records = records.filter { $0.mountain.id == id}
+            let ids = Mountain.dummy.filter { $0.name.contains(keyword)}.map { $0.id }
+            records = records.filter { ids.contains($0.mountain.id) }
         }
-        
+
         if isOnlyBookmarked {
             records = records.filter { $0.isBookmarked }
         }
         
+        records.sort {
+            $0.timeLog.first?.time ?? Date() > $1.timeLog.first?.time ?? Date()
+        }
+
         return Just(records)
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+    }
+
+    public func save(record: ClimbRecord) -> AnyPublisher<Void, Error> {
+        dummyClimbRecords.append(record)
+        print("✅ ClimbRecord saved: \(record.mountain.name)")
+        return Just(())
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }

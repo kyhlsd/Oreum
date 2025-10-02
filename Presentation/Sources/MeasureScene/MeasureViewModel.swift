@@ -20,6 +20,7 @@ final class MeasureViewModel: BaseViewModel {
     private let getCurrentActivityDataUseCase: GetCurrentActivityDataUseCase
     private let observeActivityDataUpdatesUseCase: ObserveActivityDataUpdatesUseCase
     private let getClimbingMountainUseCase: GetClimbingMountainUseCase
+    private let saveClimbRecordUseCase: SaveClimbRecordUseCase
     private var cancellables = Set<AnyCancellable>()
     private var timeUpdateTimer: Timer?
     private var currentSteps: Int = 0
@@ -35,7 +36,8 @@ final class MeasureViewModel: BaseViewModel {
         getTrackingStatusUseCase: GetTrackingStatusUseCase,
         getCurrentActivityDataUseCase: GetCurrentActivityDataUseCase,
         observeActivityDataUpdatesUseCase: ObserveActivityDataUpdatesUseCase,
-        getClimbingMountainUseCase: GetClimbingMountainUseCase
+        getClimbingMountainUseCase: GetClimbingMountainUseCase,
+        saveClimbRecordUseCase: SaveClimbRecordUseCase
     ) {
         self.fetchMountainInfosUseCase = fetchMountainInfosUseCase
         self.requestTrackActivityAuthorizationUseCase = requestTrackActivityAuthorizationUseCase
@@ -46,6 +48,7 @@ final class MeasureViewModel: BaseViewModel {
         self.getCurrentActivityDataUseCase = getCurrentActivityDataUseCase
         self.observeActivityDataUpdatesUseCase = observeActivityDataUpdatesUseCase
         self.getClimbingMountainUseCase = getClimbingMountainUseCase
+        self.saveClimbRecordUseCase = saveClimbRecordUseCase
     }
 
     struct Input {
@@ -210,18 +213,48 @@ final class MeasureViewModel: BaseViewModel {
                     }.eraseToAnyPublisher()
             }
             .sink { [weak self] logs in
-                updateMeasuringStateSubject.send(false)
-                clearMountainSelectionSubject.send()
-                updateStartButtonIsEnabledSubject.send(false)
-                clearSearchBarSubject.send()
+                guard let self else { return }
 
                 print("✅ Activity logs (\(logs.count) entries):")
                 for log in logs {
                     print("  - Time: \(log.time), Steps: \(log.step), Distance: \(log.distance)m")
                 }
 
+                // ClimbRecord 생성 및 저장
+                if let mountain = self.getClimbingMountainUseCase.execute() {
+                    let climbRecord = ClimbRecord(
+                        id: UUID().uuidString,
+                        mountain: mountain,
+                        timeLog: logs,
+                        images: [],
+                        score: 0,
+                        comment: "",
+                        isBookmarked: false
+                    )
+
+                    self.saveClimbRecordUseCase.execute(record: climbRecord)
+                        .sink(
+                            receiveCompletion: { completion in
+                                if case .failure(let error) = completion {
+                                    print("❌ Failed to save ClimbRecord: \(error)")
+                                }
+                            },
+                            receiveValue: { _ in
+                                print("✅ ClimbRecord saved successfully")
+                                // 저장 성공 시 Notification 전송
+                                NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
+                            }
+                        )
+                        .store(in: &self.cancellables)
+                }
+
+                updateMeasuringStateSubject.send(false)
+                clearMountainSelectionSubject.send()
+                updateStartButtonIsEnabledSubject.send(false)
+                clearSearchBarSubject.send()
+
                 // 트래킹 중지 및 UserDefaults clear
-                self?.stopTrackingActivityUseCase.execute(clearData: true)
+                self.stopTrackingActivityUseCase.execute(clearData: true)
             }
             .store(in: &cancellables)
 

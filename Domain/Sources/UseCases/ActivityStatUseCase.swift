@@ -27,21 +27,29 @@ public final class ActivityStatUseCaseImpl: ActivityStatUseCase {
                 restMinutes: 0
             )
         }
-        
-        let totalSteps = activityLogs.map { $0.step }.reduce(0, +)
-        let totalDistance = activityLogs.map { $0.distance }.reduce(0, +)
+
+        let totalSteps = last.step // 마지막 로그의 누적 걸음수
+        let totalDistance = last.distance // 마지막 로그의 누적 이동거리
         let totalTimeMinutes = Int(last.time.timeIntervalSince(first.time) / 60)
-        
+
+        // 초기값과 종료값을 제외한 중간 로그들만 사용
+        let middleLogs = activityLogs.count > 2 ? Array(activityLogs[1..<activityLogs.count-1]) : []
+
         var exerciseMinutes = 0
         var restMinutes = 0
-        for log in activityLogs {
+        for log in middleLogs {
             if log.distance >= 100 {
                 exerciseMinutes += 5
             } else {
                 restMinutes += 5
             }
         }
-        
+
+        // 중간 로그가 없는 경우 전체 시간을 운동 시간으로 계산
+        if middleLogs.isEmpty && totalTimeMinutes > 0 {
+            exerciseMinutes = totalTimeMinutes
+        }
+
         return ActivityStat(
             totalTimeMinutes: totalTimeMinutes,
             totalDistance: totalDistance,
