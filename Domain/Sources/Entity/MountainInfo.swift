@@ -32,8 +32,8 @@ public struct MountainInfo: Hashable {
 }
 
 extension MountainInfo {
-    public func toMountain(_ mountainInfo: Self) -> Mountain {
-        return Mountain(id: id, name: name, address: address, height: height, isFamous: designationCriteria != nil)
+    public func toMountain() -> Mountain {
+        return Mountain(id: self.id, name: self.name, address: self.address, height: self.height, isFamous: self.designationCriteria != nil)
     }
 }
 

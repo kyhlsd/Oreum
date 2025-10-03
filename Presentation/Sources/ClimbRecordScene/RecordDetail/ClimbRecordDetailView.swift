@@ -28,7 +28,7 @@ final class ClimbRecordDetailView: BaseView {
         collectionView.alwaysBounceVertical = false
         return collectionView
     }()
-    
+
     let pageControl = {
         let pageControl = UIPageControl()
         pageControl.isUserInteractionEnabled = false
@@ -36,7 +36,36 @@ final class ClimbRecordDetailView: BaseView {
         pageControl.hidesForSinglePage = true
         return pageControl
     }()
-    
+
+    private let emptyImageView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.cardBackground
+        view.isHidden = true
+        return view
+    }()
+
+    private let photoImageView = {
+        let imageView = UIImageView()
+        imageView.image = AppIcon.photo
+        imageView.tintColor = AppColor.subText
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    private let photoLabel = {
+        let label = UILabel.create("산에서 담은 순간을 추가해 보세요", color: AppColor.subText, font: AppFont.label)
+        label.textAlignment = .center
+        return label
+    }()
+
+    let editPhotoButton = {
+        let button = UIButton()
+        let config = UIImage.SymbolConfiguration(pointSize: 40)
+        button.setImage(AppIcon.editCircle?.withConfiguration(config), for: .normal)
+        button.tintColor = AppColor.primary
+        return button
+    }()
+
     private let infoView = BoxView(title: "정보")
     
     private let addressView = ImageItemView(icon: AppIcon.address, subtitle: "주소")
@@ -62,7 +91,7 @@ final class ClimbRecordDetailView: BaseView {
         return textView
     }()
     
-    private let ratingView = StarRatingView()
+    let ratingView = StarRatingView()
     
     let editButton = {
         let button = UIButton()
@@ -71,7 +100,7 @@ final class ClimbRecordDetailView: BaseView {
         return button
     }()
     
-    private let saveButton = {
+    let saveButton = {
         let button = UIButton()
         button.setImage(AppIcon.save, for: .normal)
         button.tintColor = AppColor.primaryText
@@ -94,13 +123,19 @@ final class ClimbRecordDetailView: BaseView {
     private func createLayout() -> UICollectionViewCompositionalLayout {
         let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
         let item = NSCollectionLayoutItem(layoutSize: size)
-        
+
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitems: [item])
-        
+
         let section = NSCollectionLayoutSection(group: group)
         section.contentInsets = .zero
-        section.orthogonalScrollingBehavior = .paging
-        
+        section.orthogonalScrollingBehavior = .groupPaging
+
+        section.visibleItemsInvalidationHandler = { [weak self] visibleItems, point, environment in
+            guard let self = self else { return }
+            let page = Int(round(point.x / environment.container.contentSize.width))
+            self.pageControl.currentPage = page
+        }
+
         return UICollectionViewCompositionalLayout(section: section)
     }
     
@@ -112,15 +147,19 @@ final class ClimbRecordDetailView: BaseView {
     override func setupHierarchy() {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
-        
-        [imageCollectionView, pageControl, infoView, reviewView, timelineButton, deleteButton].forEach {
+
+        [imageCollectionView, emptyImageView, pageControl, editPhotoButton, infoView, reviewView, timelineButton, deleteButton].forEach {
             contentView.addSubview($0)
         }
-        
+
+        [photoImageView, photoLabel].forEach {
+            emptyImageView.addSubview($0)
+        }
+
         [addressView, dateView, heightView].forEach {
             infoView.addSubview($0)
         }
-        
+
         [commentTextView, ratingView, editButton, saveButton, cancelButton].forEach {
             reviewView.addSubview($0)
         }
@@ -139,7 +178,27 @@ final class ClimbRecordDetailView: BaseView {
             make.top.horizontalEdges.equalToSuperview()
             make.height.equalTo(imageCollectionView.snp.width).multipliedBy(0.75)
         }
-        
+
+        emptyImageView.snp.makeConstraints { make in
+            make.edges.equalTo(imageCollectionView)
+        }
+
+        photoImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.size.equalTo(100)
+        }
+
+        photoLabel.snp.makeConstraints { make in
+            make.top.equalTo(photoImageView.snp.bottom).offset(AppSpacing.compact)
+            make.centerX.equalToSuperview()
+        }
+
+        editPhotoButton.snp.makeConstraints { make in
+            make.trailing.equalTo(imageCollectionView).inset(AppSpacing.regular)
+            make.bottom.equalTo(imageCollectionView).inset(AppSpacing.regular)
+            make.size.equalTo(40)
+        }
+
         pageControl.snp.makeConstraints { make in
             make.bottom.equalTo(imageCollectionView).inset(AppSpacing.regular)
             make.centerX.equalTo(imageCollectionView)
@@ -249,17 +308,31 @@ extension ClimbRecordDetailView {
         cancelButton.isHidden = !isEditable
     }
     
-    var saveButtonTapped: AnyPublisher<(Int, String), Never> {
-        return saveButton.tap
-            .compactMap { [weak self] in
-                guard let self else { return nil }
-                return (ratingView.rating, commentTextView.text)
-            }
-            .eraseToAnyPublisher()
-    }
-    
     func setReview(rating: Int, comment: String) {
         ratingView.setRating(rating: rating, animated: true)
         commentTextView.text = comment
+    }
+
+    func setTimelineButtonEnabled(_ isEnabled: Bool) {
+        timelineButton.isEnabled = isEnabled
+        timelineButton.alpha = isEnabled ? 1.0 : 0.5
+    }
+
+    func setTimelineButtonTitle(_ title: String) {
+        timelineButton.updateButton(title: title, image: AppIcon.timeline, foreground: .white)
+    }
+
+    func setEmptyImageViewHidden(_ isHidden: Bool) {
+        emptyImageView.isHidden = isHidden
+    }
+
+    func configureForAddRecord() {
+        commentTextView.isEditable = true
+        ratingView.setEditable(true)
+        editButton.isHidden = true
+        saveButton.isHidden = true
+        cancelButton.isHidden = true
+        timelineButton.isHidden = true
+        deleteButton.isHidden = true
     }
 }

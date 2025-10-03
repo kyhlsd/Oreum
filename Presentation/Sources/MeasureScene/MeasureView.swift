@@ -190,7 +190,7 @@ final class MeasureView: BaseView {
     private let permissionTitleLabel = UILabel.create("'건강' 권한 필요", color: AppColor.primaryText, font: AppFont.titleL)
 
     private let permissionMessageLabel = {
-        let label = UILabel.create("측정 기능을 사용하려면\n 설정에서 데이터 접근을 허용해주세요.\n(설정 - 앱 - 건강 - 데이터 접근 및 기기)", color: AppColor.subText, font: AppFont.body)
+        let label = UILabel.create("측정 기능을 사용하려면\n 설정에서 데이터 접근을 허용해주세요\n(설정 - 앱 - 건강 - 데이터 접근 및 기기)", color: AppColor.subText, font: AppFont.body)
         label.numberOfLines = 0
         label.textAlignment = .center
         return label

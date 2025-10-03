@@ -10,10 +10,11 @@ import Combine
 import Domain
 
 final class ClimbRecordDetailViewController: UIViewController {
-    
+
     var popVC: (() -> Void)?
     var pushVC: ((ClimbRecord) -> Void)?
-    
+    var isFromAddRecord: Bool = false
+
     private let mainView = ClimbRecordDetailView()
     let viewModel: ClimbRecordDetailViewModel
     private var cancellables = Set<AnyCancellable>()
@@ -45,14 +46,21 @@ final class ClimbRecordDetailViewController: UIViewController {
     
     private func bind() {
         let deleteSelectedSubject = PassthroughSubject<Void, Never>()
+        let saveButtonTap: AnyPublisher<(Int, String), Never> = mainView.saveButton.tap
+            .compactMap { [weak self] in
+                guard let self else { return nil }
+                return (mainView.ratingView.rating, mainView.commentTextView.text)
+            }
+            .eraseToAnyPublisher()
         
         let input = ClimbRecordDetailViewModel.Input(
             editButtonTapped: mainView.editButton.tap,
-            saveButtonTapped: mainView.saveButtonTapped,
+            saveButtonTapped: saveButtonTap,
             cancelButtonTapped: mainView.cancelButton.tap,
             timelineButtonTapped: mainView.timelineButton.tap,
             deleteButtonTapped: mainView.deleteButton.tap,
-            deleteSelected: deleteSelectedSubject.eraseToAnyPublisher()
+            deleteSelected: deleteSelectedSubject.eraseToAnyPublisher(),
+            editPhotoButtonTapped: mainView.editPhotoButton.tap
         )
         
         let output = viewModel.transform(input: input)
@@ -96,25 +104,67 @@ final class ClimbRecordDetailViewController: UIViewController {
                 print(errorMessage)
             }
             .store(in: &cancellables)
-        
+
+        output.timelineButtonEnabled
+            .sink { [weak self] isEnabled in
+                self?.mainView.setTimelineButtonEnabled(isEnabled)
+            }
+            .store(in: &cancellables)
+
+        output.timelineButtonTitle
+            .sink { [weak self] title in
+                self?.mainView.setTimelineButtonTitle(title)
+            }
+            .store(in: &cancellables)
+
+        output.presentPhotoActionSheet
+            .sink { [weak self] hasImages in
+                self?.presentPhotoActionSheet(hasImages: hasImages)
+            }
+            .store(in: &cancellables)
+
+        output.saveCompleted
+            .sink { [weak self] in
+                self?.popVC?()
+            }
+            .store(in: &cancellables)
+
         configureView(viewModel.climbRecord)
     }
     
     private func configureView(_ climbRecord: ClimbRecord) {
         navigationItem.title = climbRecord.mountain.name
-        
+
         mainView.setData(climbRecord: climbRecord)
-        
+
         applySnapshot(images: climbRecord.images)
         mainView.pageControl.numberOfPages = climbRecord.images.count
+        mainView.setEmptyImageViewHidden(!climbRecord.images.isEmpty)
+
+        if isFromAddRecord {
+            mainView.configureForAddRecord()
+        }
     }
     
     private func setupNavItem() {
         navigationItem.backButtonTitle = " "
+
+        if isFromAddRecord {
+            let saveButton = UIBarButtonItem(title: "저장", style: .plain, target: self, action: #selector(saveButtonTapped))
+            saveButton.tintColor = AppColor.primary
+            navigationItem.rightBarButtonItem = saveButton
+
+            navigationController?.navigationBar.tintColor = AppColor.primary
+        }
+    }
+
+    @objc private func saveButtonTapped() {
+        let rating = mainView.ratingView.rating
+        let comment = mainView.commentTextView.text ?? ""
+        viewModel.saveRecord(rating: rating, comment: comment)
     }
     
     private func setupDelegates() {
-        mainView.imageCollectionView.delegate = self
         mainView.commentTextView.delegate = self
     }
     
@@ -123,27 +173,34 @@ final class ClimbRecordDetailViewController: UIViewController {
             self?.mainView.adjustForKeyboard(height: height)
         }
     }
+
+    private func presentPhotoActionSheet(hasImages: Bool) {
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+        let addAction = UIAlertAction(title: "사진 추가", style: .default) { _ in
+            print("사진 추가")
+        }
+        alert.addAction(addAction)
+
+        if hasImages {
+            let deleteAction = UIAlertAction(title: "사진 삭제", style: .destructive) { _ in
+                print("사진 삭제")
+            }
+            alert.addAction(deleteAction)
+        }
+
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+        alert.addAction(cancelAction)
+
+        present(alert, animated: true)
+    }
 }
 
-// MARK: - CollectionViewDelegate + SubMethods
-extension ClimbRecordDetailViewController: UICollectionViewDelegate {
+// MARK: - CollectionView SubMethods
+extension ClimbRecordDetailViewController {
     
     private enum Section: CaseIterable {
         case main
-    }
-    
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        if scrollView == mainView.imageCollectionView {
-            print("mainView", mainView.imageCollectionView.bounds.width)
-            let width = scrollView.bounds.width
-            print(width)
-            print(scrollView.contentOffset.x)
-            guard width > 0 else { return }
-            print("asdf")
-            
-            let page = Int(round(scrollView.contentOffset.x / width))
-            mainView.pageControl.currentPage = page
-        }
     }
     
     private func createRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, String> {

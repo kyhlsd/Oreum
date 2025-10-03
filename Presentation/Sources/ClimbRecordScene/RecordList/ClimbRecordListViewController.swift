@@ -11,11 +11,13 @@ import Domain
 
 final class ClimbRecordListViewController: UIViewController {
 
-    var pushVC: ((ClimbRecord) -> Void)?
-    
+    var pushDetailVC: ((ClimbRecord) -> Void)?
+    var presentAddVC: (() -> Void)?
+
     private let mainView = ClimbRecordListView()
     let viewModel: ClimbRecordListViewModel
     private var cancellables = Set<AnyCancellable>()
+    private let cellBookmarkTapSubject = PassthroughSubject<String, Never>()
     
     init(viewModel: ClimbRecordListViewModel) {
         self.viewModel = viewModel
@@ -49,7 +51,7 @@ final class ClimbRecordListViewController: UIViewController {
             viewDidLoad: Just(()).eraseToAnyPublisher(),
             searchText: mainView.searchBar.textDidChange,
             bookmarkButtonTapped: mainView.bookmarkButton.tap,
-            cellBookmarkButtonTapped: mainView.cellBookmarkTapSubject.eraseToAnyPublisher(),
+            cellBookmarkButtonTapped: cellBookmarkTapSubject.eraseToAnyPublisher(),
             climbRecordDidSave: climbRecordDidSave
         )
         
@@ -57,7 +59,9 @@ final class ClimbRecordListViewController: UIViewController {
         
         output.reloadData
             .sink { [weak self] in
-                self?.mainView.reloadData()
+                guard let self else { return }
+                self.mainView.reloadData()
+                self.mainView.setEmptyStateHidden(!self.viewModel.climbRecordList.isEmpty)
             }
             .store(in: &cancellables)
         
@@ -84,11 +88,21 @@ final class ClimbRecordListViewController: UIViewController {
                print(errorMessage)
             }
             .store(in: &cancellables)
+
+        output.emptyStateText
+            .sink { [weak self] text in
+                self?.mainView.setEmptyStateText(text)
+            }
+            .store(in: &cancellables)
     }
 
     private func setupNavItem() {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "나의 등산 기록"))
         navigationItem.backButtonTitle = " "
+
+        let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonTapped))
+        addButton.tintColor = AppColor.primary
+        navigationItem.rightBarButtonItem = addButton
     }
     
     private func setupDelegates() {
@@ -96,6 +110,10 @@ final class ClimbRecordListViewController: UIViewController {
         
         mainView.recordCollectionView.delegate = self
         mainView.recordCollectionView.dataSource = self
+    }
+    
+    @objc private func addButtonTapped() {
+        presentAddVC?()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -124,16 +142,18 @@ extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionV
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(for: indexPath, cellClass: ClimbRecordCollectionViewCell.self)
-        
+
         cell.setImages(row: indexPath.item, total: viewModel.climbRecordList.count)
         cell.setData(viewModel.climbRecordList[indexPath.item])
-        cell.cellBookmarkTapSubject = mainView.cellBookmarkTapSubject
-        
+        cell.bookmarkTapped = { [weak self] recordId in
+            self?.cellBookmarkTapSubject.send(recordId)
+        }
+
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let climbRecord = viewModel.climbRecordList[indexPath.item]
-        pushVC?(climbRecord)
+        pushDetailVC?(climbRecord)
     }
 }
