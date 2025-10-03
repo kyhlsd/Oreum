@@ -71,7 +71,7 @@ let project = Project(
                     dependencies: [
                         .target(name: "Common"),
                         .target(name: "Domain"),
-                        .external(name: "Realm"),
+                        .external(name: "RealmSwift"),
                         .external(name: "Alamofire")
                     ]
                    ),
