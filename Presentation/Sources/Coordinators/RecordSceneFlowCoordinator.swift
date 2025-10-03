@@ -10,7 +10,7 @@ import Domain
 
 protocol RecordSceneFlowCoordinatorDependencies {
     func makeClimbRecordListViewController() -> ClimbRecordListViewController
-    func makeClimbRecordDetailViewController(climbRecord: ClimbRecord) -> ClimbRecordDetailViewController
+    func makeClimbRecordDetailViewController(climbRecord: ClimbRecord, isFromAddRecord: Bool) -> ClimbRecordDetailViewController
     func makeActivityLogViewController(climbRecord: ClimbRecord) -> ActivityLogViewController
     func makeAddClimbRecordViewController() -> AddClimbRecordViewController
 }
@@ -36,7 +36,7 @@ public final class RecordSceneFlowCoordinator: Coordinator {
         listVC.pushVC = { [weak self] climbRecord in
             guard let self else { return }
 
-            let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord)
+            let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord, isFromAddRecord: false)
             detailVC.popVC = { [weak self] in
                 self?.navigationController.popViewController(animated: true)
             }
@@ -55,6 +55,22 @@ public final class RecordSceneFlowCoordinator: Coordinator {
             let addVC = self.dependencies.makeAddClimbRecordViewController()
             addVC.dismissVC = { [weak self] in
                 self?.navigationController.dismiss(animated: true)
+            }
+            addVC.pushVC = { [weak self] climbRecord in
+                guard let self else { return }
+
+                let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord, isFromAddRecord: true)
+                detailVC.isFromAddRecord = true
+                detailVC.popVC = { [weak self] in
+                    self?.navigationController.dismiss(animated: true)
+                }
+                detailVC.pushVC = { [weak self] climbRecord in
+                    guard let self else { return }
+                    let activityVC = self.dependencies.makeActivityLogViewController(climbRecord: climbRecord)
+                    addVC.navigationController?.pushViewController(activityVC, animated: true)
+                }
+
+                addVC.navigationController?.pushViewController(detailVC, animated: true)
             }
 
             let navController = UINavigationController(rootViewController: addVC)

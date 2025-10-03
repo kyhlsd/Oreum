@@ -12,6 +12,7 @@ import Domain
 final class AddClimbRecordViewController: UIViewController {
 
     var dismissVC: (() -> Void)?
+    var pushVC: ((ClimbRecord) -> Void)?
 
     private let mainView = AddClimbRecordView()
     let viewModel: AddClimbRecordViewModel
@@ -49,7 +50,7 @@ final class AddClimbRecordViewController: UIViewController {
             mountainSelected: mountainSelectedSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher(),
             dateChanged: mainView.datePicker.publisher(for: \.date).eraseToAnyPublisher(),
-            saveButtonTapped: mainView.saveButton.tap
+            nextButtonTapped: mainView.nextButton.tap
         )
 
         let output = viewModel.transform(input: input)
@@ -92,19 +93,19 @@ final class AddClimbRecordViewController: UIViewController {
 
         output.updateStartButtonIsEnabledTrigger
             .sink { [weak self] isEnabled in
-                self?.mainView.setSaveButtonEnabled(isEnabled)
+                self?.mainView.setNextButtonEnabled(isEnabled)
             }
             .store(in: &cancellables)
 
-        output.saveEnabled
+        output.nextEnabled
             .sink { [weak self] isEnabled in
-                self?.mainView.setSaveButtonEnabled(isEnabled)
+                self?.mainView.setNextButtonEnabled(isEnabled)
             }
             .store(in: &cancellables)
 
-        output.dismiss
-            .sink { [weak self] in
-                self?.dismissVC?()
+        output.pushDetailVC
+            .sink { [weak self] climbRecord in
+                self?.pushVC?(climbRecord)
             }
             .store(in: &cancellables)
 

@@ -16,7 +16,7 @@ final class AddClimbRecordViewModel {
         let mountainSelected: AnyPublisher<Mountain, Never>
         let cancelMountain: AnyPublisher<Void, Never>
         let dateChanged: AnyPublisher<Date, Never>
-        let saveButtonTapped: AnyPublisher<Void, Never>
+        let nextButtonTapped: AnyPublisher<Void, Never>
     }
 
     struct Output {
@@ -27,8 +27,8 @@ final class AddClimbRecordViewModel {
         let updateSearchResultsTrigger: AnyPublisher<Int, Never>
         let clearSearchBarTrigger: AnyPublisher<Void, Never>
         let updateStartButtonIsEnabledTrigger: AnyPublisher<Bool, Never>
-        let saveEnabled: AnyPublisher<Bool, Never>
-        let dismiss: AnyPublisher<Void, Never>
+        let nextEnabled: AnyPublisher<Bool, Never>
+        let pushDetailVC: AnyPublisher<ClimbRecord, Never>
         let errorMessage: AnyPublisher<String, Never>
     }
 
@@ -45,10 +45,10 @@ final class AddClimbRecordViewModel {
     }
 
     func transform(input: Input) -> Output {
-        let selectedMountainSubject = PassthroughSubject<Mountain?, Never>()
+        let selectedMountainSubject = CurrentValueSubject<Mountain?, Never>(nil)
         let selectedDateSubject = CurrentValueSubject<Date?, Never>(Date())
         let errorSubject = PassthroughSubject<String, Never>()
-        let dismissSubject = PassthroughSubject<Void, Never>()
+        let pushDetailVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
         let updateSearchResultsCountSubject = PassthroughSubject<Int, Never>()
 
@@ -120,53 +120,39 @@ final class AddClimbRecordViewModel {
             }
             .store(in: &cancellables)
 
-        // 저장 버튼 활성화
-        let saveEnabled = selectedMountainSubject
+        // 다음 버튼 활성화
+        let nextEnabled = selectedMountainSubject
             .map { $0 != nil }
             .prepend(false)
             .eraseToAnyPublisher()
 
-        // 저장 버튼 탭
-        Publishers.CombineLatest3(
-            input.saveButtonTapped,
-            selectedMountainSubject,
-            selectedDateSubject
-        )
-        .sink { [weak self] _, mountain, date in
-            guard let self,
-                  let mountain = mountain,
-                  let date = date else {
-                errorSubject.send("산과 날짜를 선택해주세요.")
-                return
-            }
+        // 다음 버튼 탭
+        input.nextButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink { [weak self] in
+                guard let self else { return }
 
-            let record = ClimbRecord(
-                id: UUID().uuidString,
-                mountain: mountain,
-                timeLog: [
-                    ActivityLog(id: UUID().uuidString, time: date, step: 0, distance: 0)
-                ],
-                images: [],
-                score: 0,
-                comment: "",
-                isBookmarked: false
-            )
+                guard let mountain = selectedMountainSubject.value,
+                      let date = selectedDateSubject.value else {
+                    errorSubject.send("산과 날짜를 선택해주세요.")
+                    return
+                }
 
-            self.saveClimbRecordUseCase.execute(record: record)
-                .sink(
-                    receiveCompletion: { completion in
-                        if case .failure(let error) = completion {
-                            errorSubject.send(error.localizedDescription)
-                        }
-                    },
-                    receiveValue: { _ in
-                        NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
-                        dismissSubject.send(())
-                    }
+                let record = ClimbRecord(
+                    id: UUID().uuidString,
+                    mountain: mountain,
+                    timeLog: [
+                        ActivityLog(id: UUID().uuidString, time: date, step: 0, distance: 0)
+                    ],
+                    images: [],
+                    score: 0,
+                    comment: "",
+                    isBookmarked: false
                 )
-                .store(in: &self.cancellables)
-        }
-        .store(in: &cancellables)
+
+                pushDetailVCSubject.send(record)
+            }
+            .store(in: &cancellables)
 
         return Output(
             searchResults: searchResults,
@@ -176,8 +162,8 @@ final class AddClimbRecordViewModel {
             updateSearchResultsTrigger: updateSearchResultsCount,
             clearSearchBarTrigger: clearSearchBar,
             updateStartButtonIsEnabledTrigger: startButtonEnabled,
-            saveEnabled: saveEnabled,
-            dismiss: dismissSubject.eraseToAnyPublisher(),
+            nextEnabled: nextEnabled,
+            pushDetailVC: pushDetailVCSubject.eraseToAnyPublisher(),
             errorMessage: errorSubject.eraseToAnyPublisher()
         )
     }

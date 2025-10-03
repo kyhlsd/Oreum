@@ -27,8 +27,8 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
         return ClimbRecordListViewController(viewModel: makeClimbRecordListViewModel())
     }
     
-    func makeClimbRecordDetailViewController(climbRecord: ClimbRecord) -> ClimbRecordDetailViewController {
-        return ClimbRecordDetailViewController(viewModel: makeClimbRecordDetailViewModel(climbRecord: climbRecord))
+    func makeClimbRecordDetailViewController(climbRecord: ClimbRecord, isFromAddRecord: Bool) -> ClimbRecordDetailViewController {
+        return ClimbRecordDetailViewController(viewModel: makeClimbRecordDetailViewModel(climbRecord: climbRecord, isFromAddRecord: isFromAddRecord))
     }
     
     func makeActivityLogViewController(climbRecord: ClimbRecord) -> ActivityLogViewController {
@@ -44,8 +44,9 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
         return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase())
     }
     
-    private func makeClimbRecordDetailViewModel(climbRecord: ClimbRecord) -> ClimbRecordDetailViewModel {
-        return ClimbRecordDetailViewModel(updateUseCase: makeUpdateUseCase(), deleteUseCase: makeDeleteClimbRecordUseCase(), climbRecord: climbRecord)
+    private func makeClimbRecordDetailViewModel(climbRecord: ClimbRecord, isFromAddRecord: Bool = false) -> ClimbRecordDetailViewModel {
+        let saveUseCase = isFromAddRecord ? makeSaveClimbRecordUseCase() : nil
+        return ClimbRecordDetailViewModel(updateUseCase: makeUpdateUseCase(), deleteUseCase: makeDeleteClimbRecordUseCase(), climbRecord: climbRecord, saveClimbRecordUseCase: saveUseCase)
     }
     
     private func makeActivityLogViewModel(climbRecord: ClimbRecord) -> ActivityLogViewModel {

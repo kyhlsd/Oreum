@@ -15,18 +15,21 @@ protocol ClimbRecordDetailViewModelDelegate: AnyObject {
 }
 
 final class ClimbRecordDetailViewModel {
-    
+
     private let updateUseCase: UpdateClimbRecordUseCase
     private let deleteUseCase: DeleteClimbRecordUseCase
+    private let saveClimbRecordUseCase: SaveClimbRecordUseCase?
     private var cancellables = Set<AnyCancellable>()
-    
+
     private(set) var climbRecord: ClimbRecord
     weak var delegate: ClimbRecordDetailViewModelDelegate?
-    
-    init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, climbRecord: ClimbRecord) {
+    private let saveCompletedSubject = PassthroughSubject<Void, Never>()
+
+    init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, climbRecord: ClimbRecord, saveClimbRecordUseCase: SaveClimbRecordUseCase? = nil) {
         self.updateUseCase = updateUseCase
         self.deleteUseCase = deleteUseCase
         self.climbRecord = climbRecord
+        self.saveClimbRecordUseCase = saveClimbRecordUseCase
     }
     
     struct Input {
@@ -49,6 +52,7 @@ final class ClimbRecordDetailViewModel {
         let timelineButtonEnabled: AnyPublisher<Bool, Never>
         let timelineButtonTitle: AnyPublisher<String, Never>
         let presentPhotoActionSheet: AnyPublisher<Bool, Never>
+        let saveCompleted: AnyPublisher<Void, Never>
     }
     
     func transform(input: Input) -> Output {
@@ -153,7 +157,29 @@ final class ClimbRecordDetailViewModel {
             errorMessage: errorMesssageSubject.eraseToAnyPublisher(),
             timelineButtonEnabled: timelineButtonEnabled,
             timelineButtonTitle: timelineButtonTitle,
-            presentPhotoActionSheet: presentPhotoActionSheetSubject.eraseToAnyPublisher()
+            presentPhotoActionSheet: presentPhotoActionSheetSubject.eraseToAnyPublisher(),
+            saveCompleted: saveCompletedSubject.eraseToAnyPublisher()
         )
+    }
+
+    func saveRecord(rating: Int, comment: String) {
+        guard let saveClimbRecordUseCase else { return }
+
+        climbRecord.score = rating
+        climbRecord.comment = comment
+
+        saveClimbRecordUseCase.execute(record: climbRecord)
+            .sink(
+                receiveCompletion: { completion in
+                    if case .failure(let error) = completion {
+                        print("Save error: \(error.localizedDescription)")
+                    }
+                },
+                receiveValue: { [weak self] _ in
+                    NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
+                    self?.saveCompletedSubject.send(())
+                }
+            )
+            .store(in: &cancellables)
     }
 }

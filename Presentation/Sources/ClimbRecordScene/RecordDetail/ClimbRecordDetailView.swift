@@ -325,4 +325,14 @@ extension ClimbRecordDetailView {
     func setEmptyImageViewHidden(_ isHidden: Bool) {
         emptyImageView.isHidden = isHidden
     }
+
+    func configureForAddRecord() {
+        commentTextView.isEditable = true
+        ratingView.setEditable(true)
+        editButton.isHidden = true
+        saveButton.isHidden = true
+        cancelButton.isHidden = true
+        timelineButton.isHidden = true
+        deleteButton.isHidden = true
+    }
 }

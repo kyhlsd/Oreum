@@ -10,10 +10,11 @@ import Combine
 import Domain
 
 final class ClimbRecordDetailViewController: UIViewController {
-    
+
     var popVC: (() -> Void)?
     var pushVC: ((ClimbRecord) -> Void)?
-    
+    var isFromAddRecord: Bool = false
+
     private let mainView = ClimbRecordDetailView()
     let viewModel: ClimbRecordDetailViewModel
     private var cancellables = Set<AnyCancellable>()
@@ -122,6 +123,12 @@ final class ClimbRecordDetailViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        output.saveCompleted
+            .sink { [weak self] in
+                self?.popVC?()
+            }
+            .store(in: &cancellables)
+
         configureView(viewModel.climbRecord)
     }
     
@@ -133,10 +140,28 @@ final class ClimbRecordDetailViewController: UIViewController {
         applySnapshot(images: climbRecord.images)
         mainView.pageControl.numberOfPages = climbRecord.images.count
         mainView.setEmptyImageViewHidden(!climbRecord.images.isEmpty)
+
+        if isFromAddRecord {
+            mainView.configureForAddRecord()
+        }
     }
     
     private func setupNavItem() {
         navigationItem.backButtonTitle = " "
+
+        if isFromAddRecord {
+            let saveButton = UIBarButtonItem(title: "저장", style: .plain, target: self, action: #selector(saveButtonTapped))
+            saveButton.tintColor = AppColor.primary
+            navigationItem.rightBarButtonItem = saveButton
+
+            navigationController?.navigationBar.tintColor = AppColor.primary
+        }
+    }
+
+    @objc private func saveButtonTapped() {
+        let rating = mainView.ratingView.rating
+        let comment = mainView.commentTextView.text ?? ""
+        viewModel.saveRecord(rating: rating, comment: comment)
     }
     
     private func setupDelegates() {

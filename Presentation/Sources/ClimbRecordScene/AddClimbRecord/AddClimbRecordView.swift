@@ -95,7 +95,7 @@ final class AddClimbRecordView: BaseView {
         return picker
     }()
 
-    let saveButton = CustomButton(title: "저장", image: nil, foreground: .white, background: AppColor.primary)
+    let nextButton = CustomButton(title: "다음", image: nil, foreground: .white, background: AppColor.primary)
 
     // MARK: - Setups
     override func setupView() {
@@ -107,7 +107,7 @@ final class AddClimbRecordView: BaseView {
     }
 
     override func setupHierarchy() {
-        [selectLabel, searchBar, mountainBoxView, dateLabel, dateBoxView, saveButton, searchResultsOverlay].forEach {
+        [selectLabel, searchBar, mountainBoxView, dateLabel, dateBoxView, nextButton, searchResultsOverlay].forEach {
             addSubview($0)
         }
 
@@ -184,7 +184,7 @@ final class AddClimbRecordView: BaseView {
             make.edges.equalToSuperview().inset(AppSpacing.compact)
         }
 
-        saveButton.snp.makeConstraints { make in
+        nextButton.snp.makeConstraints { make in
             make.height.equalTo(44)
             make.top.equalTo(dateBoxView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
@@ -242,8 +242,8 @@ extension AddClimbRecordView {
         searchBar.text = ""
     }
 
-    func setSaveButtonEnabled(_ isEnabled: Bool) {
-        saveButton.isEnabled = isEnabled
-        saveButton.alpha = isEnabled ? 1.0 : 0.5
+    func setNextButtonEnabled(_ isEnabled: Bool) {
+        nextButton.isEnabled = isEnabled
+        nextButton.alpha = isEnabled ? 1.0 : 0.5
     }
 }
