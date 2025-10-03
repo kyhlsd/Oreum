@@ -45,14 +45,21 @@ final class ClimbRecordDetailViewController: UIViewController {
     
     private func bind() {
         let deleteSelectedSubject = PassthroughSubject<Void, Never>()
+        let saveButtonTap: AnyPublisher<(Int, String), Never> = mainView.saveButton.tap
+            .compactMap { [weak self] in
+                guard let self else { return nil }
+                return (mainView.ratingView.rating, mainView.commentTextView.text)
+            }
+            .eraseToAnyPublisher()
         
         let input = ClimbRecordDetailViewModel.Input(
             editButtonTapped: mainView.editButton.tap,
-            saveButtonTapped: mainView.saveButtonTapped,
+            saveButtonTapped: saveButtonTap,
             cancelButtonTapped: mainView.cancelButton.tap,
             timelineButtonTapped: mainView.timelineButton.tap,
             deleteButtonTapped: mainView.deleteButton.tap,
-            deleteSelected: deleteSelectedSubject.eraseToAnyPublisher()
+            deleteSelected: deleteSelectedSubject.eraseToAnyPublisher(),
+            editPhotoButtonTapped: mainView.editPhotoButton.tap
         )
         
         let output = viewModel.transform(input: input)
@@ -109,16 +116,23 @@ final class ClimbRecordDetailViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        output.presentPhotoActionSheet
+            .sink { [weak self] hasImages in
+                self?.presentPhotoActionSheet(hasImages: hasImages)
+            }
+            .store(in: &cancellables)
+
         configureView(viewModel.climbRecord)
     }
     
     private func configureView(_ climbRecord: ClimbRecord) {
         navigationItem.title = climbRecord.mountain.name
-        
+
         mainView.setData(climbRecord: climbRecord)
-        
+
         applySnapshot(images: climbRecord.images)
         mainView.pageControl.numberOfPages = climbRecord.images.count
+        mainView.setEmptyImageViewHidden(!climbRecord.images.isEmpty)
     }
     
     private func setupNavItem() {
@@ -133,6 +147,27 @@ final class ClimbRecordDetailViewController: UIViewController {
         keyboardObserver.didKeyboardHeightChange = { [weak self] height in
             self?.mainView.adjustForKeyboard(height: height)
         }
+    }
+
+    private func presentPhotoActionSheet(hasImages: Bool) {
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+        let addAction = UIAlertAction(title: "사진 추가", style: .default) { _ in
+            print("사진 추가")
+        }
+        alert.addAction(addAction)
+
+        if hasImages {
+            let deleteAction = UIAlertAction(title: "사진 삭제", style: .destructive) { _ in
+                print("사진 삭제")
+            }
+            alert.addAction(deleteAction)
+        }
+
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+        alert.addAction(cancelAction)
+
+        present(alert, animated: true)
     }
 }
 

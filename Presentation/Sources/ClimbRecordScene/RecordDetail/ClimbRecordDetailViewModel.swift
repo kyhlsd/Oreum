@@ -36,6 +36,7 @@ final class ClimbRecordDetailViewModel {
         let timelineButtonTapped: AnyPublisher<Void, Never>
         let deleteButtonTapped: AnyPublisher<Void, Never>
         let deleteSelected: AnyPublisher<Void, Never>
+        let editPhotoButtonTapped: AnyPublisher<Void, Never>
     }
     
     struct Output {
@@ -47,6 +48,7 @@ final class ClimbRecordDetailViewModel {
         let errorMessage: AnyPublisher<String, Never>
         let timelineButtonEnabled: AnyPublisher<Bool, Never>
         let timelineButtonTitle: AnyPublisher<String, Never>
+        let presentPhotoActionSheet: AnyPublisher<Bool, Never>
     }
     
     func transform(input: Input) -> Output {
@@ -126,7 +128,18 @@ final class ClimbRecordDetailViewModel {
                 popVCSubject.send(())
             }
             .store(in: &cancellables)
-        
+
+        let presentPhotoActionSheetSubject = PassthroughSubject<Bool, Never>()
+
+        input.editPhotoButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink { [weak self] in
+                guard let self else { return }
+                let hasImages = !climbRecord.images.isEmpty
+                presentPhotoActionSheetSubject.send(hasImages)
+            }
+            .store(in: &cancellables)
+
         let hasTimeline = climbRecord.timeLog.count > 1
         let timelineButtonEnabled = Just(hasTimeline).eraseToAnyPublisher()
         let timelineButtonTitle = Just(hasTimeline ? "타임라인 보기" : "측정 기록이 없습니다").eraseToAnyPublisher()
@@ -139,7 +152,8 @@ final class ClimbRecordDetailViewModel {
             pushVC: pushVCSubject.eraseToAnyPublisher(),
             errorMessage: errorMesssageSubject.eraseToAnyPublisher(),
             timelineButtonEnabled: timelineButtonEnabled,
-            timelineButtonTitle: timelineButtonTitle
+            timelineButtonTitle: timelineButtonTitle,
+            presentPhotoActionSheet: presentPhotoActionSheetSubject.eraseToAnyPublisher()
         )
     }
 }

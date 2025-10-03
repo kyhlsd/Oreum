@@ -40,4 +40,6 @@ enum AppIcon {
     static let sunset = UIImage(systemName: "sunset.fill")                // 일몰
     static let exclamation = UIImage(systemName: "exclamationmark.triangle.fill") // 주의
     static let gear = UIImage(systemName: "gearshape.fill") // 설정
+    static let photo = UIImage(systemName: "photo") // 사진
+    static let editCircle = UIImage(systemName: "pencil.circle") // 편집
 }
