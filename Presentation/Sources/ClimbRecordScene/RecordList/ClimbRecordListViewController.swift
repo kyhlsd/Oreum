@@ -11,8 +11,8 @@ import Domain
 
 final class ClimbRecordListViewController: UIViewController {
 
-    var pushVC: ((ClimbRecord) -> Void)?
-    var pushAddVC: (() -> Void)?
+    var pushDetailVC: ((ClimbRecord) -> Void)?
+    var presentAddVC: (() -> Void)?
 
     private let mainView = ClimbRecordListView()
     let viewModel: ClimbRecordListViewModel
@@ -113,7 +113,7 @@ final class ClimbRecordListViewController: UIViewController {
     }
     
     @objc private func addButtonTapped() {
-        pushAddVC?()
+        presentAddVC?()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -154,6 +154,6 @@ extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionV
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let climbRecord = viewModel.climbRecordList[indexPath.item]
-        pushVC?(climbRecord)
+        pushDetailVC?(climbRecord)
     }
 }

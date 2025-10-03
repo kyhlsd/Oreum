@@ -16,10 +16,10 @@ protocol RecordSceneFlowCoordinatorDependencies {
 }
 
 public final class RecordSceneFlowCoordinator: Coordinator {
-    
+
     public let navigationController: UINavigationController
     private let dependencies: RecordSceneFlowCoordinatorDependencies
-    
+
     init(
         navigationController: UINavigationController,
         dependencies: RecordSceneFlowCoordinatorDependencies
@@ -27,57 +27,70 @@ public final class RecordSceneFlowCoordinator: Coordinator {
         self.navigationController = navigationController
         self.dependencies = dependencies
     }
-    
+
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "기록", image: AppIcon.bookOpen, tag: 0)
         navigationController.navigationBar.tintColor = AppColor.primary
 
         let listVC = dependencies.makeClimbRecordListViewController()
-        listVC.pushVC = { [weak self] climbRecord in
-            guard let self else { return }
-
-            let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord, isFromAddRecord: false)
-            detailVC.popVC = { [weak self] in
-                self?.navigationController.popViewController(animated: true)
-            }
-            detailVC.pushVC = { [weak self] climbRecord in
-                guard let self else { return }
-                navigationController.pushViewController(dependencies.makeActivityLogViewController(climbRecord: climbRecord), animated: true)
-            }
-            detailVC.viewModel.delegate = listVC.viewModel
-
-            self.navigationController.pushViewController(detailVC, animated: true)
+        listVC.pushDetailVC = { [weak self] climbRecord in
+            self?.showDetailFromList(climbRecord: climbRecord, listVC: listVC)
         }
-
-        listVC.pushAddVC = { [weak self] in
-            guard let self else { return }
-
-            let addVC = self.dependencies.makeAddClimbRecordViewController()
-            addVC.dismissVC = { [weak self] in
-                self?.navigationController.dismiss(animated: true)
-            }
-            addVC.pushVC = { [weak self] climbRecord in
-                guard let self else { return }
-
-                let detailVC = self.dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord, isFromAddRecord: true)
-                detailVC.isFromAddRecord = true
-                detailVC.popVC = { [weak self] in
-                    self?.navigationController.dismiss(animated: true)
-                }
-                detailVC.pushVC = { [weak self] climbRecord in
-                    guard let self else { return }
-                    let activityVC = self.dependencies.makeActivityLogViewController(climbRecord: climbRecord)
-                    addVC.navigationController?.pushViewController(activityVC, animated: true)
-                }
-
-                addVC.navigationController?.pushViewController(detailVC, animated: true)
-            }
-
-            let navController = UINavigationController(rootViewController: addVC)
-            self.navigationController.present(navController, animated: true)
+        listVC.presentAddVC = { [weak self] in
+            self?.showAddClimbRecord()
         }
 
         navigationController.pushViewController(listVC, animated: false)
     }
-    
+
+    private func showDetailFromList(climbRecord: ClimbRecord, listVC: ClimbRecordListViewController) {
+        let detailVC = dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord, isFromAddRecord: false)
+        detailVC.popVC = { [weak self] in
+            self?.navigationController.popViewController(animated: true)
+        }
+        detailVC.pushVC = { [weak self] climbRecord in
+            self?.showActivityLog(climbRecord: climbRecord)
+        }
+        detailVC.viewModel.delegate = listVC.viewModel
+
+        navigationController.pushViewController(detailVC, animated: true)
+    }
+
+    private func showAddClimbRecord() {
+        let addVC = dependencies.makeAddClimbRecordViewController()
+        addVC.dismissVC = { [weak self] in
+            self?.navigationController.dismiss(animated: true)
+        }
+        addVC.pushVC = { [weak self] climbRecord in
+            self?.showDetailFromAdd(climbRecord: climbRecord, addVC: addVC)
+        }
+
+        let navController = UINavigationController(rootViewController: addVC)
+        navController.modalPresentationStyle = .fullScreen
+        navigationController.present(navController, animated: true)
+    }
+
+    private func showDetailFromAdd(climbRecord: ClimbRecord, addVC: AddClimbRecordViewController) {
+        let detailVC = dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord, isFromAddRecord: true)
+        detailVC.isFromAddRecord = true
+        detailVC.popVC = { [weak self] in
+            self?.navigationController.dismiss(animated: true)
+        }
+        detailVC.pushVC = { [weak self] climbRecord in
+            self?.showActivityLogFromAdd(climbRecord: climbRecord, addVC: addVC)
+        }
+
+        addVC.navigationController?.pushViewController(detailVC, animated: true)
+    }
+
+    private func showActivityLog(climbRecord: ClimbRecord) {
+        let activityVC = dependencies.makeActivityLogViewController(climbRecord: climbRecord)
+        navigationController.pushViewController(activityVC, animated: true)
+    }
+
+    private func showActivityLogFromAdd(climbRecord: ClimbRecord, addVC: AddClimbRecordViewController) {
+        let activityVC = dependencies.makeActivityLogViewController(climbRecord: climbRecord)
+        addVC.navigationController?.pushViewController(activityVC, animated: true)
+    }
+
 }
