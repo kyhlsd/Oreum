@@ -129,8 +129,7 @@ final class AddClimbRecordViewModel {
         // 다음 버튼 탭
         input.nextButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink { [weak self] in
-                guard let self else { return }
+            .sink {
 
                 guard let mountain = selectedMountainSubject.value,
                       let date = selectedDateSubject.value else {

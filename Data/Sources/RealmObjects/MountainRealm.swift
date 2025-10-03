@@ -11,7 +11,7 @@ import Domain
 
 final class MountainRealm: Object {
     @Persisted(primaryKey: true) private var id: ObjectId
-    @Persisted private var name: String
+    @Persisted var name: String
     @Persisted private var address: String
     @Persisted private var height: Int
     @Persisted private var isFamous: Bool
