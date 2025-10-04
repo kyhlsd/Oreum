@@ -32,7 +32,7 @@ struct MountainInfoDTO: Decodable {
 extension MountainInfoDTO {
     func toDomain() -> MountainInfo {
             return MountainInfo(
-                id: MNTN_CD_INFO ?? UUID().uuidString,                 // 산 코드 정보
+                id: UUID().uuidString,                                 // 산 코드 정보
                 name: MNTN_NM,                                         // 산명
                 address: MNTN_LOCPLC_REGION_NM,                        // 산 소재지
                 height: Int(MNTN_HG_VL) ?? 0,                                    // 산 높이
