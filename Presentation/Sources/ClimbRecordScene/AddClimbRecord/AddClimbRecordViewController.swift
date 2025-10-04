@@ -118,6 +118,7 @@ final class AddClimbRecordViewController: UIViewController {
 
     private func setupNavItem() {
         navigationItem.title = "등산 기록 추가"
+        navigationItem.backButtonTitle = " "
         let cancelButton = UIBarButtonItem(title: "취소", style: .plain, target: self, action: #selector(cancelButtonTapped))
         cancelButton.tintColor = AppColor.primary
         navigationItem.leftBarButtonItem = cancelButton

@@ -20,7 +20,7 @@ public final class MeasureSceneDIContainer {
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
         do {
-            return try RealmClimbRecordRepositoryImpl(recordImageRepository: makeRecordImageRepository())
+            return try RealmClimbRecordRepositoryImpl()
         } catch {
             print("Failed to initialize Realm: \(error.localizedDescription)")
             return ErrorClimbRecordRepositoryImpl()
@@ -33,10 +33,6 @@ public final class MeasureSceneDIContainer {
 
     private func makeTrackActivityRepository() -> TrackActivityRepository {
         return HealthKitTrackActivityRepositoryImpl()
-    }
-
-    private func makeRecordImageRepository() -> RecordImageRepository {
-        return FileManagerRecordImageRepositoryImpl()
     }
 
     // MARK: - UseCases

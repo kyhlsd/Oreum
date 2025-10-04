@@ -156,10 +156,28 @@ final class ClimbRecordDetailViewModel {
         input.deleteSelected
             .flatMap { [weak self] in
                 guard let self else { return Just(()).eraseToAnyPublisher() }
-                return deleteUseCase.execute(recordID: climbRecord.id)
-                    .catch { error in
-                        errorMesssageSubject.send(error.localizedDescription)
-                        return Just(())
+
+                // 이미지 ID 목록 저장
+                let imageIDs = climbRecord.images
+
+                // 먼저 이미지 파일들 삭제
+                let deleteImagePublishers = imageIDs.map { imageID in
+                    self.deleteRecordImageUseCase.execute(imageID: imageID)
+                        .catch { error -> Just<Void> in
+                            print("❌ Failed to delete image file \(imageID): \(error.localizedDescription)")
+                            return Just(())
+                        }
+                }
+
+                return Publishers.MergeMany(deleteImagePublishers)
+                    .collect()
+                    .flatMap { _ in
+                        // 이미지 파일 삭제 후 기록 삭제
+                        self.deleteUseCase.execute(recordID: self.climbRecord.id)
+                            .catch { error in
+                                errorMesssageSubject.send(error.localizedDescription)
+                                return Just(())
+                            }
                     }
                     .eraseToAnyPublisher()
             }
