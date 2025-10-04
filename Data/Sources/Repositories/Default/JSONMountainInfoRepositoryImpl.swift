@@ -19,7 +19,7 @@ public final class JSONMountainInfoRepositoryImpl: MountainInfoRepository {
         loadJSON()
     }
     
-    public func fetchMountains(keyword: String) -> AnyPublisher<[Domain.MountainInfo], Error> {
+    public func fetchMountains(keyword: String) -> AnyPublisher<[MountainInfo], Error> {
         guard !keyword.isEmpty else {
             return Just([])
                 .setFailureType(to: Error.self)
