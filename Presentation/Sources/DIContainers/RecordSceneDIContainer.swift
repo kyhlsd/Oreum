@@ -12,6 +12,7 @@ import Data
 public final class RecordSceneDIContainer {
     
     private lazy var climbRecordRepository = makeClimbRecordRepository()
+    private lazy var recordImageRepository = makeRecordImageRepository()
     
     public init() {}
     
@@ -45,8 +46,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeClimbRecordDetailViewModel(climbRecord: ClimbRecord, isFromAddRecord: Bool = false) -> ClimbRecordDetailViewModel {
-        let saveUseCase = isFromAddRecord ? makeSaveClimbRecordUseCase() : nil
-        return ClimbRecordDetailViewModel(updateUseCase: makeUpdateUseCase(), deleteUseCase: makeDeleteClimbRecordUseCase(), climbRecord: climbRecord, saveClimbRecordUseCase: saveUseCase)
+        return ClimbRecordDetailViewModel(updateUseCase: makeUpdateUseCase(), deleteUseCase: makeDeleteClimbRecordUseCase(), saveClimbRecordUseCase: makeSaveClimbRecordUseCase(), saveRecordImageUseCase: makeSaveRecordImageUseCase(), climbRecord: climbRecord)
     }
     
     private func makeActivityLogViewModel(climbRecord: ClimbRecord) -> ActivityLogViewModel {
@@ -88,6 +88,10 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     private func makeFetchMountainInfosUseCase() -> FetchMountainInfosUseCase {
         return FetchMountainInfosUseCaseImpl(repository: makeMountainInfoRepository())
     }
+    
+    private func makeSaveRecordImageUseCase() -> SaveRecordImageUseCase {
+        return SaveRecordImageUseCaseImpl(repository: recordImageRepository)
+    }
 
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
@@ -101,5 +105,9 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     
     private func makeMountainInfoRepository() -> MountainInfoRepository {
         return DummyMountainInfoRepositoryImpl()
+    }
+    
+    private func makeRecordImageRepository() -> RecordImageRepository {
+        return DefaultRecordImageRepositoryImpl()
     }
 }

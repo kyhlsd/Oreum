@@ -18,18 +18,20 @@ final class ClimbRecordDetailViewModel {
 
     private let updateUseCase: UpdateClimbRecordUseCase
     private let deleteUseCase: DeleteClimbRecordUseCase
-    private let saveClimbRecordUseCase: SaveClimbRecordUseCase?
+    private let saveClimbRecordUseCase: SaveClimbRecordUseCase
+    private let saveRecordImageUseCase: SaveRecordImageUseCase
     private var cancellables = Set<AnyCancellable>()
 
     private(set) var climbRecord: ClimbRecord
     weak var delegate: ClimbRecordDetailViewModelDelegate?
     private let saveCompletedSubject = PassthroughSubject<Void, Never>()
 
-    init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, climbRecord: ClimbRecord, saveClimbRecordUseCase: SaveClimbRecordUseCase? = nil) {
+    init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, saveClimbRecordUseCase: SaveClimbRecordUseCase, saveRecordImageUseCase: SaveRecordImageUseCase, climbRecord: ClimbRecord) {
         self.updateUseCase = updateUseCase
         self.deleteUseCase = deleteUseCase
-        self.climbRecord = climbRecord
         self.saveClimbRecordUseCase = saveClimbRecordUseCase
+        self.saveRecordImageUseCase = saveRecordImageUseCase
+        self.climbRecord = climbRecord
     }
     
     struct Input {
@@ -40,6 +42,8 @@ final class ClimbRecordDetailViewModel {
         let deleteButtonTapped: AnyPublisher<Void, Never>
         let deleteSelected: AnyPublisher<Void, Never>
         let editPhotoButtonTapped: AnyPublisher<Void, Never>
+        let imageSelected: AnyPublisher<Data, Error>
+        let navBarSaveButtonTapped: AnyPublisher<(Int, String), Never>
     }
     
     struct Output {
@@ -62,6 +66,8 @@ final class ClimbRecordDetailViewModel {
         let popVCSubject = PassthroughSubject<Void, Never>()
         let pushVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let errorMesssageSubject = PassthroughSubject<String, Never>()
+        
+        let presentPhotoActionSheetSubject = PassthroughSubject<Bool, Never>()
         
         input.editButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
@@ -117,7 +123,7 @@ final class ClimbRecordDetailViewModel {
             .store(in: &cancellables)
         
         input.deleteSelected
-            .flatMap { [weak self, deleteUseCase] in
+            .flatMap { [weak self] in
                 guard let self else { return Just(()).eraseToAnyPublisher() }
                 return deleteUseCase.execute(recordID: climbRecord.id)
                     .catch { error in
@@ -133,14 +139,60 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
 
-        let presentPhotoActionSheetSubject = PassthroughSubject<Bool, Never>()
-
         input.editPhotoButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
                 guard let self else { return }
                 let hasImages = !climbRecord.images.isEmpty
                 presentPhotoActionSheetSubject.send(hasImages)
+            }
+            .store(in: &cancellables)
+
+        input.imageSelected
+            .catch { error -> Just<Data> in
+                errorMesssageSubject.send(error.localizedDescription)
+                print("❌ Image selection error: \(error.localizedDescription)")
+                return Just(Data())
+            }
+            .flatMap { [weak self] imageData -> AnyPublisher<String, Never> in
+                guard let self else { return Just("").eraseToAnyPublisher() }
+                guard !imageData.isEmpty else { return Just("").eraseToAnyPublisher() }
+
+                return saveRecordImageUseCase.execute(recordID: climbRecord.id, imageData: imageData)
+                    .catch { error -> Just<String> in
+                        print("❌ Failed to save image: \(error.localizedDescription)")
+                        return Just("")
+                    }
+                    .eraseToAnyPublisher()
+            }
+            .sink { imageID in
+                if !imageID.isEmpty {
+                    print("✅ Image saved successfully with ID: \(imageID)")
+                }
+            }
+            .store(in: &cancellables)
+
+        input.navBarSaveButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink { [weak self] (rating, comment) in
+                guard let self else { return }
+
+                climbRecord.score = rating
+                climbRecord.comment = comment
+
+                saveClimbRecordUseCase.execute(record: climbRecord)
+                    .sink(
+                        receiveCompletion: { completion in
+                            if case .failure(let error) = completion {
+                                print("❌ Save error: \(error.localizedDescription)")
+                            }
+                        },
+                        receiveValue: { [weak self] _ in
+                            NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
+                            self?.saveCompletedSubject.send(())
+                        }
+                    )
+                    .store(in: &self.cancellables)
             }
             .store(in: &cancellables)
 
@@ -162,24 +214,4 @@ final class ClimbRecordDetailViewModel {
         )
     }
 
-    func saveRecord(rating: Int, comment: String) {
-        guard let saveClimbRecordUseCase else { return }
-
-        climbRecord.score = rating
-        climbRecord.comment = comment
-
-        saveClimbRecordUseCase.execute(record: climbRecord)
-            .sink(
-                receiveCompletion: { completion in
-                    if case .failure(let error) = completion {
-                        print("Save error: \(error.localizedDescription)")
-                    }
-                },
-                receiveValue: { [weak self] _ in
-                    NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
-                    self?.saveCompletedSubject.send(())
-                }
-            )
-            .store(in: &cancellables)
-    }
 }

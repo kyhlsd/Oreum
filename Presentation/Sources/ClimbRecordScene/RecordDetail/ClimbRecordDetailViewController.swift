@@ -8,6 +8,7 @@
 import UIKit
 import Combine
 import Domain
+import PhotosUI
 
 final class ClimbRecordDetailViewController: UIViewController {
 
@@ -20,6 +21,10 @@ final class ClimbRecordDetailViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
     private let keyboardObserver = KeyboardHeightObserver()
+    
+    private var imageSelectedSubject = PassthroughSubject<Data, Error>()
+    private var navBarSaveButtonSubject = PassthroughSubject<(Int, String), Never>()
+    private let deleteSelectedSubject = PassthroughSubject<Void, Never>()
     
     init(viewModel: ClimbRecordDetailViewModel) {
         self.viewModel = viewModel
@@ -45,14 +50,13 @@ final class ClimbRecordDetailViewController: UIViewController {
     }
     
     private func bind() {
-        let deleteSelectedSubject = PassthroughSubject<Void, Never>()
         let saveButtonTap: AnyPublisher<(Int, String), Never> = mainView.saveButton.tap
             .compactMap { [weak self] in
                 guard let self else { return nil }
                 return (mainView.ratingView.rating, mainView.commentTextView.text)
             }
             .eraseToAnyPublisher()
-        
+
         let input = ClimbRecordDetailViewModel.Input(
             editButtonTapped: mainView.editButton.tap,
             saveButtonTapped: saveButtonTap,
@@ -60,7 +64,9 @@ final class ClimbRecordDetailViewController: UIViewController {
             timelineButtonTapped: mainView.timelineButton.tap,
             deleteButtonTapped: mainView.deleteButton.tap,
             deleteSelected: deleteSelectedSubject.eraseToAnyPublisher(),
-            editPhotoButtonTapped: mainView.editPhotoButton.tap
+            editPhotoButtonTapped: mainView.editPhotoButton.tap,
+            imageSelected: imageSelectedSubject.eraseToAnyPublisher(),
+            navBarSaveButtonTapped: navBarSaveButtonSubject.eraseToAnyPublisher()
         )
         
         let output = viewModel.transform(input: input)
@@ -82,7 +88,7 @@ final class ClimbRecordDetailViewController: UIViewController {
         output.presentCancellableAlert
             .sink { [weak self] (title, message) in
                 self?.presentCancellableAlert(title: title, message: message) {
-                    deleteSelectedSubject.send(())
+                    self?.deleteSelectedSubject.send(())
                 }
             }
             .store(in: &cancellables)
@@ -131,7 +137,7 @@ final class ClimbRecordDetailViewController: UIViewController {
 
         configureView(viewModel.climbRecord)
     }
-    
+
     private func configureView(_ climbRecord: ClimbRecord) {
         navigationItem.title = climbRecord.mountain.name
 
@@ -161,7 +167,7 @@ final class ClimbRecordDetailViewController: UIViewController {
     @objc private func saveButtonTapped() {
         let rating = mainView.ratingView.rating
         let comment = mainView.commentTextView.text ?? ""
-        viewModel.saveRecord(rating: rating, comment: comment)
+        navBarSaveButtonSubject.send((rating, comment))
     }
     
     private func setupDelegates() {
@@ -177,8 +183,8 @@ final class ClimbRecordDetailViewController: UIViewController {
     private func presentPhotoActionSheet(hasImages: Bool) {
         let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
-        let addAction = UIAlertAction(title: "사진 추가", style: .default) { _ in
-            print("사진 추가")
+        let addAction = UIAlertAction(title: "사진 추가", style: .default) { [weak self] _ in
+            self?.presentPhotoPicker()
         }
         alert.addAction(addAction)
 
@@ -193,6 +199,16 @@ final class ClimbRecordDetailViewController: UIViewController {
         alert.addAction(cancelAction)
 
         present(alert, animated: true)
+    }
+
+    private func presentPhotoPicker() {
+        var configuration = PHPickerConfiguration()
+        configuration.selectionLimit = 0
+        configuration.filter = .images
+
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = self
+        present(picker, animated: true)
     }
 }
 
@@ -224,15 +240,51 @@ extension ClimbRecordDetailViewController {
     }
 }
 
+// MARK: - PHPickerViewControllerDelegate
+extension ClimbRecordDetailViewController: PHPickerViewControllerDelegate {
+
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+
+        guard !results.isEmpty else { return }
+
+        for result in results {
+            result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.imageSelectedSubject.send(completion: .failure(error))
+                    }
+                    return
+                }
+
+                guard let image = object as? UIImage else { return }
+
+                DispatchQueue.main.async { [weak self] in
+                    print("✅ Image loaded successfully - size: \(image.size)")
+
+                    // UIImage를 Data로 변환
+                    guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                        let conversionError = NSError(domain: "ClimbRecordDetailViewController", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])
+                        self?.imageSelectedSubject.send(completion: .failure(conversionError))
+                        return
+                    }
+
+                    self?.imageSelectedSubject.send(imageData)
+                }
+            }
+        }
+    }
+}
+
 // MARK: - TextViewDelegate
 extension ClimbRecordDetailViewController: UITextViewDelegate {
-    
+
     func textViewDidChange(_ textView: UITextView) {
         let maxHeight: CGFloat = 144
         let fittingSize = CGSize(width: textView.bounds.width, height: .greatestFiniteMagnitude)
         let size = textView.sizeThatFits(fittingSize)
-        
+
         textView.isScrollEnabled = size.height > maxHeight
     }
-    
+
 }
