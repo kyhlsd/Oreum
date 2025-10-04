@@ -1,5 +1,5 @@
 //
-//  DefaultClimbRecordRepositoryImpl.swift
+//  RealmClimbRecordRepositoryImpl.swift
 //  Data
 //
 //  Created by 김영훈 on 10/4/25.
@@ -10,12 +10,14 @@ import Combine
 import RealmSwift
 import Domain
 
-public final class DefaultClimbRecordRepositoryImpl: ClimbRecordRepository {
+public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
 
     private let realm: Realm
+    private let recordImageRepository: RecordImageRepository
 
-    public init() throws {
+    public init(recordImageRepository: RecordImageRepository) throws {
         self.realm = try Realm()
+        self.recordImageRepository = recordImageRepository
         print(realm.configuration.fileURL ?? "realm error")
     }
 
@@ -130,19 +132,41 @@ public final class DefaultClimbRecordRepositoryImpl: ClimbRecordRepository {
                 return
             }
 
-            do {
-                try realm.write {
-                    self.realm.delete(record.images)
-                    if let mountain = record.mountain {
-                        self.realm.delete(mountain)
+            // 이미지 ID 목록 저장
+            let imageIDs = record.images.map { $0.toDomain() }
+
+            // 먼저 이미지 파일들 삭제
+            var cancellables = Set<AnyCancellable>()
+            let deletePublishers = imageIDs.map { imageID in
+                self.recordImageRepository.deleteImage(imageID: imageID)
+                    .catch { error -> Just<Void> in
+                        print("❌ Failed to delete image file \(imageID): \(error.localizedDescription)")
+                        return Just(())
                     }
-                    self.realm.delete(record.timeLog)
-                    self.realm.delete(record)
-                }
-                promise(.success(()))
-            } catch {
-                promise(.failure(error))
             }
+
+            Publishers.MergeMany(deletePublishers)
+                .collect()
+                .sink(
+                    receiveCompletion: { completion in
+                        // 이미지 파일 삭제 후 Realm 객체 삭제
+                        do {
+                            try self.realm.write {
+                                self.realm.delete(record.images)
+                                if let mountain = record.mountain {
+                                    self.realm.delete(mountain)
+                                }
+                                self.realm.delete(record.timeLog)
+                                self.realm.delete(record)
+                            }
+                            promise(.success(()))
+                        } catch {
+                            promise(.failure(error))
+                        }
+                    },
+                    receiveValue: { _ in }
+                )
+                .store(in: &cancellables)
         }
         .eraseToAnyPublisher()
     }

@@ -1,5 +1,5 @@
 //
-//  DefaultRecordImageRepositoryImpl.swift
+//  FileManagerRecordImageRepositoryImpl.swift
 //  Data
 //
 //  Created by 김영훈 on 10/4/25.
@@ -10,7 +10,7 @@ import Combine
 import RealmSwift
 import Domain
 
-public final class DefaultRecordImageRepositoryImpl: RecordImageRepository {
+public final class FileManagerRecordImageRepositoryImpl: RecordImageRepository {
 
     private let fileManager = FileManager.default
 

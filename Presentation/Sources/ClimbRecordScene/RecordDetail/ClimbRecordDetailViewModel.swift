@@ -31,6 +31,7 @@ final class ClimbRecordDetailViewModel {
     private let isFromAddRecord: Bool
     weak var delegate: ClimbRecordDetailViewModelDelegate?
     private let saveCompletedSubject = PassthroughSubject<Void, Never>()
+    private var pendingImages: [Data] = [] // Add 화면에서 선택한 이미지들을 임시 저장
 
     init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, saveClimbRecordUseCase: SaveClimbRecordUseCase, saveRecordImageUseCase: SaveRecordImageUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase, deleteRecordImageUseCase: DeleteRecordImageUseCase, addImageToRecordUseCase: AddImageToRecordUseCase, removeImageFromRecordUseCase: RemoveImageFromRecordUseCase, climbRecord: ClimbRecord, isFromAddRecord: Bool = false) {
         self.updateUseCase = updateUseCase
@@ -173,7 +174,7 @@ final class ClimbRecordDetailViewModel {
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
                 guard let self else { return }
-                let hasImages = !climbRecord.images.isEmpty
+                let hasImages = isFromAddRecord ? !pendingImages.isEmpty : !climbRecord.images.isEmpty
                 presentPhotoActionSheetSubject.send(hasImages)
             }
             .store(in: &cancellables)
@@ -184,44 +185,47 @@ final class ClimbRecordDetailViewModel {
                 print("❌ Image selection error: \(error.localizedDescription)")
                 return Just(Data())
             }
-            .flatMap { [weak self] imageData -> AnyPublisher<String, Never> in
-                guard let self else { return Just("").eraseToAnyPublisher() }
-                guard !imageData.isEmpty else { return Just("").eraseToAnyPublisher() }
-
-                return saveRecordImageUseCase.execute(imageData: imageData)
-                    .catch { error -> Just<String> in
-                        print("❌ Failed to save image: \(error.localizedDescription)")
-                        return Just("")
-                    }
-                    .eraseToAnyPublisher()
-            }
-            .sink { [weak self] imageID in
+            .sink { [weak self] imageData in
                 guard let self else { return }
-                if !imageID.isEmpty {
-                    print("✅ Image saved successfully with ID: \(imageID)")
+                guard !imageData.isEmpty else { return }
 
-                    // ClimbRecord의 images 배열에 추가
-                    climbRecord.images.append(imageID)
-                    delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
-                    imageSavedSubject.send(imageID)
-
-                    // 기존 ClimbRecord인 경우에만 즉시 Realm에 저장
-                    if !isFromAddRecord {
-                        addImageToRecordUseCase.execute(recordID: climbRecord.id, imageID: imageID)
-                            .sink(
-                                receiveCompletion: { completion in
-                                    if case .failure(let error) = completion {
-                                        print("❌ Failed to add image to record: \(error.localizedDescription)")
-                                    }
-                                },
-                                receiveValue: { _ in
-                                    print("✅ Image added to Realm record")
+                if isFromAddRecord {
+                    // Add 화면에서는 이미지를 메모리에만 저장
+                    pendingImages.append(imageData)
+                    imageSavedSubject.send("pending_\(pendingImages.count - 1)")
+                    print("ℹ️ Image stored in memory, will be saved when record is saved")
+                } else {
+                    // 기존 record인 경우 즉시 파일로 저장
+                    saveRecordImageUseCase.execute(imageData: imageData)
+                        .sink(
+                            receiveCompletion: { completion in
+                                if case .failure(let error) = completion {
+                                    print("❌ Failed to save image: \(error.localizedDescription)")
                                 }
-                            )
-                            .store(in: &self.cancellables)
-                    } else {
-                        print("ℹ️ Image will be saved to Realm when record is saved")
-                    }
+                            },
+                            receiveValue: { [weak self] imageID in
+                                guard let self else { return }
+                                print("✅ Image saved successfully with ID: \(imageID)")
+
+                                climbRecord.images.append(imageID)
+                                delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
+                                imageSavedSubject.send(imageID)
+
+                                addImageToRecordUseCase.execute(recordID: climbRecord.id, imageID: imageID)
+                                    .sink(
+                                        receiveCompletion: { completion in
+                                            if case .failure(let error) = completion {
+                                                print("❌ Failed to add image to record: \(error.localizedDescription)")
+                                            }
+                                        },
+                                        receiveValue: { _ in
+                                            print("✅ Image added to Realm record")
+                                        }
+                                    )
+                                    .store(in: &self.cancellables)
+                            }
+                        )
+                        .store(in: &self.cancellables)
                 }
             }
             .store(in: &cancellables)
@@ -234,19 +238,50 @@ final class ClimbRecordDetailViewModel {
                 climbRecord.score = rating
                 climbRecord.comment = comment
 
-                saveClimbRecordUseCase.execute(record: climbRecord)
-                    .sink(
-                        receiveCompletion: { completion in
-                            if case .failure(let error) = completion {
-                                print("❌ Save error: \(error.localizedDescription)")
-                            }
-                        },
-                        receiveValue: { [weak self] _ in
-                            NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
-                            self?.saveCompletedSubject.send(())
+                // Add 화면에서 저장하는 경우, pending 이미지들을 먼저 저장
+                if isFromAddRecord && !pendingImages.isEmpty {
+                    let imagePublishers = pendingImages.map { imageData in
+                        self.saveRecordImageUseCase.execute(imageData: imageData)
+                    }
+
+                    Publishers.MergeMany(imagePublishers)
+                        .collect()
+                        .flatMap { [weak self] imageIDs -> AnyPublisher<Void, Error> in
+                            guard let self else { return Just(()).setFailureType(to: Error.self).eraseToAnyPublisher() }
+
+                            // 저장된 이미지 ID들을 ClimbRecord에 추가
+                            self.climbRecord.images = imageIDs
+
+                            return self.saveClimbRecordUseCase.execute(record: self.climbRecord)
                         }
-                    )
-                    .store(in: &self.cancellables)
+                        .sink(
+                            receiveCompletion: { completion in
+                                if case .failure(let error) = completion {
+                                    print("❌ Save error: \(error.localizedDescription)")
+                                }
+                            },
+                            receiveValue: { [weak self] _ in
+                                NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
+                                self?.saveCompletedSubject.send(())
+                            }
+                        )
+                        .store(in: &self.cancellables)
+                } else {
+                    // 이미지가 없거나 기존 record인 경우 바로 저장
+                    saveClimbRecordUseCase.execute(record: climbRecord)
+                        .sink(
+                            receiveCompletion: { completion in
+                                if case .failure(let error) = completion {
+                                    print("❌ Save error: \(error.localizedDescription)")
+                                }
+                            },
+                            receiveValue: { [weak self] _ in
+                                NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
+                                self?.saveCompletedSubject.send(())
+                            }
+                        )
+                        .store(in: &self.cancellables)
+                }
             }
             .store(in: &cancellables)
 
@@ -258,31 +293,38 @@ final class ClimbRecordDetailViewModel {
             .store(in: &cancellables)
 
         input.imageDeleteSelected
-            .flatMap { [weak self] imageID -> AnyPublisher<String, Never> in
-                guard let self else { return Just("").eraseToAnyPublisher() }
+            .sink { [weak self] imageID in
+                guard let self else { return }
 
-                // ClimbRecord의 images 배열에서 제거
-                if let index = climbRecord.images.firstIndex(of: imageID) {
-                    climbRecord.images.remove(at: index)
-                    delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
-                }
+                if isFromAddRecord {
+                    // Add 화면에서는 pendingImages에서 제거
+                    if imageID.hasPrefix("pending_"),
+                       let indexString = imageID.split(separator: "_").last,
+                       let index = Int(indexString),
+                       index < pendingImages.count {
+                        pendingImages.remove(at: index)
+                        print("ℹ️ Image removed from memory")
+                    }
+                } else {
+                    // 기존 record는 파일과 Realm에서 삭제
+                    if let index = climbRecord.images.firstIndex(of: imageID) {
+                        climbRecord.images.remove(at: index)
+                        delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
+                    }
 
-                // 파일 삭제
-                deleteRecordImageUseCase.execute(imageID: imageID)
-                    .sink(
-                        receiveCompletion: { completion in
-                            if case .failure(let error) = completion {
-                                print("❌ Failed to delete image file: \(error.localizedDescription)")
+                    deleteRecordImageUseCase.execute(imageID: imageID)
+                        .sink(
+                            receiveCompletion: { completion in
+                                if case .failure(let error) = completion {
+                                    print("❌ Failed to delete image file: \(error.localizedDescription)")
+                                }
+                            },
+                            receiveValue: { _ in
+                                print("✅ Image file deleted")
                             }
-                        },
-                        receiveValue: { _ in
-                            print("✅ Image file deleted")
-                        }
-                    )
-                    .store(in: &self.cancellables)
+                        )
+                        .store(in: &self.cancellables)
 
-                // 기존 ClimbRecord인 경우에만 즉시 Realm에서 삭제
-                if !isFromAddRecord {
                     removeImageFromRecordUseCase.execute(imageID: imageID)
                         .sink(
                             receiveCompletion: { completion in
@@ -295,13 +337,8 @@ final class ClimbRecordDetailViewModel {
                             }
                         )
                         .store(in: &self.cancellables)
-                } else {
-                    print("ℹ️ Image will be removed from Realm when record is saved")
                 }
 
-                return Just(imageID).eraseToAnyPublisher()
-            }
-            .sink { _ in
                 imageDeletedSubject.send(())
             }
             .store(in: &cancellables)
@@ -309,6 +346,13 @@ final class ClimbRecordDetailViewModel {
         let imagesFetched = input.viewDidLoad
             .flatMap { [weak self] _ -> AnyPublisher<[Data], Never> in
                 guard let self else { return Just([]).eraseToAnyPublisher() }
+
+                // Add 화면이면 pendingImages 반환
+                if isFromAddRecord {
+                    return Just(pendingImages).eraseToAnyPublisher()
+                }
+
+                // 기존 record면 파일에서 가져오기
                 let publishers = climbRecord.images.map { imageID in
                     self.fetchRecordImageUseCase.execute(imageID: imageID)
                         .catch { error -> Empty<Data, Never> in
@@ -347,6 +391,12 @@ final class ClimbRecordDetailViewModel {
     }
 
     func fetchImages() -> AnyPublisher<[Data], Never> {
+        // Add 화면이면 pendingImages 반환
+        if isFromAddRecord {
+            return Just(pendingImages).eraseToAnyPublisher()
+        }
+
+        // 기존 record면 파일에서 가져오기
         let publishers = climbRecord.images.map { imageID in
             fetchRecordImageUseCase.execute(imageID: imageID)
                 .catch { error -> Empty<Data, Never> in
@@ -359,6 +409,21 @@ final class ClimbRecordDetailViewModel {
         return Publishers.MergeMany(publishers)
             .collect()
             .eraseToAnyPublisher()
+    }
+
+    func deleteImageFile(imageID: String) {
+        deleteRecordImageUseCase.execute(imageID: imageID)
+            .sink(
+                receiveCompletion: { completion in
+                    if case .failure(let error) = completion {
+                        print("❌ Failed to delete image file: \(error.localizedDescription)")
+                    }
+                },
+                receiveValue: { _ in
+                    print("✅ Unsaved image file deleted: \(imageID)")
+                }
+            )
+            .store(in: &cancellables)
     }
 
 }

@@ -1,5 +1,5 @@
 //
-//  DefaultTrackActivityRepositoryImpl.swift
+//  HealthKitTrackActivityRepositoryImpl.swift
 //  Data
 //
 //  Created by 김영훈 on 10/1/25.
@@ -9,7 +9,7 @@ import Foundation
 import Combine
 import Domain
 
-public final class DefaultTrackActivityRepositoryImpl: TrackActivityRepository {
+public final class HealthKitTrackActivityRepositoryImpl: TrackActivityRepository {
 
     private let healthKitManager: HealthKitManager
 

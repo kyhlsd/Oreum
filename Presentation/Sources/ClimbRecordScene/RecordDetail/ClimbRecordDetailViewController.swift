@@ -45,14 +45,15 @@ final class ClimbRecordDetailViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         bind()
         setupNavItem()
         setupDelegates()
         setupKeyboardAction()
-        
+
         viewDidLoadSubject.send(())
     }
+
     
     private func bind() {
         let saveButtonTap: AnyPublisher<(Int, String), Never> = mainView.saveButton.tap
@@ -139,6 +140,7 @@ final class ClimbRecordDetailViewController: UIViewController {
 
         output.saveCompleted
             .sink { [weak self] in
+                self?.isFromAddRecord = false // 저장 완료 시 이미지 삭제 방지
                 self?.popVC?()
             }
             .store(in: &cancellables)
@@ -258,8 +260,16 @@ final class ClimbRecordDetailViewController: UIViewController {
 
     private func presentImageDeleteAlert() {
         let currentPage = mainView.pageControl.currentPage
-        guard currentPage < viewModel.climbRecord.images.count else { return }
-        let imageID = viewModel.climbRecord.images[currentPage]
+
+        let imageID: String
+        if isFromAddRecord {
+            // Add 화면에서는 pending_X 형태의 ID 사용
+            imageID = "pending_\(currentPage)"
+        } else {
+            // 기존 record는 실제 imageID 사용
+            guard currentPage < viewModel.climbRecord.images.count else { return }
+            imageID = viewModel.climbRecord.images[currentPage]
+        }
 
         let alert = UIAlertController(title: "사진 삭제", message: "이 사진을 삭제하시겠습니까?", preferredStyle: .alert)
 

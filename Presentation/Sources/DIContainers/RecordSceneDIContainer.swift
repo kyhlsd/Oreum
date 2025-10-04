@@ -112,7 +112,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
         do {
-            return try DefaultClimbRecordRepositoryImpl()
+            return try RealmClimbRecordRepositoryImpl(recordImageRepository: recordImageRepository)
         } catch {
             print("Failed to initialize Realm: \(error.localizedDescription)")
             return ErrorClimbRecordRepositoryImpl()
@@ -124,6 +124,6 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeRecordImageRepository() -> RecordImageRepository {
-        return DefaultRecordImageRepositoryImpl()
+        return FileManagerRecordImageRepositoryImpl()
     }
 }
