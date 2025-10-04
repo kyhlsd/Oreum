@@ -16,7 +16,7 @@ final class ClimbRecordRealm: Object {
     @Persisted var images: List<RecordImageRealm>
     @Persisted private var score: Int
     @Persisted private var comment: String
-    @Persisted var isBookmarked: Bool
+    @Persisted(indexed: true) var isBookmarked: Bool
     @Persisted private var climbDate: Date
 }
 
