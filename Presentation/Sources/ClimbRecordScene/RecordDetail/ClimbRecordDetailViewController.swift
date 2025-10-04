@@ -347,7 +347,7 @@ extension ClimbRecordDetailViewController: PHPickerViewControllerDelegate {
 
                 DispatchQueue.main.async { [weak self] in
 
-                    guard let imageData = converter.process(image, format: .jpeg(quality: 0.8)) else {
+                    guard let imageData = converter.process(image, format: .jpeg(quality: 1.0)) else {
                         let conversionError = NSError(domain: "ClimbRecordDetailViewController", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])
                         self?.imageSelectedSubject.send(completion: .failure(conversionError))
                         return

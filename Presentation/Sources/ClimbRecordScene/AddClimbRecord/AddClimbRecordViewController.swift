@@ -167,6 +167,7 @@ extension AddClimbRecordViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
 
         guard let mountain = dataSource.itemIdentifier(for: indexPath) else { return }
+        view.endEditing(true)
         mountainSelectedSubject.send(mountain)
     }
 
