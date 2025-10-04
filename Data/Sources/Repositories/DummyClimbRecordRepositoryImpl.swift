@@ -74,12 +74,22 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
     }
     
     public func delete(recordID: String) -> AnyPublisher<Void, any Error> {
-        
+
         if let index = dummyClimbRecords.firstIndex(where: { $0.id == recordID
         }) {
             dummyClimbRecords.remove(at: index)
         }
-        
+
+        return Just(())
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+    }
+
+    public func addImage(recordID: String, imageID: String) -> AnyPublisher<Void, Error> {
+        if let index = dummyClimbRecords.firstIndex(where: { $0.id == recordID }) {
+            dummyClimbRecords[index].images.append(imageID)
+        }
+
         return Just(())
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()

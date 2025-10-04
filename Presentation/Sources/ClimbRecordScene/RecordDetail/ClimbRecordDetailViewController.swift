@@ -25,6 +25,7 @@ final class ClimbRecordDetailViewController: UIViewController {
     private var imageSelectedSubject = PassthroughSubject<Data, Error>()
     private var navBarSaveButtonSubject = PassthroughSubject<(Int, String), Never>()
     private let deleteSelectedSubject = PassthroughSubject<Void, Never>()
+    private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     
     init(viewModel: ClimbRecordDetailViewModel) {
         self.viewModel = viewModel
@@ -47,6 +48,8 @@ final class ClimbRecordDetailViewController: UIViewController {
         setupNavItem()
         setupDelegates()
         setupKeyboardAction()
+        
+        viewDidLoadSubject.send(())
     }
     
     private func bind() {
@@ -66,7 +69,8 @@ final class ClimbRecordDetailViewController: UIViewController {
             deleteSelected: deleteSelectedSubject.eraseToAnyPublisher(),
             editPhotoButtonTapped: mainView.editPhotoButton.tap,
             imageSelected: imageSelectedSubject.eraseToAnyPublisher(),
-            navBarSaveButtonTapped: navBarSaveButtonSubject.eraseToAnyPublisher()
+            navBarSaveButtonTapped: navBarSaveButtonSubject.eraseToAnyPublisher(),
+            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher()
         )
         
         let output = viewModel.transform(input: input)
@@ -135,6 +139,28 @@ final class ClimbRecordDetailViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        output.imageSaved
+            .flatMap { [weak self] _ -> AnyPublisher<[Data], Never> in
+                guard let self else { return Just([]).eraseToAnyPublisher() }
+                return viewModel.fetchImages()
+            }
+            .sink { [weak self] imageDatas in
+                guard let self else { return }
+                applySnapshot(images: imageDatas)
+                mainView.pageControl.numberOfPages = imageDatas.count
+                mainView.setEmptyImageViewHidden(!imageDatas.isEmpty)
+            }
+            .store(in: &cancellables)
+
+        output.imagesFetched
+            .sink { [weak self] imageDatas in
+                guard let self else { return }
+                applySnapshot(images: imageDatas)
+                mainView.pageControl.numberOfPages = imageDatas.count
+                mainView.setEmptyImageViewHidden(!imageDatas.isEmpty)
+            }
+            .store(in: &cancellables)
+
         configureView(viewModel.climbRecord)
     }
 
@@ -142,10 +168,6 @@ final class ClimbRecordDetailViewController: UIViewController {
         navigationItem.title = climbRecord.mountain.name
 
         mainView.setData(climbRecord: climbRecord)
-
-        applySnapshot(images: climbRecord.images)
-        mainView.pageControl.numberOfPages = climbRecord.images.count
-        mainView.setEmptyImageViewHidden(!climbRecord.images.isEmpty)
 
         if isFromAddRecord {
             mainView.configureForAddRecord()
@@ -219,21 +241,21 @@ extension ClimbRecordDetailViewController {
         case main
     }
     
-    private func createRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, String> {
-        return UICollectionView.CellRegistration<ImageCollectionViewCell, String> { cell, indexPath, item in
-            cell.setImage(image: item)
+    private func createRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, Data> {
+        return UICollectionView.CellRegistration<ImageCollectionViewCell, Data> { cell, indexPath, item in
+            cell.setImage(imageData: item)
         }
     }
-    
-    private func createDataSource() -> UICollectionViewDiffableDataSource<Section, String> {
+
+    private func createDataSource() -> UICollectionViewDiffableDataSource<Section, Data> {
         let registration = createRegistration()
-        return UICollectionViewDiffableDataSource<Section, String>(collectionView: mainView.imageCollectionView) { collectionView, indexPath, item in
+        return UICollectionViewDiffableDataSource<Section, Data>(collectionView: mainView.imageCollectionView) { collectionView, indexPath, item in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
         }
     }
-    
-    private func applySnapshot(images: [String]) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, String>()
+
+    private func applySnapshot(images: [Data]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Data>()
         snapshot.appendSections(Section.allCases)
         snapshot.appendItems(images)
         dataSource.apply(snapshot, animatingDifferences: true)

@@ -140,4 +140,30 @@ public final class DefaultClimbRecordRepositoryImpl: ClimbRecordRepository {
         }
         .eraseToAnyPublisher()
     }
+
+    public func addImage(recordID: String, imageID: String) -> AnyPublisher<Void, Error> {
+        return Future { [weak self] promise in
+            guard let self else {
+                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -1)))
+                return
+            }
+
+            guard let objectId = try? ObjectId(string: recordID),
+                  let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
+                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
+                return
+            }
+
+            do {
+                try realm.write {
+                    let imageRealm = RecordImageRealm(from: imageID)
+                    record.images.append(imageRealm)
+                }
+                promise(.success(()))
+            } catch {
+                promise(.failure(error))
+            }
+        }
+        .eraseToAnyPublisher()
+    }
 }

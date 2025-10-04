@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 public protocol RecordImageRepository {
-    func saveImage(recordID: String, imageData: Data) -> AnyPublisher<String, Error>
+    func saveImage(imageData: Data) -> AnyPublisher<String, Error>
     func deleteImage(imageID: String) -> AnyPublisher<Void, Error>
     func fetchImage(imageID: String) -> AnyPublisher<Data, Error>
 }

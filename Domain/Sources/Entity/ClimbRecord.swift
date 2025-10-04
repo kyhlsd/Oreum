@@ -11,7 +11,7 @@ public struct ClimbRecord: Hashable {
     public let id: String
     public let mountain: Mountain
     public let timeLog: [ActivityLog]
-    public let images: [String]
+    public var images: [String]
     public var score: Int
     public var comment: String
     public var isBookmarked: Bool

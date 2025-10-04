@@ -9,30 +9,33 @@ import UIKit
 import SnapKit
 
 final class ImageCollectionViewCell: BaseCollectionViewCell {
-    
+
     private let imageView = {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
         return imageView
     }()
-    
+
     override func setupView() {
         backgroundColor = .clear
     }
-    
+
     override func setupHierarchy() {
         contentView.addSubview(imageView)
     }
-    
+
     override func setupLayout() {
         imageView.snp.makeConstraints { make in
-            make.size.equalToSuperview()
+            make.edges.equalToSuperview()
         }
     }
-    
-    func setImage(image: String) {
-        print(image)
-        let temp = "star"
-        imageView.image = UIImage(systemName: temp)
+
+    func setImage(imageData: Data) {
+        if let image = UIImage(data: imageData) {
+            imageView.image = image
+        } else {
+            imageView.image = nil
+        }
     }
 }

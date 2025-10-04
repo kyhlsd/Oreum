@@ -46,7 +46,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeClimbRecordDetailViewModel(climbRecord: ClimbRecord, isFromAddRecord: Bool = false) -> ClimbRecordDetailViewModel {
-        return ClimbRecordDetailViewModel(updateUseCase: makeUpdateUseCase(), deleteUseCase: makeDeleteClimbRecordUseCase(), saveClimbRecordUseCase: makeSaveClimbRecordUseCase(), saveRecordImageUseCase: makeSaveRecordImageUseCase(), climbRecord: climbRecord)
+        return ClimbRecordDetailViewModel(updateUseCase: makeUpdateUseCase(), deleteUseCase: makeDeleteClimbRecordUseCase(), saveClimbRecordUseCase: makeSaveClimbRecordUseCase(), saveRecordImageUseCase: makeSaveRecordImageUseCase(), fetchRecordImageUseCase: makeFetchRecordImageUseCase(), addImageToRecordUseCase: makeAddImageToRecordUseCase(), climbRecord: climbRecord, isFromAddRecord: isFromAddRecord)
     }
     
     private func makeActivityLogViewModel(climbRecord: ClimbRecord) -> ActivityLogViewModel {
@@ -91,6 +91,14 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     
     private func makeSaveRecordImageUseCase() -> SaveRecordImageUseCase {
         return SaveRecordImageUseCaseImpl(repository: recordImageRepository)
+    }
+
+    private func makeFetchRecordImageUseCase() -> FetchRecordImageUseCase {
+        return FetchRecordImageUseCaseImpl(repository: recordImageRepository)
+    }
+
+    private func makeAddImageToRecordUseCase() -> AddImageToRecordUseCase {
+        return AddImageToRecordUseCaseImpl(repository: climbRecordRepository)
     }
 
     // MARK: - Repositories

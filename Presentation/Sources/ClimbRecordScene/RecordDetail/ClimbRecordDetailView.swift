@@ -62,7 +62,10 @@ final class ClimbRecordDetailView: BaseView {
         let button = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 40)
         button.setImage(AppIcon.editCircle?.withConfiguration(config), for: .normal)
-        button.tintColor = AppColor.primary
+        button.tintColor = .gray
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 20
+        button.clipsToBounds = true
         return button
     }()
 
