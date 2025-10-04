@@ -28,6 +28,8 @@ final class ClimbRecordDetailViewController: UIViewController {
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let imageDeleteButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let imageDeleteSelectedSubject = PassthroughSubject<String, Never>()
+    private let commentTextViewDidBeginEditing = PassthroughSubject<String, Never>()
+    private let commentTextViewDidEndEditing = PassthroughSubject<String, Never>()
     
     init(viewModel: ClimbRecordDetailViewModel) {
         self.viewModel = viewModel
@@ -64,6 +66,7 @@ final class ClimbRecordDetailViewController: UIViewController {
             .eraseToAnyPublisher()
 
         let input = ClimbRecordDetailViewModel.Input(
+            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
             editButtonTapped: mainView.editButton.tap,
             saveButtonTapped: saveButtonTap,
             cancelButtonTapped: mainView.cancelButton.tap,
@@ -73,9 +76,10 @@ final class ClimbRecordDetailViewController: UIViewController {
             editPhotoButtonTapped: mainView.editPhotoButton.tap,
             imageSelected: imageSelectedSubject.eraseToAnyPublisher(),
             navBarSaveButtonTapped: navBarSaveButtonSubject.eraseToAnyPublisher(),
-            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
             imageDeleteButtonTapped: imageDeleteButtonTappedSubject.eraseToAnyPublisher(),
-            imageDeleteSelected: imageDeleteSelectedSubject.eraseToAnyPublisher()
+            imageDeleteSelected: imageDeleteSelectedSubject.eraseToAnyPublisher(),
+            commentTextViewDidBeginEditing: commentTextViewDidBeginEditing.eraseToAnyPublisher(),
+            commentTextViewDidEndEditing: commentTextViewDidEndEditing.eraseToAnyPublisher()
         )
         
         let output = viewModel.transform(input: input)
@@ -185,7 +189,14 @@ final class ClimbRecordDetailViewController: UIViewController {
                 mainView.setEmptyImageViewHidden(!imageDatas.isEmpty)
             }
             .store(in: &cancellables)
-
+        
+        output.placeholderState
+            .sink { [weak self] state in
+                guard let self else { return }
+                mainView.setPlaceholder(isPlaceholder: state.isPlaceholder, text: state.text)
+            }
+            .store(in: &cancellables)
+        
         configureView(viewModel.climbRecord)
     }
 
@@ -360,4 +371,15 @@ extension ClimbRecordDetailViewController: UITextViewDelegate {
         textView.isScrollEnabled = size.height > maxHeight
     }
 
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        if let text = textView.text {
+            commentTextViewDidBeginEditing.send(text)
+        }
+    }
+    
+    func textViewDidEndEditing(_ textView: UITextView) {
+        if let text = textView.text {
+            commentTextViewDidEndEditing.send(text)
+        }
+    }
 }

@@ -18,6 +18,7 @@ enum AppColor {
     
     // MARK: - Text
     static let primaryText = UIColor(hex: "#1a2319")   // 메인 텍스트
+    static let tertiaryText = UIColor(hex: "B0B0B0")
     static let cardText = UIColor(hex: "#1a2319")
     static let popoverText = UIColor(hex: "#1a2319")
     static let sidebarText = UIColor(hex: "#1a2319")

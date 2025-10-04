@@ -331,4 +331,9 @@ extension ClimbRecordDetailView {
         timelineButton.isHidden = true
         deleteButton.isHidden = true
     }
+
+    func setPlaceholder(isPlaceholder: Bool, text: String) {
+        commentTextView.textColor = isPlaceholder ? AppColor.tertiaryText : AppColor.subText
+        commentTextView.text = text
+    }
 }

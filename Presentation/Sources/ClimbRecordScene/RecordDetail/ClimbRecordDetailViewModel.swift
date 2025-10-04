@@ -32,6 +32,7 @@ final class ClimbRecordDetailViewModel {
     weak var delegate: ClimbRecordDetailViewModelDelegate?
     private let saveCompletedSubject = PassthroughSubject<Void, Never>()
     private var pendingImages: [Data] = [] // Add 화면에서 선택한 이미지들을 임시 저장
+    private let placeholderText = "등산\u{00A0}후기를\u{00A0}작성해주세요."
 
     init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, saveClimbRecordUseCase: SaveClimbRecordUseCase, saveRecordImageUseCase: SaveRecordImageUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase, deleteRecordImageUseCase: DeleteRecordImageUseCase, addImageToRecordUseCase: AddImageToRecordUseCase, removeImageFromRecordUseCase: RemoveImageFromRecordUseCase, climbRecord: ClimbRecord, isFromAddRecord: Bool = false) {
         self.updateUseCase = updateUseCase
@@ -47,6 +48,7 @@ final class ClimbRecordDetailViewModel {
     }
     
     struct Input {
+        let viewDidLoad: AnyPublisher<Void, Never>
         let editButtonTapped: AnyPublisher<Void, Never>
         let saveButtonTapped: AnyPublisher<(Int, String), Never>
         let cancelButtonTapped: AnyPublisher<Void, Never>
@@ -56,9 +58,10 @@ final class ClimbRecordDetailViewModel {
         let editPhotoButtonTapped: AnyPublisher<Void, Never>
         let imageSelected: AnyPublisher<Data, Error>
         let navBarSaveButtonTapped: AnyPublisher<(Int, String), Never>
-        let viewDidLoad: AnyPublisher<Void, Never>
         let imageDeleteButtonTapped: AnyPublisher<Void, Never>
         let imageDeleteSelected: AnyPublisher<String, Never>
+        let commentTextViewDidBeginEditing: AnyPublisher<String, Never>
+        let commentTextViewDidEndEditing: AnyPublisher<String, Never>
     }
 
     struct Output {
@@ -76,6 +79,7 @@ final class ClimbRecordDetailViewModel {
         let imagesFetched: AnyPublisher<[Data], Never>
         let presentImageDeleteAlert: AnyPublisher<Void, Never>
         let imageDeleted: AnyPublisher<Void, Never>
+        let placeholderState: AnyPublisher<(isPlaceholder: Bool, text: String), Never>
     }
     
     func transform(input: Input) -> Output {
@@ -85,16 +89,48 @@ final class ClimbRecordDetailViewModel {
         let popVCSubject = PassthroughSubject<Void, Never>()
         let pushVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let errorMesssageSubject = PassthroughSubject<String, Never>()
-
         let presentPhotoActionSheetSubject = PassthroughSubject<Bool, Never>()
         let imageSavedSubject = PassthroughSubject<String, Never>()
         let presentImageDeleteAlertSubject = PassthroughSubject<Void, Never>()
         let imageDeletedSubject = PassthroughSubject<Void, Never>()
+        let isPlaceholderSubject = PassthroughSubject<Bool, Never>()
+        let commentTextSubject = PassthroughSubject<String, Never>()
 
+        input.viewDidLoad
+            .sink { [weak self] in
+                guard let self else { return }
+                if climbRecord.comment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    isPlaceholderSubject.send(true)
+                    commentTextSubject.send(placeholderText)
+                }
+            }
+            .store(in: &cancellables)
+        
         input.editButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink {
                 recordEditableSubject.send(true)
+            }
+            .store(in: &cancellables)
+        
+        input.commentTextViewDidBeginEditing
+            .filter { [weak self] text in
+                guard let self else { return false }
+                return text == self.placeholderText
+            }
+            .sink { _ in
+                isPlaceholderSubject.send(false)
+                commentTextSubject.send("")
+            }
+            .store(in: &cancellables)
+        
+        input.commentTextViewDidEndEditing
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { $0.isEmpty }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                isPlaceholderSubject.send(true)
+                commentTextSubject.send(placeholderText)
             }
             .store(in: &cancellables)
         
@@ -103,14 +139,17 @@ final class ClimbRecordDetailViewModel {
             .flatMap { [weak self, updateUseCase] (rating, comment) in
                 guard let self else { return Just(()).eraseToAnyPublisher() }
 
+                // placeholder 텍스트면 빈 문자열로 변환
+                let finalComment = comment == placeholderText ? "" : comment
+
                 // 기존 record인 경우에만 Realm 업데이트
                 if !isFromAddRecord {
-                    return updateUseCase.execute(recordID: climbRecord.id, rating: rating, comment: comment)
+                    return updateUseCase.execute(recordID: climbRecord.id, rating: rating, comment: finalComment)
                         .handleEvents(receiveOutput: { [weak self] _ in
                             guard let self else { return }
                             climbRecord.score = rating
-                            climbRecord.comment = comment
-                            delegate?.updateReview(id: climbRecord.id, rating: rating, comment: comment)
+                            climbRecord.comment = finalComment
+                            delegate?.updateReview(id: climbRecord.id, rating: rating, comment: finalComment)
                         })
                         .catch { error in
                             errorMesssageSubject.send(error.localizedDescription)
@@ -120,7 +159,7 @@ final class ClimbRecordDetailViewModel {
                 } else {
                     // Add 화면에서는 메모리에만 저장
                     climbRecord.score = rating
-                    climbRecord.comment = comment
+                    climbRecord.comment = finalComment
                     return Just(()).eraseToAnyPublisher()
                 }
             }
@@ -253,8 +292,11 @@ final class ClimbRecordDetailViewModel {
             .sink { [weak self] (rating, comment) in
                 guard let self else { return }
 
+                // placeholder 텍스트면 빈 문자열로 변환
+                let finalComment = comment == placeholderText ? "" : comment
+
                 climbRecord.score = rating
-                climbRecord.comment = comment
+                climbRecord.comment = finalComment
 
                 // Add 화면에서 저장하는 경우, pending 이미지들을 먼저 저장
                 if isFromAddRecord && !pendingImages.isEmpty {
@@ -390,6 +432,13 @@ final class ClimbRecordDetailViewModel {
         let timelineButtonEnabled = Just(hasTimeline).eraseToAnyPublisher()
         let timelineButtonTitle = Just(hasTimeline ? "타임라인 보기" : "측정 기록이 없습니다").eraseToAnyPublisher()
 
+        let placeholderState = Publishers.CombineLatest(
+            isPlaceholderSubject.eraseToAnyPublisher(),
+            commentTextSubject.eraseToAnyPublisher()
+        )
+        .map { (isPlaceholder: $0, text: $1) }
+        .eraseToAnyPublisher()
+
         return Output(
             recordEditable: recordEditableSubject.eraseToAnyPublisher(),
             resetReview: resetReviewSubject.eraseToAnyPublisher(),
@@ -404,7 +453,8 @@ final class ClimbRecordDetailViewModel {
             imageSaved: imageSavedSubject.eraseToAnyPublisher(),
             imagesFetched: imagesFetched,
             presentImageDeleteAlert: presentImageDeleteAlertSubject.eraseToAnyPublisher(),
-            imageDeleted: imageDeletedSubject.eraseToAnyPublisher()
+            imageDeleted: imageDeletedSubject.eraseToAnyPublisher(),
+            placeholderState: placeholderState
         )
     }
 
