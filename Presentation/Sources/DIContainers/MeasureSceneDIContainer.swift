@@ -17,6 +17,31 @@ public final class MeasureSceneDIContainer {
         return MeasureSceneFlowCoordinator(navigationController: navigationController, dependencies: self)
     }
 
+}
+
+extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
+
+    // MARK: - ViewControllers
+    func makeMeasureViewController() -> MeasureViewController {
+        return MeasureViewController(viewModel: makeMeasureViewModel())
+    }
+
+    // MARK: - ViewModels
+    private func makeMeasureViewModel() -> MeasureViewModel {
+        return MeasureViewModel(
+            fetchMountainInfosUseCase: makeFetchMountainsUseCase(),
+            requestTrackActivityAuthorizationUseCase: makeRequestTrackActivityAuthorizationUseCase(),
+            startTrackingActivityUseCase: makeStartTrackingActivityUseCase(),
+            getActivityLogsUseCase: makeGetActivityLogsUseCase(),
+            stopTrackingActivityUseCase: makeStopTrackingActivityUseCase(),
+            getTrackingStatusUseCase: makeGetTrackingStatusUseCase(),
+            getCurrentActivityDataUseCase: makeGetCurrentActivityDataUseCase(),
+            observeActivityDataUpdatesUseCase: makeObserveActivityDataUpdatesUseCase(),
+            getClimbingMountainUseCase: makeGetClimbingMountainUseCase(),
+            saveClimbRecordUseCase: makeSaveClimbRecordUseCase()
+        )
+    }
+    
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
         do {
@@ -28,7 +53,7 @@ public final class MeasureSceneDIContainer {
     }
 
     private func makeMountainInfoRepository() -> MountainInfoRepository {
-        return DummyMountainInfoRepositoryImpl()
+        return JSONMountainInfoRepositoryImpl()
     }
 
     private func makeTrackActivityRepository() -> TrackActivityRepository {
@@ -75,28 +100,5 @@ public final class MeasureSceneDIContainer {
     private func makeSaveClimbRecordUseCase() -> SaveClimbRecordUseCase {
         return SaveClimbRecordUseCaseImpl(repository: makeClimbRecordRepository())
     }
-}
-
-extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
-
-    // MARK: - ViewControllers
-    func makeMeasureViewController() -> MeasureViewController {
-        return MeasureViewController(viewModel: makeMeasureViewModel())
-    }
-
-    // MARK: - ViewModels
-    private func makeMeasureViewModel() -> MeasureViewModel {
-        return MeasureViewModel(
-            fetchMountainInfosUseCase: makeFetchMountainsUseCase(),
-            requestTrackActivityAuthorizationUseCase: makeRequestTrackActivityAuthorizationUseCase(),
-            startTrackingActivityUseCase: makeStartTrackingActivityUseCase(),
-            getActivityLogsUseCase: makeGetActivityLogsUseCase(),
-            stopTrackingActivityUseCase: makeStopTrackingActivityUseCase(),
-            getTrackingStatusUseCase: makeGetTrackingStatusUseCase(),
-            getCurrentActivityDataUseCase: makeGetCurrentActivityDataUseCase(),
-            observeActivityDataUpdatesUseCase: makeObserveActivityDataUpdatesUseCase(),
-            getClimbingMountainUseCase: makeGetClimbingMountainUseCase(),
-            saveClimbRecordUseCase: makeSaveClimbRecordUseCase()
-        )
-    }
+    
 }

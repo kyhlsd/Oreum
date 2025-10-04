@@ -120,7 +120,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeMountainInfoRepository() -> MountainInfoRepository {
-        return DummyMountainInfoRepositoryImpl()
+        return JSONMountainInfoRepositoryImpl()
     }
     
     private func makeRecordImageRepository() -> RecordImageRepository {
