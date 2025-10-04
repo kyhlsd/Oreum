@@ -321,6 +321,8 @@ extension ClimbRecordDetailViewController: PHPickerViewControllerDelegate {
 
         guard !results.isEmpty else { return }
 
+        let converter = ImageDataManager(width: view.frame.width)
+        
         for result in results {
             result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
                 if let error = error {
@@ -333,10 +335,8 @@ extension ClimbRecordDetailViewController: PHPickerViewControllerDelegate {
                 guard let image = object as? UIImage else { return }
 
                 DispatchQueue.main.async { [weak self] in
-                    print("✅ Image loaded successfully - size: \(image.size)")
 
-                    // UIImage를 Data로 변환
-                    guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                    guard let imageData = converter.process(image, format: .jpeg(quality: 0.8)) else {
                         let conversionError = NSError(domain: "ClimbRecordDetailViewController", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])
                         self?.imageSelectedSubject.send(completion: .failure(conversionError))
                         return

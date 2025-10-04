@@ -7,7 +7,7 @@
 
 import UIKit
 import SnapKit
-
+import Kingfisher
 final class ImageCollectionViewCell: BaseCollectionViewCell {
 
     private let imageView = {

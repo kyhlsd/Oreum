@@ -88,7 +88,6 @@ let project = Project(
                         .target(name: "Domain"),
                         .target(name: "Data"),
                         .external(name: "Kingfisher"),
-                        .external(name: "KingfisherWebP"),
                         .external(name: "SnapKit"),
                         .external(name: "Toast")
                     ]
