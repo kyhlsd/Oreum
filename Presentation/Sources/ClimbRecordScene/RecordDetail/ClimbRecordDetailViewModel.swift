@@ -12,6 +12,7 @@ import Domain
 protocol ClimbRecordDetailViewModelDelegate: AnyObject {
     func updateReview(id: String, rating: Int, comment: String)
     func deleteRecord(id: String)
+    func updateImages(id: String, images: [String])
 }
 
 final class ClimbRecordDetailViewModel {
@@ -21,7 +22,9 @@ final class ClimbRecordDetailViewModel {
     private let saveClimbRecordUseCase: SaveClimbRecordUseCase
     private let saveRecordImageUseCase: SaveRecordImageUseCase
     private let fetchRecordImageUseCase: FetchRecordImageUseCase
+    private let deleteRecordImageUseCase: DeleteRecordImageUseCase
     private let addImageToRecordUseCase: AddImageToRecordUseCase
+    private let removeImageFromRecordUseCase: RemoveImageFromRecordUseCase
     private var cancellables = Set<AnyCancellable>()
 
     private(set) var climbRecord: ClimbRecord
@@ -29,13 +32,15 @@ final class ClimbRecordDetailViewModel {
     weak var delegate: ClimbRecordDetailViewModelDelegate?
     private let saveCompletedSubject = PassthroughSubject<Void, Never>()
 
-    init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, saveClimbRecordUseCase: SaveClimbRecordUseCase, saveRecordImageUseCase: SaveRecordImageUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase, addImageToRecordUseCase: AddImageToRecordUseCase, climbRecord: ClimbRecord, isFromAddRecord: Bool = false) {
+    init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, saveClimbRecordUseCase: SaveClimbRecordUseCase, saveRecordImageUseCase: SaveRecordImageUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase, deleteRecordImageUseCase: DeleteRecordImageUseCase, addImageToRecordUseCase: AddImageToRecordUseCase, removeImageFromRecordUseCase: RemoveImageFromRecordUseCase, climbRecord: ClimbRecord, isFromAddRecord: Bool = false) {
         self.updateUseCase = updateUseCase
         self.deleteUseCase = deleteUseCase
         self.saveClimbRecordUseCase = saveClimbRecordUseCase
         self.saveRecordImageUseCase = saveRecordImageUseCase
         self.fetchRecordImageUseCase = fetchRecordImageUseCase
+        self.deleteRecordImageUseCase = deleteRecordImageUseCase
         self.addImageToRecordUseCase = addImageToRecordUseCase
+        self.removeImageFromRecordUseCase = removeImageFromRecordUseCase
         self.climbRecord = climbRecord
         self.isFromAddRecord = isFromAddRecord
     }
@@ -51,6 +56,8 @@ final class ClimbRecordDetailViewModel {
         let imageSelected: AnyPublisher<Data, Error>
         let navBarSaveButtonTapped: AnyPublisher<(Int, String), Never>
         let viewDidLoad: AnyPublisher<Void, Never>
+        let imageDeleteButtonTapped: AnyPublisher<Void, Never>
+        let imageDeleteSelected: AnyPublisher<String, Never>
     }
 
     struct Output {
@@ -66,6 +73,8 @@ final class ClimbRecordDetailViewModel {
         let saveCompleted: AnyPublisher<Void, Never>
         let imageSaved: AnyPublisher<String, Never>
         let imagesFetched: AnyPublisher<[Data], Never>
+        let presentImageDeleteAlert: AnyPublisher<Void, Never>
+        let imageDeleted: AnyPublisher<Void, Never>
     }
     
     func transform(input: Input) -> Output {
@@ -75,9 +84,11 @@ final class ClimbRecordDetailViewModel {
         let popVCSubject = PassthroughSubject<Void, Never>()
         let pushVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let errorMesssageSubject = PassthroughSubject<String, Never>()
-        
+
         let presentPhotoActionSheetSubject = PassthroughSubject<Bool, Never>()
         let imageSavedSubject = PassthroughSubject<String, Never>()
+        let presentImageDeleteAlertSubject = PassthroughSubject<Void, Never>()
+        let imageDeletedSubject = PassthroughSubject<Void, Never>()
 
         input.editButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
@@ -191,6 +202,7 @@ final class ClimbRecordDetailViewModel {
 
                     // ClimbRecord의 images 배열에 추가
                     climbRecord.images.append(imageID)
+                    delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
                     imageSavedSubject.send(imageID)
 
                     // 기존 ClimbRecord인 경우에만 즉시 Realm에 저장
@@ -238,6 +250,62 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
 
+        input.imageDeleteButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink {
+                presentImageDeleteAlertSubject.send(())
+            }
+            .store(in: &cancellables)
+
+        input.imageDeleteSelected
+            .flatMap { [weak self] imageID -> AnyPublisher<String, Never> in
+                guard let self else { return Just("").eraseToAnyPublisher() }
+
+                // ClimbRecord의 images 배열에서 제거
+                if let index = climbRecord.images.firstIndex(of: imageID) {
+                    climbRecord.images.remove(at: index)
+                    delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
+                }
+
+                // 파일 삭제
+                deleteRecordImageUseCase.execute(imageID: imageID)
+                    .sink(
+                        receiveCompletion: { completion in
+                            if case .failure(let error) = completion {
+                                print("❌ Failed to delete image file: \(error.localizedDescription)")
+                            }
+                        },
+                        receiveValue: { _ in
+                            print("✅ Image file deleted")
+                        }
+                    )
+                    .store(in: &self.cancellables)
+
+                // 기존 ClimbRecord인 경우에만 즉시 Realm에서 삭제
+                if !isFromAddRecord {
+                    removeImageFromRecordUseCase.execute(imageID: imageID)
+                        .sink(
+                            receiveCompletion: { completion in
+                                if case .failure(let error) = completion {
+                                    print("❌ Failed to remove image from record: \(error.localizedDescription)")
+                                }
+                            },
+                            receiveValue: { _ in
+                                print("✅ Image removed from Realm record")
+                            }
+                        )
+                        .store(in: &self.cancellables)
+                } else {
+                    print("ℹ️ Image will be removed from Realm when record is saved")
+                }
+
+                return Just(imageID).eraseToAnyPublisher()
+            }
+            .sink { _ in
+                imageDeletedSubject.send(())
+            }
+            .store(in: &cancellables)
+
         let imagesFetched = input.viewDidLoad
             .flatMap { [weak self] _ -> AnyPublisher<[Data], Never> in
                 guard let self else { return Just([]).eraseToAnyPublisher() }
@@ -272,7 +340,9 @@ final class ClimbRecordDetailViewModel {
             presentPhotoActionSheet: presentPhotoActionSheetSubject.eraseToAnyPublisher(),
             saveCompleted: saveCompletedSubject.eraseToAnyPublisher(),
             imageSaved: imageSavedSubject.eraseToAnyPublisher(),
-            imagesFetched: imagesFetched
+            imagesFetched: imagesFetched,
+            presentImageDeleteAlert: presentImageDeleteAlertSubject.eraseToAnyPublisher(),
+            imageDeleted: imageDeletedSubject.eraseToAnyPublisher()
         )
     }
 

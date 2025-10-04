@@ -94,4 +94,17 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }
+
+    public func removeImage(imageID: String) -> AnyPublisher<Void, Error> {
+        for recordIndex in dummyClimbRecords.indices {
+            if let imageIndex = dummyClimbRecords[recordIndex].images.firstIndex(of: imageID) {
+                dummyClimbRecords[recordIndex].images.remove(at: imageIndex)
+                break
+            }
+        }
+
+        return Just(())
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+    }
 }

@@ -45,4 +45,9 @@ public final class ErrorClimbRecordRepositoryImpl: ClimbRecordRepository {
         return Fail(error: error)
             .eraseToAnyPublisher()
     }
+
+    public func removeImage(imageID: String) -> AnyPublisher<Void, Error> {
+        return Fail(error: error)
+            .eraseToAnyPublisher()
+    }
 }

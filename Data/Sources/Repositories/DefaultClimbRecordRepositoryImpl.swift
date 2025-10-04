@@ -16,6 +16,7 @@ public final class DefaultClimbRecordRepositoryImpl: ClimbRecordRepository {
 
     public init() throws {
         self.realm = try Realm()
+        print(realm.configuration.fileURL ?? "realm error")
     }
 
     public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], any Error> {
@@ -131,6 +132,11 @@ public final class DefaultClimbRecordRepositoryImpl: ClimbRecordRepository {
 
             do {
                 try realm.write {
+                    self.realm.delete(record.images)
+                    if let mountain = record.mountain {
+                        self.realm.delete(mountain)
+                    }
+                    self.realm.delete(record.timeLog)
                     self.realm.delete(record)
                 }
                 promise(.success(()))
@@ -158,6 +164,31 @@ public final class DefaultClimbRecordRepositoryImpl: ClimbRecordRepository {
                 try realm.write {
                     let imageRealm = RecordImageRealm(from: imageID)
                     record.images.append(imageRealm)
+                }
+                promise(.success(()))
+            } catch {
+                promise(.failure(error))
+            }
+        }
+        .eraseToAnyPublisher()
+    }
+
+    public func removeImage(imageID: String) -> AnyPublisher<Void, Error> {
+        return Future { [weak self] promise in
+            guard let self else {
+                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -1)))
+                return
+            }
+
+            guard let imageObjectId = try? ObjectId(string: imageID),
+                  let imageRealm = realm.object(ofType: RecordImageRealm.self, forPrimaryKey: imageObjectId) else {
+                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Image not found"])))
+                return
+            }
+
+            do {
+                try realm.write {
+                    self.realm.delete(imageRealm)
                 }
                 promise(.success(()))
             } catch {

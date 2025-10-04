@@ -12,7 +12,7 @@ import Domain
 final class ClimbRecordRealm: Object {
     @Persisted(primaryKey: true) private var id: ObjectId
     @Persisted var mountain: MountainRealm?
-    @Persisted private var timeLog: List<ActivityLogRealm>
+    @Persisted var timeLog: List<ActivityLogRealm>
     @Persisted var images: List<RecordImageRealm>
     @Persisted private var score: Int
     @Persisted private var comment: String

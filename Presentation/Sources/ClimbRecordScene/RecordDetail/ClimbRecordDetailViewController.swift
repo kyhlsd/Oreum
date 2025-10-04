@@ -26,6 +26,8 @@ final class ClimbRecordDetailViewController: UIViewController {
     private var navBarSaveButtonSubject = PassthroughSubject<(Int, String), Never>()
     private let deleteSelectedSubject = PassthroughSubject<Void, Never>()
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
+    private let imageDeleteButtonTappedSubject = PassthroughSubject<Void, Never>()
+    private let imageDeleteSelectedSubject = PassthroughSubject<String, Never>()
     
     init(viewModel: ClimbRecordDetailViewModel) {
         self.viewModel = viewModel
@@ -70,7 +72,9 @@ final class ClimbRecordDetailViewController: UIViewController {
             editPhotoButtonTapped: mainView.editPhotoButton.tap,
             imageSelected: imageSelectedSubject.eraseToAnyPublisher(),
             navBarSaveButtonTapped: navBarSaveButtonSubject.eraseToAnyPublisher(),
-            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher()
+            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
+            imageDeleteButtonTapped: imageDeleteButtonTappedSubject.eraseToAnyPublisher(),
+            imageDeleteSelected: imageDeleteSelectedSubject.eraseToAnyPublisher()
         )
         
         let output = viewModel.transform(input: input)
@@ -161,6 +165,25 @@ final class ClimbRecordDetailViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        output.presentImageDeleteAlert
+            .sink { [weak self] in
+                self?.presentImageDeleteAlert()
+            }
+            .store(in: &cancellables)
+
+        output.imageDeleted
+            .flatMap { [weak self] _ -> AnyPublisher<[Data], Never> in
+                guard let self else { return Just([]).eraseToAnyPublisher() }
+                return viewModel.fetchImages()
+            }
+            .sink { [weak self] imageDatas in
+                guard let self else { return }
+                applySnapshot(images: imageDatas)
+                mainView.pageControl.numberOfPages = imageDatas.count
+                mainView.setEmptyImageViewHidden(!imageDatas.isEmpty)
+            }
+            .store(in: &cancellables)
+
         configureView(viewModel.climbRecord)
     }
 
@@ -211,8 +234,8 @@ final class ClimbRecordDetailViewController: UIViewController {
         alert.addAction(addAction)
 
         if hasImages {
-            let deleteAction = UIAlertAction(title: "사진 삭제", style: .destructive) { _ in
-                print("사진 삭제")
+            let deleteAction = UIAlertAction(title: "사진 삭제", style: .destructive) { [weak self] _ in
+                self?.imageDeleteButtonTappedSubject.send(())
             }
             alert.addAction(deleteAction)
         }
@@ -231,6 +254,24 @@ final class ClimbRecordDetailViewController: UIViewController {
         let picker = PHPickerViewController(configuration: configuration)
         picker.delegate = self
         present(picker, animated: true)
+    }
+
+    private func presentImageDeleteAlert() {
+        let currentPage = mainView.pageControl.currentPage
+        guard currentPage < viewModel.climbRecord.images.count else { return }
+        let imageID = viewModel.climbRecord.images[currentPage]
+
+        let alert = UIAlertController(title: "사진 삭제", message: "이 사진을 삭제하시겠습니까?", preferredStyle: .alert)
+
+        let deleteAction = UIAlertAction(title: "삭제", style: .destructive) { [weak self] _ in
+            self?.imageDeleteSelectedSubject.send(imageID)
+        }
+        alert.addAction(deleteAction)
+
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+        alert.addAction(cancelAction)
+
+        present(alert, animated: true)
     }
 }
 

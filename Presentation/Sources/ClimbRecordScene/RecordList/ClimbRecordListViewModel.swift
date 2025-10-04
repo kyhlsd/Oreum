@@ -140,7 +140,7 @@ final class ClimbRecordListViewModel {
 
 // MARK: - ClimbRecordDetailViewModelDelegate
 extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
-    
+
     func updateReview(id: String, rating: Int, comment: String) {
         if let index = climbRecordList.firstIndex(where: {
             $0.id == id
@@ -149,13 +149,21 @@ extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
             climbRecordList[index].comment = comment
         }
     }
-    
+
     func deleteRecord(id: String) {
         if let index = climbRecordList.firstIndex(where: {
             $0.id == id
         }) {
             climbRecordList.remove(at: index)
             reloadDataSubject.send(())
+        }
+    }
+
+    func updateImages(id: String, images: [String]) {
+        if let index = climbRecordList.firstIndex(where: {
+            $0.id == id
+        }) {
+            climbRecordList[index].images = images
         }
     }
 }
