@@ -62,7 +62,10 @@ final class ClimbRecordDetailView: BaseView {
         let button = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 40)
         button.setImage(AppIcon.editCircle?.withConfiguration(config), for: .normal)
-        button.tintColor = AppColor.primary
+        button.tintColor = .gray
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 20
+        button.clipsToBounds = true
         return button
     }()
 
@@ -287,16 +290,9 @@ extension ClimbRecordDetailView {
     }
     
     func setData(climbRecord: ClimbRecord) {
-        // TODO: 메서드로 만들기
-        if let date = climbRecord.timeLog.first?.time {
-            dateView.setTitle(title: AppFormatter.dateFormatter.string(from: date))
-        } else {
-            dateView.setTitle(title: "기록 없음")
-        }
-
+        dateView.setTitle(title: AppFormatter.dateFormatter.string(from: climbRecord.climbDate))
         addressView.setTitle(title: climbRecord.mountain.address)
         heightView.setTitle(title: climbRecord.mountain.height.formatted() + "m")
-        
         setReview(rating: climbRecord.score, comment: climbRecord.comment)
     }
     
@@ -334,5 +330,10 @@ extension ClimbRecordDetailView {
         cancelButton.isHidden = true
         timelineButton.isHidden = true
         deleteButton.isHidden = true
+    }
+
+    func setPlaceholder(isPlaceholder: Bool, text: String) {
+        commentTextView.textColor = isPlaceholder ? AppColor.tertiaryText : AppColor.subText
+        commentTextView.text = text
     }
 }

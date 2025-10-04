@@ -12,6 +12,7 @@ import Data
 public final class RecordSceneDIContainer {
     
     private lazy var climbRecordRepository = makeClimbRecordRepository()
+    private lazy var recordImageRepository = makeRecordImageRepository()
     
     public init() {}
     
@@ -45,8 +46,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeClimbRecordDetailViewModel(climbRecord: ClimbRecord, isFromAddRecord: Bool = false) -> ClimbRecordDetailViewModel {
-        let saveUseCase = isFromAddRecord ? makeSaveClimbRecordUseCase() : nil
-        return ClimbRecordDetailViewModel(updateUseCase: makeUpdateUseCase(), deleteUseCase: makeDeleteClimbRecordUseCase(), climbRecord: climbRecord, saveClimbRecordUseCase: saveUseCase)
+        return ClimbRecordDetailViewModel(updateUseCase: makeUpdateUseCase(), deleteUseCase: makeDeleteClimbRecordUseCase(), saveClimbRecordUseCase: makeSaveClimbRecordUseCase(), saveRecordImageUseCase: makeSaveRecordImageUseCase(), fetchRecordImageUseCase: makeFetchRecordImageUseCase(), deleteRecordImageUseCase: makeDeleteRecordImageUseCase(), addImageToRecordUseCase: makeAddImageToRecordUseCase(), removeImageFromRecordUseCase: makeRemoveImageFromRecordUseCase(), climbRecord: climbRecord, isFromAddRecord: isFromAddRecord)
     }
     
     private func makeActivityLogViewModel(climbRecord: ClimbRecord) -> ActivityLogViewModel {
@@ -88,13 +88,42 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     private func makeFetchMountainInfosUseCase() -> FetchMountainInfosUseCase {
         return FetchMountainInfosUseCaseImpl(repository: makeMountainInfoRepository())
     }
+    
+    private func makeSaveRecordImageUseCase() -> SaveRecordImageUseCase {
+        return SaveRecordImageUseCaseImpl(repository: recordImageRepository)
+    }
+
+    private func makeFetchRecordImageUseCase() -> FetchRecordImageUseCase {
+        return FetchRecordImageUseCaseImpl(repository: recordImageRepository)
+    }
+
+    private func makeDeleteRecordImageUseCase() -> DeleteRecordImageUseCase {
+        return DeleteRecordImageUseCaseImpl(repository: recordImageRepository)
+    }
+
+    private func makeAddImageToRecordUseCase() -> AddImageToRecordUseCase {
+        return AddImageToRecordUseCaseImpl(repository: climbRecordRepository)
+    }
+
+    private func makeRemoveImageFromRecordUseCase() -> RemoveImageFromRecordUseCase {
+        return RemoveImageFromRecordUseCaseImpl(repository: climbRecordRepository)
+    }
 
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
-        return DummyClimbRecordRepositoryImpl.shared
+        do {
+            return try RealmClimbRecordRepositoryImpl()
+        } catch {
+            print("Failed to initialize Realm: \(error.localizedDescription)")
+            return ErrorClimbRecordRepositoryImpl()
+        }
     }
     
     private func makeMountainInfoRepository() -> MountainInfoRepository {
         return DummyMountainInfoRepositoryImpl()
+    }
+    
+    private func makeRecordImageRepository() -> RecordImageRepository {
+        return FileManagerRecordImageRepositoryImpl()
     }
 }

@@ -13,4 +13,6 @@ public protocol ClimbRecordRepository {
     func toggleBookmark(recordID: String) -> AnyPublisher<Void, Error>
     func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Void, any Error>
     func delete(recordID: String) -> AnyPublisher<Void, any Error>
+    func addImage(recordID: String, imageID: String) -> AnyPublisher<Void, Error>
+    func removeImage(imageID: String) -> AnyPublisher<Void, Error>
 }

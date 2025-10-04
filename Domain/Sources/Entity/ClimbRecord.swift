@@ -11,12 +11,13 @@ public struct ClimbRecord: Hashable {
     public let id: String
     public let mountain: Mountain
     public let timeLog: [ActivityLog]
-    public let images: [String]
+    public var images: [String]
     public var score: Int
     public var comment: String
     public var isBookmarked: Bool
-    
-    public init(id: String, mountain: Mountain, timeLog: [ActivityLog], images: [String], score: Int, comment: String, isBookmarked: Bool) {
+    public let climbDate: Date
+
+    public init(id: String, mountain: Mountain, timeLog: [ActivityLog], images: [String], score: Int, comment: String, isBookmarked: Bool, climbDate: Date) {
         self.id = id
         self.mountain = mountain
         self.timeLog = timeLog
@@ -24,6 +25,7 @@ public struct ClimbRecord: Hashable {
         self.score = score
         self.comment = comment
         self.isBookmarked = isBookmarked
+        self.climbDate = climbDate
     }
 }
 
@@ -36,7 +38,8 @@ extension ClimbRecord {
             images: ["hallasan1.jpg", "hallasan2.jpg"],
             score: 5,
             comment: "comment",
-            isBookmarked: true
+            isBookmarked: true,
+            climbDate: Date().addingTimeInterval(-Double.random(in: 0...86400*30))
         ),
         ClimbRecord(
             id: UUID().uuidString,
@@ -45,7 +48,8 @@ extension ClimbRecord {
             images: ["seoraksan1.jpg"],
             score: 4,
             comment: "comment",
-            isBookmarked: false
+            isBookmarked: false,
+            climbDate: Date().addingTimeInterval(-Double.random(in: 0...86400*30))
         ),
         ClimbRecord(
             id: UUID().uuidString,
@@ -54,7 +58,8 @@ extension ClimbRecord {
             images: ["hallasan1.jpg", "hallasan2.jpg"],
             score: 5,
             comment: "comment",
-            isBookmarked: true
+            isBookmarked: true,
+            climbDate: Date().addingTimeInterval(-Double.random(in: 0...86400*30))
         ),
         ClimbRecord(
             id: UUID().uuidString,
@@ -63,7 +68,8 @@ extension ClimbRecord {
             images: [],
             score: 3,
             comment: "comment",
-            isBookmarked: true
+            isBookmarked: true,
+            climbDate: Date().addingTimeInterval(-Double.random(in: 0...86400*30))
         ),
         ClimbRecord(
             id: UUID().uuidString,
@@ -72,7 +78,8 @@ extension ClimbRecord {
             images: ["seoraksan1.jpg"],
             score: 4,
             comment: "comment",
-            isBookmarked: false
+            isBookmarked: false,
+            climbDate: Date().addingTimeInterval(-Double.random(in: 0...86400*30))
         ),
         ClimbRecord(
             id: UUID().uuidString,
@@ -81,7 +88,8 @@ extension ClimbRecord {
             images: ["jirisann1.jpg"],
             score: 4,
             comment: "comment",
-            isBookmarked: false
+            isBookmarked: false,
+            climbDate: Date().addingTimeInterval(-Double.random(in: 0...86400*30))
         ),
         ClimbRecord(
             id: UUID().uuidString,
@@ -90,8 +98,9 @@ extension ClimbRecord {
             images: [],
             score: 3,
             comment: "comment",
-            isBookmarked: true
+            isBookmarked: true,
+            climbDate: Date().addingTimeInterval(-Double.random(in: 0...86400*30))
         ),
-        
+
     ]
 }

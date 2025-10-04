@@ -66,14 +66,9 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         }
         let name = data.mountain.name
         
-        let date = data.timeLog.first?.time
-        mountainImageView.image = getMountainImage(date: date)
+        mountainImageView.image = getMountainImage(date: data.climbDate)
         nameLabel.text = name
-        if let date {
-            dateLabel.text = AppFormatter.dateFormatter.string(from: date)
-        } else {
-            dateLabel.text = nil
-        }
+        dateLabel.text = AppFormatter.dateFormatter.string(from: data.climbDate)
         
         let image = data.isBookmarked ? AppIcon.bookmarkFill : AppIcon.bookmark
         bookmarkButton.setImage(image, for: .normal)

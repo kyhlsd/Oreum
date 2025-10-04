@@ -32,7 +32,7 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
         }
         
         records.sort {
-            $0.timeLog.first?.time ?? Date() > $1.timeLog.first?.time ?? Date()
+            $0.climbDate > $1.climbDate
         }
 
         return Just(records)
@@ -74,12 +74,35 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
     }
     
     public func delete(recordID: String) -> AnyPublisher<Void, any Error> {
-        
+
         if let index = dummyClimbRecords.firstIndex(where: { $0.id == recordID
         }) {
             dummyClimbRecords.remove(at: index)
         }
-        
+
+        return Just(())
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+    }
+
+    public func addImage(recordID: String, imageID: String) -> AnyPublisher<Void, Error> {
+        if let index = dummyClimbRecords.firstIndex(where: { $0.id == recordID }) {
+            dummyClimbRecords[index].images.append(imageID)
+        }
+
+        return Just(())
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+    }
+
+    public func removeImage(imageID: String) -> AnyPublisher<Void, Error> {
+        for recordIndex in dummyClimbRecords.indices {
+            if let imageIndex = dummyClimbRecords[recordIndex].images.firstIndex(of: imageID) {
+                dummyClimbRecords[recordIndex].images.remove(at: imageIndex)
+                break
+            }
+        }
+
         return Just(())
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()

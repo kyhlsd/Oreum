@@ -178,6 +178,7 @@ final class AddClimbRecordView: BaseView {
         dateBoxView.snp.makeConstraints { make in
             make.top.equalTo(dateLabel.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
+            make.bottom.lessThanOrEqualTo(nextButton.snp.top).offset(-AppSpacing.regular)
         }
 
         datePicker.snp.makeConstraints { make in
@@ -186,7 +187,6 @@ final class AddClimbRecordView: BaseView {
 
         nextButton.snp.makeConstraints { make in
             make.height.equalTo(44)
-            make.top.equalTo(dateBoxView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
             make.bottom.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
         }

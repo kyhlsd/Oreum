@@ -222,6 +222,7 @@ final class MeasureViewModel: BaseViewModel {
 
                 // ClimbRecord 생성 및 저장
                 if let mountain = self.getClimbingMountainUseCase.execute() {
+                    let startDate = logs.first?.time ?? Date()
                     let climbRecord = ClimbRecord(
                         id: UUID().uuidString,
                         mountain: mountain,
@@ -229,7 +230,8 @@ final class MeasureViewModel: BaseViewModel {
                         images: [],
                         score: 0,
                         comment: "",
-                        isBookmarked: false
+                        isBookmarked: false,
+                        climbDate: startDate
                     )
 
                     self.saveClimbRecordUseCase.execute(record: climbRecord)

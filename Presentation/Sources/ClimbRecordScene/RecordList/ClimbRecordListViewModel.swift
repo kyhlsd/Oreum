@@ -10,16 +10,20 @@ import Combine
 import Domain
 
 final class ClimbRecordListViewModel {
-    
+
     private let fetchUseCase: FetchClimbRecordUseCase
     private let toggleBookmarkUseCase: ToggleBookmarkUseCase
     private var cancellables = Set<AnyCancellable>()
-    
+
     private(set) var climbRecordList = [ClimbRecord]()
     private let baseGuideText = "산을 눌러 자세한 정보를 확인하세요."
-    private let reloadDataSubject = PassthroughSubject<Void, Never>()
     private let emptyText = "+ 버튼으로 이전 기록을 추가하거나,\n측정 탭에서 기록을 측정하여 추가할 수 있습니다"
+    private var isOnlyBookmarked = false
     
+    private let reloadDataSubject = PassthroughSubject<Void, Never>()
+    private lazy var guideTextSubject = CurrentValueSubject<String, Never>(baseGuideText)
+    private lazy var emptyStateTextSubject = CurrentValueSubject<String, Never>(emptyText)
+
     init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase) {
         self.fetchUseCase = fetchUseCase
         self.toggleBookmarkUseCase = toggleBookmarkUseCase
@@ -43,9 +47,7 @@ final class ClimbRecordListViewModel {
     }
     
     func transform(input: Input) -> Output {
-        let guideTextSubject = CurrentValueSubject<String, Never>(baseGuideText)
         let errorMessageSubject = PassthroughSubject<String, Never>()
-        let emptyStateTextSubject = CurrentValueSubject<String, Never>(emptyText)
 
         let searchTextSubject = CurrentValueSubject<String, Never>("")
 
@@ -64,7 +66,10 @@ final class ClimbRecordListViewModel {
         input.bookmarkButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .scan(false) { last, _ in !last }
-            .sink { isOnlyBookmarkedSubject.send($0) }
+            .sink { [weak self] value in
+                isOnlyBookmarkedSubject.send(value)
+                self?.isOnlyBookmarked = value
+            }
             .store(in: &cancellables)
 
         let isOnlyBookmarked = isOnlyBookmarkedSubject.eraseToAnyPublisher()
@@ -140,7 +145,7 @@ final class ClimbRecordListViewModel {
 
 // MARK: - ClimbRecordDetailViewModelDelegate
 extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
-    
+
     func updateReview(id: String, rating: Int, comment: String) {
         if let index = climbRecordList.firstIndex(where: {
             $0.id == id
@@ -149,13 +154,32 @@ extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
             climbRecordList[index].comment = comment
         }
     }
-    
+
     func deleteRecord(id: String) {
         if let index = climbRecordList.firstIndex(where: {
             $0.id == id
         }) {
             climbRecordList.remove(at: index)
+
+            if isOnlyBookmarked {
+                guideTextSubject.send("북마크한 산들 (\(climbRecordList.count)개)")
+            } else {
+                guideTextSubject.send("\(baseGuideText) (\(climbRecordList.count)개)")
+            }
+
+            if climbRecordList.isEmpty {
+                emptyStateTextSubject.send(emptyText)
+            }
+
             reloadDataSubject.send(())
+        }
+    }
+
+    func updateImages(id: String, images: [String]) {
+        if let index = climbRecordList.firstIndex(where: {
+            $0.id == id
+        }) {
+            climbRecordList[index].images = images
         }
     }
 }
