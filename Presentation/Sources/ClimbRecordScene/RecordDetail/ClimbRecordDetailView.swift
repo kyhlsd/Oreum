@@ -287,16 +287,9 @@ extension ClimbRecordDetailView {
     }
     
     func setData(climbRecord: ClimbRecord) {
-        // TODO: 메서드로 만들기
-        if let date = climbRecord.timeLog.first?.time {
-            dateView.setTitle(title: AppFormatter.dateFormatter.string(from: date))
-        } else {
-            dateView.setTitle(title: "기록 없음")
-        }
-
+        dateView.setTitle(title: AppFormatter.dateFormatter.string(from: climbRecord.climbDate))
         addressView.setTitle(title: climbRecord.mountain.address)
         heightView.setTitle(title: climbRecord.mountain.height.formatted() + "m")
-        
         setReview(rating: climbRecord.score, comment: climbRecord.comment)
     }
     

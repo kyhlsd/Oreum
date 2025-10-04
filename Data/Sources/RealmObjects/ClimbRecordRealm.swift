@@ -17,7 +17,7 @@ final class ClimbRecordRealm: Object {
     @Persisted private var score: Int
     @Persisted private var comment: String
     @Persisted var isBookmarked: Bool
-    @Persisted private var climbDate: Date // 정렬용 필드
+    @Persisted private var climbDate: Date
 }
 
 extension ClimbRecordRealm {
@@ -28,7 +28,8 @@ extension ClimbRecordRealm {
                            images: images.map { $0.toDomain() },
                            score: score,
                            comment: comment,
-                           isBookmarked: isBookmarked)
+                           isBookmarked: isBookmarked,
+                           climbDate: climbDate)
     }
 
     convenience init(from domain: ClimbRecord) {
@@ -40,6 +41,6 @@ extension ClimbRecordRealm {
         self.score = domain.score
         self.comment = domain.comment
         self.isBookmarked = domain.isBookmarked
-        self.climbDate = domain.timeLog.first?.time ?? Date()
+        self.climbDate = domain.climbDate
     }
 }

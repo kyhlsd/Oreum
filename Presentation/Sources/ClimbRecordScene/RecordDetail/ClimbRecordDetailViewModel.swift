@@ -144,7 +144,7 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
 
-        let hasTimeline = climbRecord.timeLog.count > 1
+        let hasTimeline = !climbRecord.timeLog.isEmpty
         let timelineButtonEnabled = Just(hasTimeline).eraseToAnyPublisher()
         let timelineButtonTitle = Just(hasTimeline ? "타임라인 보기" : "측정 기록이 없습니다").eraseToAnyPublisher()
 

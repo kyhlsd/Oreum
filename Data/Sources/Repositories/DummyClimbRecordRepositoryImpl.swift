@@ -32,7 +32,7 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
         }
         
         records.sort {
-            $0.timeLog.first?.time ?? Date() > $1.timeLog.first?.time ?? Date()
+            $0.climbDate > $1.climbDate
         }
 
         return Just(records)

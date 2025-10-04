@@ -140,13 +140,12 @@ final class AddClimbRecordViewModel {
                 let record = ClimbRecord(
                     id: UUID().uuidString,
                     mountain: mountain,
-                    timeLog: [
-                        ActivityLog(id: UUID().uuidString, time: date, step: 0, distance: 0)
-                    ],
+                    timeLog: [],
                     images: [],
                     score: 0,
                     comment: "",
-                    isBookmarked: false
+                    isBookmarked: false,
+                    climbDate: date
                 )
 
                 pushDetailVCSubject.send(record)
