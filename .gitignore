@@ -73,4 +73,5 @@ Tuist/.build
 /.claude/
 
 ### Secrets ###
-**/Secrets/Data/Resources/MountainInfos.json
+**/Secrets/
+Data/Resources/MountainInfos.json
