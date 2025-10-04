@@ -58,6 +58,9 @@ final class AddClimbRecordViewController: UIViewController {
         output.searchResults
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
+                if !mountains.isEmpty {
+                    self?.mainView.searchResultsTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: false)
+                }
             }
             .store(in: &cancellables)
 
