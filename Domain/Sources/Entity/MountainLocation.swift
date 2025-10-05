@@ -11,11 +11,15 @@ public struct MountainLocation: Hashable {
     public let name: String
     public let latitude: Double
     public let longitude: Double
+    public let height: Int
+    public let address: String
     
-    public init(name: String, latitude: Double, longitude: Double) {
+    public init(name: String, latitude: Double, longitude: Double, height: Int, address: String) {
         self.name = name
         self.latitude = latitude
         self.longitude = longitude
+        self.height = height
+        self.address = address
     }
 }
 

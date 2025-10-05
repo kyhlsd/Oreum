@@ -21,13 +21,14 @@ final class NearbyMountainCollectionViewCell: BaseCollectionViewCell {
         return view
     }()
 
-    private let imageItemView = ImageItemView(icon: AppIcon.mountain, subtitle: "주소")
+    private let imageItemView = ImageItemView(icon: AppIcon.mountain)
 
     private let distanceLabel = TagLabel(text: "", textColor: AppColor.distanceForground, backgroundColor: AppColor.distanceBackground)
     
     func configure(mountainLocation: MountainLocation, distance: Double) {
         imageItemView.setTitle(title: mountainLocation.name)
-
+        imageItemView.setSubtitle(subtitle: mountainLocation.address)
+        
         if distance == Double.infinity {
             distanceLabel.text = "-"
         } else {
@@ -46,12 +47,11 @@ final class NearbyMountainCollectionViewCell: BaseCollectionViewCell {
     override func setupLayout() {
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
-            make.height.greaterThanOrEqualTo(80)
         }
 
         imageItemView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(AppSpacing.regular)
-            make.centerY.equalToSuperview()
+            make.leading.equalToSuperview().offset(AppSpacing.regular)
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.regular)
             make.trailing.lessThanOrEqualTo(distanceLabel.snp.leading).offset(-AppSpacing.compact)
         }
 

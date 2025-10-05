@@ -28,15 +28,24 @@ final class ImageItemView: BaseView {
     private let titleLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleS)
     
     private let subtitleLabel = UILabel.create(color: AppColor.subText, font: AppFont.description)
-    
-    init(icon: UIImage?, subtitle: String) {
+        
+    init(icon: UIImage?) {
         super.init(frame: .zero)
         iconImageView.image = icon
+    }
+    
+    convenience init(icon: UIImage?, subtitle: String) {
+        self.init(icon: icon)
         subtitleLabel.text = subtitle
     }
+
     
     func setTitle(title: String?) {
         titleLabel.text = title
+    }
+    
+    func setSubtitle(subtitle: String?) {
+        subtitleLabel.text = subtitle
     }
     
     override func setupHierarchy() {

@@ -1,0 +1,702 @@
+[
+  {
+    "name": "가리산",
+    "latitude": 37.5278,
+    "longitude": 128.2075,
+    "height": 1050,
+    "address": "강원도 홍천군 두촌면ㆍ화촌면, 춘천시 북산면ㆍ동면"
+  },
+  {
+    "name": "가리왕산",
+    "latitude": 37.3964,
+    "longitude": 128.2686,
+    "height": 1561,
+    "address": "강원도 정선군 북평면ㆍ정선읍 회동리, 평창군 진부면"
+  },
+  {
+    "name": "가야산",
+    "latitude": 35.6792,
+    "longitude": 128.0633,
+    "height": 1432,
+    "address": "경상남도 합천군ㆍ거창군, 경상북도 성주군"
+  },
+  {
+    "name": "가지산",
+    "latitude": 35.4972,
+    "longitude": 129.0956,
+    "height": 1240,
+    "address": "울산광역시 울주군, 경상북도 청도군, 경상남도 밀양시"
+  },
+  {
+    "name": "감악산",
+    "latitude": 37.9333,
+    "longitude": 126.9833,
+    "height": 674,
+    "address": "경기도 파주시 적성면, 양주시 남면, 연천군 전곡읍"
+  },
+  {
+    "name": "강천산",
+    "latitude": 35.2486,
+    "longitude": 127.1222,
+    "height": 585,
+    "address": "전라북도 순창군 팔덕면, 전라남도 담양군 용면"
+  },
+  {
+    "name": "계룡산",
+    "latitude": 36.2892,
+    "longitude": 127.285,
+    "height": 846,
+    "address": "대전광역시, 충청남도 공주시 계룡면, 논산시 상월면, 계룡시 신도안면"
+  },
+  {
+    "name": "계방산",
+    "latitude": 37.4314,
+    "longitude": 128.3742,
+    "height": 1579,
+    "address": "강원도 홍천군 내면, 평창군 용편면ㆍ진부면"
+  },
+  {
+    "name": "공작산",
+    "latitude": 37.5744,
+    "longitude": 128.1794,
+    "height": 887,
+    "address": "강원도 홍천군 동면, 화촌면"
+  },
+  {
+    "name": "관악산",
+    "latitude": 37.4756,
+    "longitude": 126.9511,
+    "height": 632,
+    "address": "서울특별시 관악구, 경기도 안양시, 과천시"
+  },
+  {
+    "name": "구병산",
+    "latitude": 36.4633,
+    "longitude": 127.7,
+    "height": 876,
+    "address": "경상북도 상주신 화북면, 충청북도 보은군 마로면ㆍ속리산면"
+  },
+  {
+    "name": "금산",
+    "latitude": 34.83,
+    "longitude": 128.08,
+    "height": 704,
+    "address": "경상남도 남해군 상주면, 이동면, 삼동면"
+  },
+  {
+    "name": "금수산",
+    "latitude": 37.15,
+    "longitude": 128.2,
+    "height": 1015,
+    "address": "충청북도 제천시 수산면, 단양군 적성면"
+  },
+  {
+    "name": "금오산",
+    "latitude": 35.1675,
+    "longitude": 128.3492,
+    "height": 976,
+    "address": "경상북도 구미시, 칠곡군 북삼읍, 김천시 남면"
+  },
+  {
+    "name": "금정산",
+    "latitude": 35.2325,
+    "longitude": 129.0725,
+    "height": 800,
+    "address": "부산광역시 금정구ㆍ북구, 경상남도 양산시"
+  },
+  {
+    "name": "깃대봉",
+    "latitude": 34.9242,
+    "longitude": 125.5,
+    "height": 367,
+    "address": "전라남도 신안군 흑산면 홍도"
+  },
+  {
+    "name": "남산(금오산)",
+    "latitude": 35.8567,
+    "longitude": 129.2183,
+    "height": 495,
+    "address": "경상북도 경주시 남산동, 내남면"
+  },
+  {
+    "name": "내연산",
+    "latitude": 36.0425,
+    "longitude": 129.375,
+    "height": 711,
+    "address": "경상북도 포항시 송라면ㆍ청하면ㆍ죽장면, 영덕군 남정면"
+  },
+  {
+    "name": "내장산(신선봉)",
+    "latitude": 35.5633,
+    "longitude": 126.87,
+    "height": 763,
+    "address": "전라북도 정읍시 내장동, 순창군 쌍치면ㆍ복흥면"
+  },
+  {
+    "name": "대둔산",
+    "latitude": 36.2875,
+    "longitude": 127.3475,
+    "height": 879,
+    "address": "충청남도 논산시 벌곡면ㆍ금산군 진산면, 전라북도 완주군 운주면"
+  },
+  {
+    "name": "대암산",
+    "latitude": 38.1292,
+    "longitude": 128.1456,
+    "height": 1312,
+    "address": "강원 양구군 동면, 인제군 서화면"
+  },
+  {
+    "name": "대야산",
+    "latitude": 36.7403,
+    "longitude": 128.1536,
+    "height": 931,
+    "address": "경상북도 문경시 가은읍, 충청북도 괴산군 청천면"
+  },
+  {
+    "name": "덕숭산(수덕산)",
+    "latitude": 36.7361,
+    "longitude": 126.9078,
+    "height": 495,
+    "address": "충청남도 예산군 덕산면"
+  },
+  {
+    "name": "덕유산(향적봉)",
+    "latitude": 35.86,
+    "longitude": 127.7717,
+    "height": 1614,
+    "address": "전라북도 무주군ㆍ장수군, 경상남도 거창군ㆍ함양군"
+  },
+  {
+    "name": "덕항산",
+    "latitude": 37.2061,
+    "longitude": 129.1156,
+    "height": 1072,
+    "address": "강원도 삼척시 신기면, 태백시 하사미동"
+  },
+  {
+    "name": "도락산",
+    "latitude": 36.9763,
+    "longitude": 128.38,
+    "height": 965,
+    "address": "충청북도 단양군 단성면, 대강면"
+  },
+  {
+    "name": "도봉산(자운봉)",
+    "latitude": 37.6886,
+    "longitude": 127.0394,
+    "height": 740,
+    "address": "서울특별시 도봉구, 경기도 의정부시 호원동ㆍ양주시 장흥면"
+  },
+  {
+    "name": "두륜산",
+    "latitude": 34.5536,
+    "longitude": 126.5981,
+    "height": 700,
+    "address": "전라남도 해남군 삼산면ㆍ북일면ㆍ북평면ㆍ현산면"
+  },
+  {
+    "name": "두타산",
+    "latitude": 37.4878,
+    "longitude": 129.1083,
+    "height": 1357,
+    "address": "강원도 동해시 삼화동, 삼척시 미로면ㆍ하자면"
+  },
+  {
+    "name": "마니산",
+    "latitude": 37.7411,
+    "longitude": 126.4822,
+    "height": 472,
+    "address": "인천광역시 강화군 화도면"
+  },
+  {
+    "name": "마이산(암마이산)",
+    "latitude": 35.7517,
+    "longitude": 127.3703,
+    "height": 687,
+    "address": "전라북도 진안군 진안읍ㆍ마령면"
+  },
+  {
+    "name": "명성산",
+    "latitude": 38.2211,
+    "longitude": 127.2972,
+    "height": 922,
+    "address": "강원도 철원군 갈말읍, 경기도 포천시 영북면ㆍ이동면"
+  },
+  {
+    "name": "명지산",
+    "latitude": 37.8322,
+    "longitude": 127.5236,
+    "height": 1252,
+    "address": "경기도 가평군 북면ㆍ하면"
+  },
+  {
+    "name": "모악산",
+    "latitude": 35.8253,
+    "longitude": 127.1296,
+    "height": 795,
+    "address": "전라북도 김제시 금산면, 전주시 완산구, 완주군 구이면"
+  },
+  {
+    "name": "무등산",
+    "latitude": 35.1592,
+    "longitude": 126.9264,
+    "height": 1186,
+    "address": "광주광역시 동구, 전라남도 담양군 남면ㆍ화순군 이서면"
+  },
+  {
+    "name": "무학산",
+    "latitude": 35.2283,
+    "longitude": 128.6583,
+    "height": 761,
+    "address": "경상남도 창원시 교방동ㆍ두척동ㆍ내서읍"
+  },
+  {
+    "name": "미륵산",
+    "latitude": 34.8422,
+    "longitude": 128.4333,
+    "height": 458,
+    "address": "경상남도 통영시 산양읍ㆍ봉평동"
+  },
+  {
+    "name": "민주지산",
+    "latitude": 36.2208,
+    "longitude": 128.0736,
+    "height": 1241,
+    "address": "충청북도 영동군 쌍촌면ㆍ용화면, 전라북도 무주군 설천면, 경상북도 김천시 부항면"
+  },
+  {
+    "name": "방장산",
+    "latitude": 35.5292,
+    "longitude": 126.7092,
+    "height": 733,
+    "address": "전라북도 고창군 신림면ㆍ정읍시 입암면, 전라남도 장성군"
+  },
+  {
+    "name": "방태산(주억봉)",
+    "latitude": 38.1372,
+    "longitude": 128.1583,
+    "height": 1445,
+    "address": "강원도 인제군 기린면ㆍ상남면, 홍천군 내면"
+  },
+  {
+    "name": "백덕산",
+    "latitude": 37.4544,
+    "longitude": 128.4875,
+    "height": 1350,
+    "address": "강원도 평창군 방림면, 횡성군 안흥면, 영월군 수주면"
+  },
+  {
+    "name": "백암산",
+    "latitude": 35.4167,
+    "longitude": 126.9667,
+    "height": 741,
+    "address": "전라북도 순창군 복흥면, 잔라남도 장성군 북하면"
+  },
+  {
+    "name": "백운산(포천)",
+    "latitude": 38.0833,
+    "longitude": 127.3167,
+    "height": 903,
+    "address": "경기도 포천시 이동면"
+  },
+  {
+    "name": "백운산(광양)",
+    "latitude": 35.1167,
+    "longitude": 127.6167,
+    "height": 1222,
+    "address": "전라남도 광양시 진상면ㆍ옥룡면ㆍ봉강면ㆍ다압면, 구례군 간전면"
+  },
+  {
+    "name": "백운산(정선)",
+    "latitude": 37.3333,
+    "longitude": 128.65,
+    "height": 883,
+    "address": "강원도 정선군 신동읍, 평창군 미탄면"
+  },
+  {
+    "name": "변산(의상봉)",
+    "latitude": 35.6667,
+    "longitude": 126.55,
+    "height": 459,
+    "address": "전라북도 부안군 변산면, 상서면, 진서면"
+  },
+  {
+    "name": "북한산(백운대)",
+    "latitude": 37.6594,
+    "longitude": 126.9858,
+    "height": 835,
+    "address": "서울특별시 강북구ㆍ성북구ㆍ종로구ㆍ은평구, 경기도 고양시ㆍ양주시"
+  },
+  {
+    "name": "비슬산(천왕봉)",
+    "latitude": 35.7167,
+    "longitude": 128.55,
+    "height": 1083,
+    "address": "대구광역시 달성군 옥포면ㆍ유가면ㆍ가창면, 경상북도 청도군 각북면"
+  },
+  {
+    "name": "삼악산",
+    "latitude": 37.95,
+    "longitude": 127.7,
+    "height": 655,
+    "address": "강원도 춘천시 서면"
+  },
+  {
+    "name": "서대산",
+    "latitude": 36.0833,
+    "longitude": 127.5833,
+    "height": 905,
+    "address": "충청남도 금산군 추부면ㆍ군북면, 충청북도 옥천군 군서면"
+  },
+  {
+    "name": "선운산",
+    "latitude": 35.5,
+    "longitude": 126.5833,
+    "height": 334,
+    "address": "전라북도 고창군 아산면ㆍ심원면ㆍ해리면"
+  },
+  {
+    "name": "설악산(대청봉)",
+    "latitude": 38.1194,
+    "longitude": 128.4656,
+    "height": 1708,
+    "address": "강원도 속초시 설악동, 인제군 북면ㆍ인제읍, 양양군 서면ㆍ강현면"
+  },
+  {
+    "name": "성인봉",
+    "latitude": 37.5,
+    "longitude": 130.8667,
+    "height": 986,
+    "address": "경상북도 울릉군 울릉읍 서면ㆍ북면"
+  },
+  {
+    "name": "소백산",
+    "latitude": 36.95,
+    "longitude": 128.4833,
+    "height": 1439,
+    "address": "경상북도 영주시 풍기읍, 충청북도 단양군 단양읍"
+  },
+  {
+    "name": "소요산",
+    "latitude": 37.95,
+    "longitude": 127.0833,
+    "height": 587,
+    "address": "경기도 동두천시, 포천시 신북면"
+  },
+  {
+    "name": "속리산",
+    "latitude": 36.5417,
+    "longitude": 127.8667,
+    "height": 1058,
+    "address": "경상북도 상주시 화북면, 충청북도 보은군 내속리면"
+  },
+  {
+    "name": "신불산",
+    "latitude": 35.5333,
+    "longitude": 129.05,
+    "height": 1159,
+    "address": "울산광역시 울주군 삼남면ㆍ상북면"
+  },
+  {
+    "name": "연화산",
+    "latitude": 34.95,
+    "longitude": 128.25,
+    "height": 524,
+    "address": "경상남도 고성군 개천면ㆍ영현면"
+  },
+  {
+    "name": "오대산(비로봉)",
+    "latitude": 37.7833,
+    "longitude": 128.5667,
+    "height": 1565,
+    "address": "강원도 평창군 진부면, 홍천군 내면, 강릉시 연곡면"
+  },
+  {
+    "name": "오봉산",
+    "latitude": 37.9667,
+    "longitude": 127.6833,
+    "height": 777,
+    "address": "강원도 춘천시 북산면, 화천군 간동면"
+  },
+  {
+    "name": "용문산",
+    "latitude": 37.4319,
+    "longitude": 127.5314,
+    "height": 1157,
+    "address": "경기도 양평군 용문면ㆍ옥천면"
+  },
+  {
+    "name": "용화산",
+    "latitude": 38.1211,
+    "longitude": 128.1111,
+    "height": 877,
+    "address": "강원도 화천군 간동면ㆍ하남면, 춘천시 사북면"
+  },
+  {
+    "name": "운문산",
+    "latitude": 35.5465,
+    "longitude": 128.7725,
+    "height": 1195,
+    "address": "경상북도 청도군 운문면, 경상남도 밀양시 산내면"
+  },
+  {
+    "name": "운악산(현등산)",
+    "latitude": 37.8333,
+    "longitude": 127.2833,
+    "height": 934,
+    "address": "경기도 가평군 하면, 포천시 화현면"
+  },
+  {
+    "name": "운장산",
+    "latitude": 35.5322,
+    "longitude": 127.3522,
+    "height": 1125,
+    "address": "전라북도 진안군 주천면, 부귀면, 정천면, 완주군 동상면"
+  },
+  {
+    "name": "월악산",
+    "latitude": 36.975,
+    "longitude": 128.2292,
+    "height": 1095,
+    "address": "충청북도 제천시 한수면, 덕산면"
+  },
+  {
+    "name": "월출산",
+    "latitude": 34.7742,
+    "longitude": 126.7464,
+    "height": 810,
+    "address": "전라남도 영암군 영암읍ㆍ군서면ㆍ학산면, 강진군 성전면"
+  },
+  {
+    "name": "유명산",
+    "latitude": 37.5744,
+    "longitude": 127.4878,
+    "height": 864,
+    "address": "경기도 가평군 설악면, 양평군 옥천면"
+  },
+  {
+    "name": "응봉산(매봉산)",
+    "latitude": 37.4486,
+    "longitude": 129.1608,
+    "height": 999,
+    "address": "강원도 삼척시 가곡면ㆍ원덕읍, 경상북도 울진군 북면"
+  },
+  {
+    "name": "장안산",
+    "latitude": 35.5986,
+    "longitude": 126.6356,
+    "height": 1237,
+    "address": "전라북도 장수군 장수읍, 계남면"
+  },
+  {
+    "name": "재약산",
+    "latitude": 35.4875,
+    "longitude": 128.725,
+    "height": 1119,
+    "address": "경상남도 밀양시 단장면ㆍ산내면, 울산광역시 울주군 상북면"
+  },
+  {
+    "name": "적상산",
+    "latitude": 35.7081,
+    "longitude": 127.7236,
+    "height": 1030,
+    "address": "전라북도 무주군 적상면"
+  },
+  {
+    "name": "점봉산",
+    "latitude": 38.0531,
+    "longitude": 128.2714,
+    "height": 1426,
+    "address": "강원도 양양군 서면, 인제군 인제읍ㆍ기린면"
+  },
+  {
+    "name": "조계산",
+    "latitude": 34.9469,
+    "longitude": 127.5406,
+    "height": 887,
+    "address": "전라남도 순천시 승주읍ㆍ송광면"
+  },
+  {
+    "name": "주왕산",
+    "latitude": 36.46,
+    "longitude": 129.1069,
+    "height": 722,
+    "address": "경상북도 청송군 청송읍ㆍ부동면, 영덕군 지품면ㆍ달산면"
+  },
+  {
+    "name": "주흘산",
+    "latitude": 36.5878,
+    "longitude": 128.1892,
+    "height": 1108,
+    "address": "경상북도 문경시 문경읍"
+  },
+  {
+    "name": "지리산(천왕봉)",
+    "latitude": 35.3436,
+    "longitude": 127.77,
+    "height": 1915,
+    "address": "경상남도 하동군ㆍ산청군ㆍ함양군, 전라북도 남원시, 전라남도 구례군"
+  },
+  {
+    "name": "지리산",
+    "latitude": 34.86,
+    "longitude": 128.4083,
+    "height": 399,
+    "address": "경상남도 통영시 사량면"
+  },
+  {
+    "name": "천관산",
+    "latitude": 34.6111,
+    "longitude": 126.9514,
+    "height": 724,
+    "address": "전라남도 장흥군 관산읍, 대덕읍"
+  },
+  {
+    "name": "천마산",
+    "latitude": 37.65,
+    "longitude": 127.2333,
+    "height": 810,
+    "address": "경기도 남양주시 화도읍, 오남읍"
+  },
+  {
+    "name": "천성산",
+    "latitude": 35.3833,
+    "longitude": 129.05,
+    "height": 920,
+    "address": "경상남도 양산시 하북면, 웅상읍, 상북면"
+  },
+  {
+    "name": "천태산",
+    "latitude": 36.1667,
+    "longitude": 127.6333,
+    "height": 714,
+    "address": "충청북도 영동군 양산면, 충청남도 금산군 제원면"
+  },
+  {
+    "name": "청량산",
+    "latitude": 36.7833,
+    "longitude": 128.8,
+    "height": 869,
+    "address": "경상북도 봉화군 명호면ㆍ재산면, 안동시 도산면ㆍ예안면"
+  },
+  {
+    "name": "추월산",
+    "latitude": 35.35,
+    "longitude": 127.0167,
+    "height": 731,
+    "address": "전라남도 담양군 용면, 전라북도 순창군 복흥면"
+  },
+  {
+    "name": "축령산",
+    "latitude": 37.7667,
+    "longitude": 127.45,
+    "height": 887,
+    "address": "경기도 남양주시 수동면, 가평군 상면"
+  },
+  {
+    "name": "치악산",
+    "latitude": 37.3667,
+    "longitude": 128.05,
+    "height": 1282,
+    "address": "강원도 원주시, 횡성군, 영월군"
+  },
+  {
+    "name": "칠갑산",
+    "latitude": 36.4167,
+    "longitude": 126.85,
+    "height": 559,
+    "address": "충청남도 청양군 대치면, 정산면, 장평면"
+  },
+  {
+    "name": "태백산",
+    "latitude": 37.0994,
+    "longitude": 128.9156,
+    "height": 1566,
+    "address": "강원도 태백시, 경상북도 봉화군 석포면"
+  },
+  {
+    "name": "태화산",
+    "latitude": 37.0667,
+    "longitude": 128.4167,
+    "height": 1027,
+    "address": "강원도 영월군 남면, 충청북도 단양군 영춘면"
+  },
+  {
+    "name": "팔공산",
+    "latitude": 36.0167,
+    "longitude": 128.7,
+    "height": 1192,
+    "address": "경상북도 군위군 부계면, 영천시 신녕면, 대구광역시 동구"
+  },
+  {
+    "name": "팔봉산",
+    "latitude": 37.6761,
+    "longitude": 127.9042,
+    "height": 328,
+    "address": "강원도 홍천군 서면"
+  },
+  {
+    "name": "팔영산",
+    "latitude": 34.6028,
+    "longitude": 127.4136,
+    "height": 606,
+    "address": "전라남도 고흥군 점암면, 영남면"
+  },
+  {
+    "name": "한라산",
+    "latitude": 33.3617,
+    "longitude": 126.5297,
+    "height": 1947,
+    "address": "제주특별자치도"
+  },
+  {
+    "name": "화악산",
+    "latitude": 37.8389,
+    "longitude": 128.1717,
+    "height": 1468,
+    "address": "경기도 가평군 북면, 강원도 화천군 사내면"
+  },
+  {
+    "name": "화왕산",
+    "latitude": 35.5694,
+    "longitude": 128.6872,
+    "height": 757,
+    "address": "경상남도 창녕군 창녕읍, 고암면"
+  },
+  {
+    "name": "황매산",
+    "latitude": 35.4747,
+    "longitude": 128.0708,
+    "height": 1113,
+    "address": "경상남도 합천군 대병면ㆍ가회면, 산청군 차황면"
+  },
+  {
+    "name": "황석산",
+    "latitude": 35.4394,
+    "longitude": 127.8914,
+    "height": 1192,
+    "address": "경상남도 함양군 안의면, 서하면, 서상면"
+  },
+  {
+    "name": "황악산",
+    "latitude": 36.1194,
+    "longitude": 128.0747,
+    "height": 1111,
+    "address": "경상북도 김천시 대항면"
+  },
+  {
+    "name": "황장산",
+    "latitude": 36.6264,
+    "longitude": 128.1269,
+    "height": 1078,
+    "address": "경상북도 문경시 동로면"
+  },
+  {
+    "name": "희양산",
+    "latitude": 36.5956,
+    "longitude": 128.0506,
+    "height": 996,
+    "address": "경상북도 문경시 가은읍, 충청북도 괴산군 연풍면"
+  }
+]

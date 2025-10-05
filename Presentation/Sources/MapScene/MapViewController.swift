@@ -60,6 +60,7 @@ final class MapViewController: UIViewController, BaseViewController {
         output.nearbyMountains
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
+                self?.updateMapAnnotations(mountains: mountains)
             }
             .store(in: &cancellables)
 
@@ -113,5 +114,22 @@ extension MapViewController {
         snapshot.appendItems(mountains)
         dataSource.apply(snapshot, animatingDifferences: true)
     }
-    
+
+    private func updateMapAnnotations(mountains: [MountainDistance]) {
+        mainView.mapView.removeAnnotations(mainView.mapView.annotations)
+
+        let annotations = mountains.map { mountain -> MKPointAnnotation in
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = CLLocationCoordinate2D(
+                latitude: mountain.mountainLocation.latitude,
+                longitude: mountain.mountainLocation.longitude
+            )
+            annotation.title = mountain.mountainLocation.name
+            annotation.subtitle = String(format: "%.1fkm", mountain.distance)
+            return annotation
+        }
+
+        mainView.mapView.addAnnotations(annotations)
+    }
+
 }
