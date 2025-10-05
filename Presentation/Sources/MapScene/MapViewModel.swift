@@ -30,11 +30,13 @@ final class MapViewModel: NSObject, BaseViewModel {
         let viewDidLoad: AnyPublisher<Void, Never>
         let locationButtonTapped: AnyPublisher<Void, Never>
         let mountainCellTapped: AnyPublisher<MountainDistance, Never>
+        let searchText: AnyPublisher<String, Never>
     }
 
     struct Output {
         let userLocation: AnyPublisher<CLLocationCoordinate2D, Never>
-        let nearbyMountains: AnyPublisher<[MountainDistance], Never>
+        let displayMountains: AnyPublisher<[MountainDistance], Never>
+        let allMountains: AnyPublisher<[MountainDistance], Never>
         let errorMessage: AnyPublisher<String, Never>
         let showLocationPermissionAlert: AnyPublisher<Void, Never>
         let moveToMountainLocation: AnyPublisher<CLLocationCoordinate2D, Never>
@@ -43,6 +45,7 @@ final class MapViewModel: NSObject, BaseViewModel {
     func transform(input: Input) -> Output {
 
         let nearbyMountainsSubject = PassthroughSubject<[MountainDistance], Never>()
+        let allMountainsSubject = PassthroughSubject<[MountainDistance], Never>()
         let errorMessageSubject = PassthroughSubject<String, Never>()
         let showLocationPermissionAlertSubject = PassthroughSubject<Void, Never>()
 
@@ -80,7 +83,7 @@ final class MapViewModel: NSObject, BaseViewModel {
         userLocationSubject
             .flatMap { [weak self] coordinate -> AnyPublisher<[MountainDistance], Never> in
                 guard let self else { return Just([]).eraseToAnyPublisher() }
-                
+
                 return self.fetchMountainLocationUseCase.execute()
                     .map { mountainLocations in
                         mountainLocations
@@ -89,8 +92,6 @@ final class MapViewModel: NSObject, BaseViewModel {
                                 return MountainDistance(mountainLocation: mountainLocation, distance: distance)
                             }
                             .sorted { $0.distance < $1.distance }
-                            .prefix(10)
-                            .map { $0 }
                     }
                     .catch { error -> Just<[MountainDistance]> in
                         errorMessageSubject.send(error.localizedDescription)
@@ -99,7 +100,8 @@ final class MapViewModel: NSObject, BaseViewModel {
                     .eraseToAnyPublisher()
             }
             .sink { mountains in
-                nearbyMountainsSubject.send(mountains)
+                allMountainsSubject.send(mountains)
+                nearbyMountainsSubject.send(Array(mountains.prefix(20)))
             }
             .store(in: &cancellables)
 
@@ -112,9 +114,28 @@ final class MapViewModel: NSObject, BaseViewModel {
             }
             .eraseToAnyPublisher()
 
+        let displayMountains = Publishers.CombineLatest(
+            nearbyMountainsSubject,
+            input.searchText
+                .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
+                .prepend("")
+        )
+        .map { nearbyMountains, searchText -> [MountainDistance] in
+            guard !searchText.isEmpty else {
+                return nearbyMountains
+            }
+
+            return nearbyMountains.filter { mountain in
+                mountain.mountainLocation.name.localizedCaseInsensitiveContains(searchText) ||
+                mountain.mountainLocation.address.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+        .eraseToAnyPublisher()
+
         return Output(
             userLocation: userLocationSubject.eraseToAnyPublisher(),
-            nearbyMountains: nearbyMountainsSubject.eraseToAnyPublisher(),
+            displayMountains: displayMountains,
+            allMountains: allMountainsSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher(),
             showLocationPermissionAlert: showLocationPermissionAlertSubject.eraseToAnyPublisher(),
             moveToMountainLocation: moveToMountainLocation

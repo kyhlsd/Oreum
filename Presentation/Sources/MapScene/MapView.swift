@@ -19,7 +19,8 @@ final class MapView: BaseView {
 
     lazy var collectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
-        collectionView.backgroundColor = AppColor.background
+        collectionView.backgroundColor = .clear
+        collectionView.keyboardDismissMode = .onDrag
         return collectionView
     }()
 
@@ -36,9 +37,22 @@ final class MapView: BaseView {
         return button
     }()
 
-    private let titleLabel = UILabel.create("내 주변 명산", color: AppColor.primaryText, font: AppFont.titleM)
+    private let titleLabel = UILabel.create("내 주위 명산", color: AppColor.primaryText, font: AppFont.titleM)
 
     private let descriptionLabel = UILabel.create("산림청에서 지정한 100대 명산", color: AppColor.subText, font: AppFont.description)
+
+    let searchBar = {
+        let searchBar = CustomSearchBar()
+        searchBar.placeholder = "산 이름 혹은 지역 명을 입력하세요"
+        return searchBar
+    }()
+
+    let emptyLabel = {
+        let label = UILabel.create("검색 결과가 없습니다", color: AppColor.subText, font: AppFont.body)
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
 
     private func createLayout() -> UICollectionViewCompositionalLayout {
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
@@ -57,10 +71,11 @@ final class MapView: BaseView {
     // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
+        searchBar.setBorder(false)
     }
 
     override func setupHierarchy() {
-        [mapView, currentLocationButton, titleLabel, descriptionLabel, collectionView].forEach {
+        [mapView, currentLocationButton, titleLabel, descriptionLabel, searchBar, collectionView, emptyLabel].forEach {
             addSubview($0)
         }
     }
@@ -87,9 +102,20 @@ final class MapView: BaseView {
             make.lastBaseline.equalTo(titleLabel)
         }
 
-        collectionView.snp.makeConstraints { make in
+        searchBar.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(AppSpacing.compact)
+            make.height.equalTo(40)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
+        }
+
+        collectionView.snp.makeConstraints { make in
+            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.compact)
             make.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
+        }
+
+        emptyLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalTo(collectionView)
         }
     }
 }
@@ -99,5 +125,20 @@ extension MapView {
     func updateMapRegion(coordinate: CLLocationCoordinate2D) {
         let region = MKCoordinateRegion(center: coordinate, latitudinalMeters: 40000, longitudinalMeters: 40000)
         mapView.setRegion(region, animated: true)
+    }
+
+    func setupMapBoundary(region: MKCoordinateRegion, zoomRange: MKMapView.CameraZoomRange) {
+        let cameraBoundary = MKMapView.CameraBoundary(coordinateRegion: region)
+        mapView.setCameraBoundary(cameraBoundary, animated: false)
+        mapView.setCameraZoomRange(zoomRange, animated: false)
+    }
+
+    func showEmptyState(_ show: Bool) {
+        emptyLabel.isHidden = !show
+        collectionView.isHidden = show
+    }
+
+    func setSearchBarBorder(isFirstResponder: Bool) {
+        searchBar.setBorder(isFirstResponder)
     }
 }

@@ -14,12 +14,21 @@ final class MapViewController: UIViewController, BaseViewController {
 
     let mainView = MapView()
     let viewModel: MapViewModel
-    
+
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
 
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let mountainCellTappedSubject = PassthroughSubject<MountainDistance, Never>()
+
+    // MARK: - Map Configuration Constants
+    private enum MapConfig {
+        static let southKoreaCenter = CLLocationCoordinate2D(latitude: 36.5, longitude: 127.5)
+        static let regionLatitudinalMeters: CLLocationDistance = 800000
+        static let regionLongitudinalMeters: CLLocationDistance = 500000
+        static let minZoomDistance: CLLocationDistance = 5000
+        static let maxZoomDistance: CLLocationDistance = 1000000
+    }
 
     init(viewModel: MapViewModel) {
         self.viewModel = viewModel
@@ -40,16 +49,35 @@ final class MapViewController: UIViewController, BaseViewController {
 
         setupNavItem()
         setupDelegates()
+        setupMapBoundary()
         bind()
 
         viewDidLoadSubject.send(())
+    }
+
+    private func setupMapBoundary() {
+        let southKoreaRegion = MKCoordinateRegion(
+            center: MapConfig.southKoreaCenter,
+            latitudinalMeters: MapConfig.regionLatitudinalMeters,
+            longitudinalMeters: MapConfig.regionLongitudinalMeters
+        )
+
+        let zoomRange = MKMapView.CameraZoomRange(
+            minCenterCoordinateDistance: MapConfig.minZoomDistance,
+            maxCenterCoordinateDistance: MapConfig.maxZoomDistance
+        )
+
+        if let zoomRange {
+            mainView.setupMapBoundary(region: southKoreaRegion, zoomRange: zoomRange)
+        }
     }
 
     func bind() {
         let input = MapViewModel.Input(
             viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
             locationButtonTapped: mainView.currentLocationButton.tap,
-            mountainCellTapped: mountainCellTappedSubject.eraseToAnyPublisher()
+            mountainCellTapped: mountainCellTappedSubject.eraseToAnyPublisher(),
+            searchText: mainView.searchBar.textDidChange
         )
 
         let output = viewModel.transform(input: input)
@@ -60,9 +88,15 @@ final class MapViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
-        output.nearbyMountains
+        output.displayMountains
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
+                self?.mainView.showEmptyState(mountains.isEmpty)
+            }
+            .store(in: &cancellables)
+
+        output.allMountains
+            .sink { [weak self] mountains in
                 self?.updateMapAnnotations(mountains: mountains)
             }
             .store(in: &cancellables)
@@ -98,6 +132,7 @@ final class MapViewController: UIViewController, BaseViewController {
     private func setupDelegates() {
         mainView.collectionView.delegate = self
         mainView.mapView.delegate = self
+        mainView.searchBar.delegate = self
     }
     
 }
@@ -146,6 +181,9 @@ extension MapViewController {
         mainView.mapView.addAnnotations(annotations)
     }
 
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        view.endEditing(true)
+    }
 }
 
 // MARK: - UICollectionViewDelegate
@@ -171,41 +209,75 @@ extension MapViewController: MKMapViewDelegate {
             annotationView?.annotation = annotation
         }
 
-        if let originalImage = UIImage(named: "MapPin", in: .module, with: nil),
-           let title = annotation.title ?? nil {
-            let imageSize = CGSize(width: 40, height: 60)
-            let textAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 12, weight: .medium),
-                .foregroundColor: AppColor.primaryText
-            ]
-            let textSize = (title as NSString).size(withAttributes: textAttributes)
-            let padding: CGFloat = 8
-            let backgroundWidth = textSize.width + padding * 2
-            let backgroundHeight = textSize.height + padding
-            let totalWidth = max(imageSize.width, backgroundWidth)
-            let totalHeight = imageSize.height + backgroundHeight + 4
-
-            let renderer = UIGraphicsImageRenderer(size: CGSize(width: totalWidth, height: totalHeight))
-            let combinedImage = renderer.image { context in
-                let imageX = (totalWidth - imageSize.width) / 2
-                originalImage.draw(in: CGRect(x: imageX, y: 0, width: imageSize.width, height: imageSize.height))
-
-                let backgroundX = (totalWidth - backgroundWidth) / 2
-                let backgroundY = imageSize.height - 8
-                let backgroundRect = CGRect(x: backgroundX, y: backgroundY, width: backgroundWidth, height: backgroundHeight)
-                let path = UIBezierPath(roundedRect: backgroundRect, cornerRadius: 8)
-                UIColor.white.setFill()
-                path.fill()
-
-                let textX = backgroundX + padding
-                let textY = backgroundY + padding / 2
-                (title as NSString).draw(at: CGPoint(x: textX, y: textY), withAttributes: textAttributes)
-            }
-
-            annotationView?.image = combinedImage
-            annotationView?.centerOffset = CGPoint(x: 0, y: -totalHeight / 2)
+        if let title = annotation.title ?? nil {
+            configureAnnotationView(annotationView, with: title)
         }
 
         return annotationView
+    }
+
+    private func configureAnnotationView(_ annotationView: MKAnnotationView?, with title: String) {
+        guard let combinedImage = createAnnotationImage(with: title) else { return }
+
+        let imageSize = CGSize(width: 40, height: 60)
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 12, weight: .medium),
+            .foregroundColor: AppColor.primaryText
+        ]
+        let textSize = (title as NSString).size(withAttributes: textAttributes)
+        let padding: CGFloat = 8
+        let backgroundHeight = textSize.height + padding
+        let totalHeight = imageSize.height + backgroundHeight + 4
+
+        annotationView?.image = combinedImage
+        annotationView?.centerOffset = CGPoint(x: 0, y: -totalHeight / 2)
+    }
+
+    private func createAnnotationImage(with title: String) -> UIImage? {
+        guard let originalImage = UIImage(named: "MapPin", in: .module, with: nil) else { return nil }
+
+        let imageSize = CGSize(width: 40, height: 60)
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 12, weight: .medium),
+            .foregroundColor: AppColor.primaryText
+        ]
+        let textSize = (title as NSString).size(withAttributes: textAttributes)
+        let padding: CGFloat = 8
+        let backgroundWidth = textSize.width + padding * 2
+        let backgroundHeight = textSize.height + padding
+        let totalWidth = max(imageSize.width, backgroundWidth)
+        let totalHeight = imageSize.height + backgroundHeight + 4
+
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: totalWidth, height: totalHeight))
+        return renderer.image { context in
+            let imageX = (totalWidth - imageSize.width) / 2
+            originalImage.draw(in: CGRect(x: imageX, y: 0, width: imageSize.width, height: imageSize.height))
+
+            let backgroundX = (totalWidth - backgroundWidth) / 2
+            let backgroundY = imageSize.height - 8
+            let backgroundRect = CGRect(x: backgroundX, y: backgroundY, width: backgroundWidth, height: backgroundHeight)
+            let path = UIBezierPath(roundedRect: backgroundRect, cornerRadius: 8)
+            UIColor.white.setFill()
+            path.fill()
+
+            let textX = backgroundX + padding
+            let textY = backgroundY + padding / 2
+            (title as NSString).draw(at: CGPoint(x: textX, y: textY), withAttributes: textAttributes)
+        }
+    }
+}
+
+// MARK: - UISearchBarDelegate
+extension MapViewController: UISearchBarDelegate {
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        mainView.setSearchBarBorder(isFirstResponder: true)
+    }
+
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        mainView.setSearchBarBorder(isFirstResponder: false)
+    }
+
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
     }
 }
