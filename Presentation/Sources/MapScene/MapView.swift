@@ -23,7 +23,22 @@ final class MapView: BaseView {
         return collectionView
     }()
 
+    let currentLocationButton = {
+        let button = UIButton()
+        button.setImage(UIImage(systemName: "location.fill"), for: .normal)
+        button.tintColor = AppColor.primary
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 20
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.2
+        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        button.layer.shadowRadius = 4
+        return button
+    }()
+
     private let titleLabel = UILabel.create("내 주변 명산", color: AppColor.primaryText, font: AppFont.titleM)
+
+    private let descriptionLabel = UILabel.create("산림청에서 지정한 100대 명산", color: AppColor.subText, font: AppFont.description)
 
     private func createLayout() -> UICollectionViewCompositionalLayout {
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(80))
@@ -45,7 +60,7 @@ final class MapView: BaseView {
     }
 
     override func setupHierarchy() {
-        [mapView, titleLabel, collectionView].forEach {
+        [mapView, currentLocationButton, titleLabel, descriptionLabel, collectionView].forEach {
             addSubview($0)
         }
     }
@@ -56,9 +71,20 @@ final class MapView: BaseView {
             make.height.equalTo(300)
         }
 
+        currentLocationButton.snp.makeConstraints { make in
+            make.trailing.equalTo(mapView).inset(AppSpacing.regular)
+            make.bottom.equalTo(mapView).inset(AppSpacing.regular)
+            make.width.height.equalTo(40)
+        }
+
         titleLabel.snp.makeConstraints { make in
             make.top.equalTo(mapView.snp.bottom).offset(AppSpacing.regular)
             make.leading.equalToSuperview().inset(AppSpacing.regular)
+        }
+
+        descriptionLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(AppSpacing.regular)
+            make.lastBaseline.equalTo(titleLabel)
         }
 
         collectionView.snp.makeConstraints { make in

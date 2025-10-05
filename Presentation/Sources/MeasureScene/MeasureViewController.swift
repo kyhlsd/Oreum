@@ -52,10 +52,10 @@ final class MeasureViewController: UIViewController, BaseViewController {
             checkTrackingStatusTrigger: Just(()).eraseToAnyPublisher(),
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             selectMountain: selectMountainSubject.eraseToAnyPublisher(),
-            cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher(),
-            startMeasuring: mainView.startButton.tap.eraseToAnyPublisher(),
-            cancelMeasuring: mainView.cancelMeasuringButton.tap.eraseToAnyPublisher(),
-            stopMeasuring: mainView.stopButton.tap.eraseToAnyPublisher(),
+            cancelMountain: mainView.cancelButton.tap,
+            startMeasuring: mainView.startButton.tap,
+            cancelMeasuring: mainView.cancelMeasuringButton.tap,
+            stopMeasuring: mainView.stopButton.tap,
             didBecomeActive: didBecomeActive
         )
 

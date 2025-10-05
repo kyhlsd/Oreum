@@ -48,7 +48,7 @@ final class AddClimbRecordViewController: UIViewController {
         let input = AddClimbRecordViewModel.Input(
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             mountainSelected: mountainSelectedSubject.eraseToAnyPublisher(),
-            cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher(),
+            cancelMountain: mainView.cancelButton.tap,
             dateChanged: mainView.datePicker.publisher(for: \.date).eraseToAnyPublisher(),
             nextButtonTapped: mainView.nextButton.tap
         )

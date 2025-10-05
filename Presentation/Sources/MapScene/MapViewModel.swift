@@ -28,18 +28,21 @@ final class MapViewModel: NSObject, BaseViewModel {
 
     struct Input {
         let viewDidLoad: AnyPublisher<Void, Never>
+        let locationButtonTapped: AnyPublisher<Void, Never>
     }
 
     struct Output {
         let userLocation: AnyPublisher<CLLocationCoordinate2D, Never>
         let nearbyMountains: AnyPublisher<[MountainDistance], Never>
         let errorMessage: AnyPublisher<String, Never>
+        let showLocationPermissionAlert: AnyPublisher<Void, Never>
     }
 
     func transform(input: Input) -> Output {
-        
+
         let nearbyMountainsSubject = PassthroughSubject<[MountainDistance], Never>()
         let errorMessageSubject = PassthroughSubject<String, Never>()
+        let showLocationPermissionAlertSubject = PassthroughSubject<Void, Never>()
 
         input.viewDidLoad
             .sink { [weak self] in
@@ -57,8 +60,21 @@ final class MapViewModel: NSObject, BaseViewModel {
                 }
             }
             .store(in: &cancellables)
+        
+        input.locationButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink { [weak self] in
+                guard let self else { return }
+                let status = self.locationManager.authorizationStatus
 
-        // 위치를 받아서 근처 명산 로딩
+                if status == .denied || status == .restricted {
+                    showLocationPermissionAlertSubject.send(())
+                } else {
+                    self.requestLocation()
+                }
+            }
+            .store(in: &cancellables)
+
         userLocationSubject
             .flatMap { [weak self] coordinate -> AnyPublisher<[MountainDistance], Never> in
                 guard let self else { return Just([]).eraseToAnyPublisher() }
@@ -88,7 +104,8 @@ final class MapViewModel: NSObject, BaseViewModel {
         return Output(
             userLocation: userLocationSubject.eraseToAnyPublisher(),
             nearbyMountains: nearbyMountainsSubject.eraseToAnyPublisher(),
-            errorMessage: errorMessageSubject.eraseToAnyPublisher()
+            errorMessage: errorMessageSubject.eraseToAnyPublisher(),
+            showLocationPermissionAlert: showLocationPermissionAlertSubject.eraseToAnyPublisher()
         )
     }
 

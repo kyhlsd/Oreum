@@ -45,7 +45,8 @@ final class MapViewController: UIViewController, BaseViewController {
 
     func bind() {
         let input = MapViewModel.Input(
-            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher()
+            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
+            locationButtonTapped: mainView.currentLocationButton.tap
         )
 
         let output = viewModel.transform(input: input)
@@ -65,6 +66,16 @@ final class MapViewController: UIViewController, BaseViewController {
         output.errorMessage
             .sink { errorMessage in
                 print(errorMessage)
+            }
+            .store(in: &cancellables)
+
+        output.showLocationPermissionAlert
+            .sink { [weak self] in
+                self?.presentCancellableAlert(title: "위치 권한 필요", message: "위치 권한이 거부되어 있습니다.\n설정으로 이동하시겠습니까?") {
+                    if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(settingsURL)
+                    }
+                }
             }
             .store(in: &cancellables)
     }
