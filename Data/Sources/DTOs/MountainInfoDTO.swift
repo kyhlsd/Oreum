@@ -39,6 +39,7 @@ extension MountainInfoDTO {
                 admin: MNTN_MANAGE_MAINBD_INST_NM ?? "",               // 관리 기관명
                 adminNumber: "",                                       // 관리 연락처
                 detail: DETAIL_INFO_DTCONT,                            // 상세 정보
+                image: MNTN_INFO_IMAGE_URL,                            // 산 이미지
                 referenceDate: Date(timeIntervalSince1970: 1576108800),// 기준 날짜
                 designationCriteria: HUN_LRGE_FAMMNT_SELECT_DTCONT     // 100대 명산 선정 이유
             )

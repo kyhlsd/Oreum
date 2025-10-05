@@ -23,21 +23,38 @@ final class MountainInfoViewModel: BaseViewModel {
     }
 
     struct Output {
-        let mountainInfo: AnyPublisher<MountainInfo, Never>
+        let mountainName: AnyPublisher<String, Never>
+        let address: AnyPublisher<String, Never>
+        let height: AnyPublisher<String, Never>
+        let introduction: AnyPublisher<String, Never>
+        let imageURL: AnyPublisher<URL?, Never>
     }
 
     func transform(input: Input) -> Output {
-        let mountainInfoSubject = PassthroughSubject<MountainInfo, Never>()
+        let mountainNameSubject = PassthroughSubject<String, Never>()
+        let addressSubject = PassthroughSubject<String, Never>()
+        let heightSubject = PassthroughSubject<String, Never>()
+        let introductionSubject = PassthroughSubject<String, Never>()
+        let imageURLSubject = PassthroughSubject<URL?, Never>()
 
         input.viewDidLoad
             .sink { [weak self] in
                 guard let self else { return }
-                mountainInfoSubject.send(self.mountainInfo)
+
+                mountainNameSubject.send(self.mountainInfo.name)
+                addressSubject.send(self.mountainInfo.address)
+                heightSubject.send("\(self.mountainInfo.height)m")
+                introductionSubject.send(self.mountainInfo.detail)
+                imageURLSubject.send(self.mountainInfo.image.flatMap { URL(string: $0) })
             }
             .store(in: &cancellables)
 
         return Output(
-            mountainInfo: mountainInfoSubject.eraseToAnyPublisher()
+            mountainName: mountainNameSubject.eraseToAnyPublisher(),
+            address: addressSubject.eraseToAnyPublisher(),
+            height: heightSubject.eraseToAnyPublisher(),
+            introduction: introductionSubject.eraseToAnyPublisher(),
+            imageURL: imageURLSubject.eraseToAnyPublisher()
         )
     }
 }

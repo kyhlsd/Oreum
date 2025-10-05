@@ -34,7 +34,6 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        setupNavItem()
         bind()
 
         viewDidLoadSubject.send(())
@@ -47,15 +46,67 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
 
         let output = viewModel.transform(input: input)
 
-        output.mountainInfo
-            .sink { [weak self] mountainInfo in
-                self?.mainView.configure(with: mountainInfo)
-                self?.title = mountainInfo.name
+        output.mountainName
+            .sink { [weak self] name in
+                self?.navigationItem.title = name
+            }
+            .store(in: &cancellables)
+
+        output.address
+            .sink { [weak self] address in
+                self?.mainView.setAddress(address)
+            }
+            .store(in: &cancellables)
+
+        output.height
+            .sink { [weak self] height in
+                self?.mainView.setHeight(height)
+            }
+            .store(in: &cancellables)
+
+        output.introduction
+            .sink { [weak self] introduction in
+                let attributedText = self?.createIntroductionAttributedString(from: introduction) ?? NSAttributedString()
+                self?.mainView.setIntroduction(attributedText)
+                self?.adjustTextViewScroll()
+            }
+            .store(in: &cancellables)
+
+        output.imageURL
+            .sink { [weak self] imageURL in
+                self?.mainView.setImage(imageURL)
             }
             .store(in: &cancellables)
     }
 
-    private func setupNavItem() {
-        navigationItem.backButtonTitle = " "
+    private func createIntroductionAttributedString(from text: String) -> NSAttributedString {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 8
+
+        if text.isEmpty {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .paragraphStyle: paragraphStyle,
+                .font: AppFont.body,
+                .foregroundColor: AppColor.tertiaryText
+            ]
+            return NSAttributedString(string: "소개 문구가 없습니다.", attributes: attributes)
+        } else {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .paragraphStyle: paragraphStyle,
+                .font: AppFont.body,
+                .foregroundColor: AppColor.subText
+            ]
+            return NSAttributedString(string: text, attributes: attributes)
+        }
     }
+
+    private func adjustTextViewScroll() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let textWidth = self.mainView.bounds.width - AppSpacing.regular * 2 - AppSpacing.compact * 2
+            let shouldEnableScroll = self.mainView.calculateTextViewHeight(width: textWidth) > 180
+            self.mainView.setTextViewScrollEnabled(shouldEnableScroll)
+        }
+    }
+
 }

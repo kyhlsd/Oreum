@@ -8,22 +8,41 @@
 import UIKit
 import Domain
 import SnapKit
+import Kingfisher
 
 final class MountainInfoView: BaseView {
 
-    private let scrollView = {
-        let scrollView = UIScrollView()
-        return scrollView
-    }()
+    private let scrollView = UIScrollView()
 
     private let contentView = UIView()
 
-    let imageView = {
+    private let imageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         imageView.backgroundColor = AppColor.cardBackground
         return imageView
+    }()
+
+    private let emptyImageView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.cardBackground
+        view.isHidden = true
+        return view
+    }()
+
+    private let photoImageView = {
+        let imageView = UIImageView()
+        imageView.image = AppIcon.photo
+        imageView.tintColor = AppColor.subText
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    private let photoLabel = {
+        let label = UILabel.create("이미지가 없습니다", color: AppColor.subText, font: AppFont.label)
+        label.textAlignment = .center
+        return label
     }()
 
     private let infoView = BoxView(title: "정보")
@@ -33,12 +52,13 @@ final class MountainInfoView: BaseView {
 
     private let introductionView = BoxView(title: "산 소개")
 
-    private let introductionLabel = {
-        let label = UILabel()
-        label.font = AppFont.body
-        label.textColor = AppColor.subText
-        label.numberOfLines = 0
-        return label
+    private let introductionTextView = {
+        let textView = UITextView(usingTextLayoutManager: false)
+        textView.textContainerInset = UIEdgeInsets(top: AppSpacing.compact, left: AppSpacing.compact, bottom: AppSpacing.compact, right: AppSpacing.compact)
+        textView.textContainer.lineFragmentPadding = 0
+        textView.isScrollEnabled = false
+        textView.isEditable = false
+        return textView
     }()
 
     private let weatherView = BoxView(title: "날씨 정보")
@@ -53,15 +73,19 @@ final class MountainInfoView: BaseView {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        [imageView, infoView, introductionView, weatherView].forEach {
+        [imageView, emptyImageView, infoView, introductionView, weatherView].forEach {
             contentView.addSubview($0)
+        }
+
+        [photoImageView, photoLabel].forEach {
+            emptyImageView.addSubview($0)
         }
 
         [addressView, heightView].forEach {
             infoView.addSubview($0)
         }
 
-        introductionView.addSubview(introductionLabel)
+        introductionView.addSubview(introductionTextView)
 
         weatherView.addSubview(weatherContentView)
     }
@@ -78,6 +102,20 @@ final class MountainInfoView: BaseView {
         imageView.snp.makeConstraints { make in
             make.top.horizontalEdges.equalToSuperview()
             make.height.equalTo(imageView.snp.width).multipliedBy(0.75)
+        }
+
+        emptyImageView.snp.makeConstraints { make in
+            make.edges.equalTo(imageView)
+        }
+
+        photoImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.size.equalTo(100)
+        }
+
+        photoLabel.snp.makeConstraints { make in
+            make.top.equalTo(photoImageView.snp.bottom).offset(AppSpacing.compact)
+            make.centerX.equalToSuperview()
         }
 
         infoView.snp.makeConstraints { make in
@@ -103,9 +141,11 @@ final class MountainInfoView: BaseView {
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
         }
 
-        introductionLabel.snp.makeConstraints { make in
-            make.top.equalTo(introductionView.lineView.snp.bottom).offset(AppSpacing.compact)
-            make.horizontalEdges.bottom.equalToSuperview().inset(AppSpacing.compact)
+        introductionTextView.snp.makeConstraints { make in
+            make.top.equalTo(introductionView.lineView.snp.bottom)
+            make.horizontalEdges.bottom.equalToSuperview()
+            make.height.greaterThanOrEqualTo(20)
+            make.height.lessThanOrEqualTo(180)
         }
 
         weatherView.snp.makeConstraints { make in
@@ -124,9 +164,37 @@ final class MountainInfoView: BaseView {
 
 // MARK: - Binding Methods
 extension MountainInfoView {
-    func configure(with mountainInfo: MountainInfo) {
-        addressView.setTitle(title: mountainInfo.address)
-        heightView.setTitle(title: "\(mountainInfo.height)m")
-        introductionLabel.text = mountainInfo.detail
+
+    func setAddress(_ address: String) {
+        addressView.setTitle(title: address)
+    }
+
+    func setHeight(_ height: String) {
+        heightView.setTitle(title: height)
+    }
+
+    func setIntroduction(_ attributedText: NSAttributedString) {
+        introductionTextView.attributedText = attributedText
+    }
+
+    func setImage(_ url: URL?) {
+        if let url = url {
+            imageView.kf.setImage(with: url, options: [
+                .processor(DownsamplingImageProcessor(size: CGSize(width: DeviceSize.width, height: DeviceSize.width * 0.75))),
+                .scaleFactor(DeviceSize.scale)
+            ])
+            emptyImageView.isHidden = true
+        } else {
+            emptyImageView.isHidden = false
+        }
+    }
+
+    func calculateTextViewHeight(width: CGFloat) -> CGFloat {
+        let size = introductionTextView.sizeThatFits(CGSize(width: width, height: .infinity))
+        return size.height
+    }
+
+    func setTextViewScrollEnabled(_ enabled: Bool) {
+        introductionTextView.isScrollEnabled = enabled
     }
 }

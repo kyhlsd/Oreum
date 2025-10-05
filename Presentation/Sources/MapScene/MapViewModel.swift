@@ -88,7 +88,7 @@ final class MapViewModel: NSObject, BaseViewModel {
         input.mountainInfoButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .flatMap { [weak self] (name, height) in
-                let errorInfo = Just(MountainInfo(id: "error", name: "error", address: "error", height: 0, admin: "error", adminNumber: "error", detail: "error", referenceDate: Date(), designationCriteria: nil))
+                let errorInfo = Just(MountainInfo(id: "error", name: "error", address: "error", height: 0, admin: "error", adminNumber: "error", detail: "error", image: nil, referenceDate: Date(), designationCriteria: nil))
                 guard let self else { return errorInfo.eraseToAnyPublisher() }
                 
                 return self.fetchMountainInfoUseCase.execute(name: name, height: height)

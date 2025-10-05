@@ -25,6 +25,15 @@ let project = Project(
                             ]
                         ]
                     ],
+                    "NSAppTransportSecurity": [
+                        "NSExceptionDomains": [
+                            "forest.go.kr": [
+                                "NSIncludesSubdomains": true,
+                                "NSTemporaryExceptionAllowsInsecureHTTPLoads": true,
+                                "NSTemporaryExceptionMinimumTLSVersion": "TLSv1.0"
+                            ]
+                        ]
+                    ],
                     "UIUserInterfaceStyle": "Light",
                     "UISupportedInterfaceOrientations": [
                         "UIInterfaceOrientationPortrait"

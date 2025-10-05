@@ -21,6 +21,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: scene)
         guard let window else { return }
         
+        DeviceSize.width = window.screen.bounds.width
+        DeviceSize.scale = window.screen.scale
+        
         AppAppearance.setupNavAppearance()
         AppAppearance.setupTabAppearance()
         
