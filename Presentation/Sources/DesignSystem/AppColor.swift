@@ -69,7 +69,8 @@ enum AppColor {
     static let firstVisitBackground = UIColor(hex: "#fef3c7")
     static let famousForeground = UIColor(hex: "#065f46")
     static let famousBackground = UIColor(hex: "#d1fae5")
-    
+    static let distanceForground = UIColor(hex: "#dc2626")
+    static let distanceBackground = UIColor(hex: "#fef2f2")
     // MARK: - Nature Colors
     static let forestGreen = UIColor(hex: "#2d5832")
     static let mossGreen = UIColor(hex: "#4a7c59")

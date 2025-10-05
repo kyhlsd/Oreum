@@ -7,20 +7,28 @@
 
 import UIKit
 
+protocol MapSceneFlowCoordinatorDependencies {
+    func makeMapViewController() -> MapViewController
+}
+
 public final class MapSceneFlowCoordinator: Coordinator {
-    
+
     public let navigationController: UINavigationController
-    
-    public init(navigationController: UINavigationController) {
+    private let dependencies: MapSceneFlowCoordinatorDependencies
+
+    init(
+        navigationController: UINavigationController,
+        dependencies: MapSceneFlowCoordinatorDependencies
+    ) {
         self.navigationController = navigationController
+        self.dependencies = dependencies
     }
-    
+
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "지도", image: AppIcon.map, tag: 2)
         navigationController.navigationBar.tintColor = AppColor.primary
-        
-        let vc = UIViewController()
-        vc.view.backgroundColor = .white
-        navigationController.pushViewController(vc, animated: false)
+
+        let mapVC = dependencies.makeMapViewController()
+        navigationController.pushViewController(mapVC, animated: false)
     }
 }
