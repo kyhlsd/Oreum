@@ -29,6 +29,7 @@ final class MapViewModel: NSObject, BaseViewModel {
     struct Input {
         let viewDidLoad: AnyPublisher<Void, Never>
         let locationButtonTapped: AnyPublisher<Void, Never>
+        let mountainCellTapped: AnyPublisher<MountainDistance, Never>
     }
 
     struct Output {
@@ -36,6 +37,7 @@ final class MapViewModel: NSObject, BaseViewModel {
         let nearbyMountains: AnyPublisher<[MountainDistance], Never>
         let errorMessage: AnyPublisher<String, Never>
         let showLocationPermissionAlert: AnyPublisher<Void, Never>
+        let moveToMountainLocation: AnyPublisher<CLLocationCoordinate2D, Never>
     }
 
     func transform(input: Input) -> Output {
@@ -101,11 +103,21 @@ final class MapViewModel: NSObject, BaseViewModel {
             }
             .store(in: &cancellables)
 
+        let moveToMountainLocation = input.mountainCellTapped
+            .map {
+                CLLocationCoordinate2D(
+                    latitude: $0.mountainLocation.latitude,
+                    longitude: $0.mountainLocation.longitude
+                )
+            }
+            .eraseToAnyPublisher()
+
         return Output(
             userLocation: userLocationSubject.eraseToAnyPublisher(),
             nearbyMountains: nearbyMountainsSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher(),
-            showLocationPermissionAlert: showLocationPermissionAlertSubject.eraseToAnyPublisher()
+            showLocationPermissionAlert: showLocationPermissionAlertSubject.eraseToAnyPublisher(),
+            moveToMountainLocation: moveToMountainLocation
         )
     }
 

@@ -19,6 +19,7 @@ final class MapViewController: UIViewController, BaseViewController {
     private lazy var dataSource = createDataSource()
 
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
+    private let mountainCellTappedSubject = PassthroughSubject<MountainDistance, Never>()
 
     init(viewModel: MapViewModel) {
         self.viewModel = viewModel
@@ -38,6 +39,7 @@ final class MapViewController: UIViewController, BaseViewController {
         super.viewDidLoad()
 
         setupNavItem()
+        setupDelegates()
         bind()
 
         viewDidLoadSubject.send(())
@@ -46,7 +48,8 @@ final class MapViewController: UIViewController, BaseViewController {
     func bind() {
         let input = MapViewModel.Input(
             viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
-            locationButtonTapped: mainView.currentLocationButton.tap
+            locationButtonTapped: mainView.currentLocationButton.tap,
+            mountainCellTapped: mountainCellTappedSubject.eraseToAnyPublisher()
         )
 
         let output = viewModel.transform(input: input)
@@ -79,11 +82,22 @@ final class MapViewController: UIViewController, BaseViewController {
                 }
             }
             .store(in: &cancellables)
+
+        output.moveToMountainLocation
+            .sink { [weak self] coordinate in
+                self?.mainView.updateMapRegion(coordinate: coordinate)
+            }
+            .store(in: &cancellables)
     }
     
     private func setupNavItem() {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "내 주위 명산"))
         navigationItem.backButtonTitle = " "
+    }
+    
+    private func setupDelegates() {
+        mainView.collectionView.delegate = self
+        mainView.mapView.delegate = self
     }
     
 }
@@ -132,4 +146,66 @@ extension MapViewController {
         mainView.mapView.addAnnotations(annotations)
     }
 
+}
+
+// MARK: - UICollectionViewDelegate
+extension MapViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let mountain = dataSource.itemIdentifier(for: indexPath) else { return }
+        mountainCellTappedSubject.send(mountain)
+    }
+}
+
+// MARK: - MKMapViewDelegate
+extension MapViewController: MKMapViewDelegate {
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        guard !(annotation is MKUserLocation) else { return nil }
+
+        let identifier = "MountainAnnotation"
+        var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+
+        if annotationView == nil {
+            annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            annotationView?.canShowCallout = true
+        } else {
+            annotationView?.annotation = annotation
+        }
+
+        if let originalImage = UIImage(named: "MapPin", in: .module, with: nil),
+           let title = annotation.title ?? nil {
+            let imageSize = CGSize(width: 40, height: 60)
+            let textAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 12, weight: .medium),
+                .foregroundColor: AppColor.primaryText
+            ]
+            let textSize = (title as NSString).size(withAttributes: textAttributes)
+            let padding: CGFloat = 8
+            let backgroundWidth = textSize.width + padding * 2
+            let backgroundHeight = textSize.height + padding
+            let totalWidth = max(imageSize.width, backgroundWidth)
+            let totalHeight = imageSize.height + backgroundHeight + 4
+
+            let renderer = UIGraphicsImageRenderer(size: CGSize(width: totalWidth, height: totalHeight))
+            let combinedImage = renderer.image { context in
+                let imageX = (totalWidth - imageSize.width) / 2
+                originalImage.draw(in: CGRect(x: imageX, y: 0, width: imageSize.width, height: imageSize.height))
+
+                let backgroundX = (totalWidth - backgroundWidth) / 2
+                let backgroundY = imageSize.height - 8
+                let backgroundRect = CGRect(x: backgroundX, y: backgroundY, width: backgroundWidth, height: backgroundHeight)
+                let path = UIBezierPath(roundedRect: backgroundRect, cornerRadius: 8)
+                UIColor.white.setFill()
+                path.fill()
+
+                let textX = backgroundX + padding
+                let textY = backgroundY + padding / 2
+                (title as NSString).draw(at: CGPoint(x: textX, y: textY), withAttributes: textAttributes)
+            }
+
+            annotationView?.image = combinedImage
+            annotationView?.centerOffset = CGPoint(x: 0, y: -totalHeight / 2)
+        }
+
+        return annotationView
+    }
 }

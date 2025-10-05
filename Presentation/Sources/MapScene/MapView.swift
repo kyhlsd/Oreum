@@ -97,7 +97,7 @@ final class MapView: BaseView {
 // MARK: - Binding Methods
 extension MapView {
     func updateMapRegion(coordinate: CLLocationCoordinate2D) {
-        let region = MKCoordinateRegion(center: coordinate, latitudinalMeters: 10000, longitudinalMeters: 10000)
+        let region = MKCoordinateRegion(center: coordinate, latitudinalMeters: 40000, longitudinalMeters: 40000)
         mapView.setRegion(region, animated: true)
     }
 }
