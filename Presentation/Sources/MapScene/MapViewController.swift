@@ -55,23 +55,6 @@ final class MapViewController: UIViewController, BaseViewController {
         viewDidLoadSubject.send(())
     }
 
-    private func setupMapBoundary() {
-        let southKoreaRegion = MKCoordinateRegion(
-            center: MapConfig.southKoreaCenter,
-            latitudinalMeters: MapConfig.regionLatitudinalMeters,
-            longitudinalMeters: MapConfig.regionLongitudinalMeters
-        )
-
-        let zoomRange = MKMapView.CameraZoomRange(
-            minCenterCoordinateDistance: MapConfig.minZoomDistance,
-            maxCenterCoordinateDistance: MapConfig.maxZoomDistance
-        )
-
-        if let zoomRange {
-            mainView.setupMapBoundary(region: southKoreaRegion, zoomRange: zoomRange)
-        }
-    }
-
     func bind() {
         let input = MapViewModel.Input(
             viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
@@ -167,14 +150,13 @@ extension MapViewController {
     private func updateMapAnnotations(mountains: [MountainDistance]) {
         mainView.mapView.removeAnnotations(mainView.mapView.annotations)
 
-        let annotations = mountains.map { mountain -> MKPointAnnotation in
-            let annotation = MKPointAnnotation()
+        let annotations = mountains.map { mountain -> MountainAnnotation in
+            let annotation = MountainAnnotation()
             annotation.coordinate = CLLocationCoordinate2D(
                 latitude: mountain.mountainLocation.latitude,
                 longitude: mountain.mountainLocation.longitude
             )
-            annotation.title = mountain.mountainLocation.name
-            annotation.subtitle = String(format: "%.1fkm", mountain.distance)
+            annotation.mountainDistance = mountain
             return annotation
         }
 
@@ -184,6 +166,7 @@ extension MapViewController {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         view.endEditing(true)
     }
+
 }
 
 // MARK: - UICollectionViewDelegate
@@ -194,8 +177,9 @@ extension MapViewController: UICollectionViewDelegate {
     }
 }
 
-// MARK: - MKMapViewDelegate
+// MARK: - MKMapViewDelegate + SubMethods
 extension MapViewController: MKMapViewDelegate {
+    
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         guard !(annotation is MKUserLocation) else { return nil }
 
@@ -209,11 +193,37 @@ extension MapViewController: MKMapViewDelegate {
             annotationView?.annotation = annotation
         }
 
-        if let title = annotation.title ?? nil {
-            configureAnnotationView(annotationView, with: title)
+        if let mountainAnnotation = annotation as? MountainAnnotation,
+           let mountainDistance = mountainAnnotation.mountainDistance {
+            configureAnnotationView(annotationView, with: mountainDistance.mountainLocation.name)
+            configureCalloutView(for: annotationView, with: mountainDistance)
         }
 
         return annotationView
+    }
+
+    private func setupMapBoundary() {
+        let southKoreaRegion = MKCoordinateRegion(
+            center: MapConfig.southKoreaCenter,
+            latitudinalMeters: MapConfig.regionLatitudinalMeters,
+            longitudinalMeters: MapConfig.regionLongitudinalMeters
+        )
+
+        let zoomRange = MKMapView.CameraZoomRange(
+            minCenterCoordinateDistance: MapConfig.minZoomDistance,
+            maxCenterCoordinateDistance: MapConfig.maxZoomDistance
+        )
+
+        if let zoomRange {
+            mainView.setupMapBoundary(region: southKoreaRegion, zoomRange: zoomRange)
+        }
+    }
+
+    private func configureCalloutView(for annotationView: MKAnnotationView?, with mountainDistance: MountainDistance) {
+        let calloutView = MountainAnnotationCalloutView()
+        calloutView.configure(with: mountainDistance)
+        // TODO: 화면 이동
+        annotationView?.detailCalloutAccessoryView = calloutView
     }
 
     private func configureAnnotationView(_ annotationView: MKAnnotationView?, with title: String) {
@@ -265,6 +275,11 @@ extension MapViewController: MKMapViewDelegate {
             (title as NSString).draw(at: CGPoint(x: textX, y: textY), withAttributes: textAttributes)
         }
     }
+}
+
+// MARK: - MountainAnnotation
+final class MountainAnnotation: MKPointAnnotation {
+    var mountainDistance: MountainDistance?
 }
 
 // MARK: - UISearchBarDelegate
