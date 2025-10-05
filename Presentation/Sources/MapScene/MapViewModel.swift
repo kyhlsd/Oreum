@@ -13,6 +13,7 @@ import Domain
 final class MapViewModel: NSObject, BaseViewModel {
 
     private let fetchMountainLocationUseCase: FetchMountainLocationUseCase
+    private let fetchMountainInfoUseCase: FetchMountainInfoUseCase
     private let locationManager = CLLocationManager()
     private var cancellables = Set<AnyCancellable>()
 
@@ -20,8 +21,9 @@ final class MapViewModel: NSObject, BaseViewModel {
     private let seoulCityHall = CLLocationCoordinate2D(latitude: 37.5665, longitude: 126.9780)
     private let userLocationSubject = PassthroughSubject<CLLocationCoordinate2D, Never>()
     
-    init(fetchMountainLocationUseCase: FetchMountainLocationUseCase) {
+    init(fetchMountainLocationUseCase: FetchMountainLocationUseCase, fetchMountainInfoUseCase: FetchMountainInfoUseCase) {
         self.fetchMountainLocationUseCase = fetchMountainLocationUseCase
+        self.fetchMountainInfoUseCase = fetchMountainInfoUseCase
         super.init()
         setupLocationManager()
     }
@@ -31,6 +33,7 @@ final class MapViewModel: NSObject, BaseViewModel {
         let locationButtonTapped: AnyPublisher<Void, Never>
         let mountainCellTapped: AnyPublisher<MountainDistance, Never>
         let searchText: AnyPublisher<String, Never>
+        let mountainInfoButtonTapped: AnyPublisher<(String, Int), Never>
     }
 
     struct Output {
@@ -40,6 +43,7 @@ final class MapViewModel: NSObject, BaseViewModel {
         let errorMessage: AnyPublisher<String, Never>
         let showLocationPermissionAlert: AnyPublisher<Void, Never>
         let moveToMountainLocation: AnyPublisher<CLLocationCoordinate2D, Never>
+        let pushMountainInfo: AnyPublisher<MountainInfo, Never>
     }
 
     func transform(input: Input) -> Output {
@@ -48,6 +52,7 @@ final class MapViewModel: NSObject, BaseViewModel {
         let allMountainsSubject = PassthroughSubject<[MountainDistance], Never>()
         let errorMessageSubject = PassthroughSubject<String, Never>()
         let showLocationPermissionAlertSubject = PassthroughSubject<Void, Never>()
+        let pushMountainInfoSubject = PassthroughSubject<MountainInfo, Never>()
 
         input.viewDidLoad
             .sink { [weak self] in
@@ -77,6 +82,24 @@ final class MapViewModel: NSObject, BaseViewModel {
                 } else {
                     self.requestLocation()
                 }
+            }
+            .store(in: &cancellables)
+        
+        input.mountainInfoButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .flatMap { [weak self] (name, height) in
+                let errorInfo = Just(MountainInfo(id: "error", name: "error", address: "error", height: 0, admin: "error", adminNumber: "error", detail: "error", referenceDate: Date(), designationCriteria: nil))
+                guard let self else { return errorInfo.eraseToAnyPublisher() }
+                
+                return self.fetchMountainInfoUseCase.execute(name: name, height: height)
+                    .catch { error in
+                        errorMessageSubject.send(error.localizedDescription)
+                        return errorInfo
+                    }
+                    .eraseToAnyPublisher()
+            }
+            .sink { mountainInfo in
+                pushMountainInfoSubject.send(mountainInfo)
             }
             .store(in: &cancellables)
 
@@ -138,7 +161,8 @@ final class MapViewModel: NSObject, BaseViewModel {
             allMountains: allMountainsSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher(),
             showLocationPermissionAlert: showLocationPermissionAlertSubject.eraseToAnyPublisher(),
-            moveToMountainLocation: moveToMountainLocation
+            moveToMountainLocation: moveToMountainLocation,
+            pushMountainInfo: pushMountainInfoSubject.eraseToAnyPublisher()
         )
     }
 

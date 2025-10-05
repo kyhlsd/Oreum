@@ -16,6 +16,22 @@ public final class DummyMountainInfoRepositoryImpl: MountainInfoRepository {
 
     public init() {}
 
+    public func fetchMountainInfo(name: String, height: Int) -> AnyPublisher<Domain.MountainInfo, any Error> {
+        let mountains = dummyMountainInfos.filter {
+            $0.name.first == name.first &&
+            abs($0.height - height) < 3
+        }
+        
+        if let mountainInfo = mountains.first {
+            return Just(mountainInfo)
+                .setFailureType(to: Error.self)
+                .eraseToAnyPublisher()
+        } else {
+            return Fail(error: NSError(domain: "DummyMountainInfoRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Mountain information not found"]))
+                .eraseToAnyPublisher()
+        }
+    }
+    
     public func fetchMountains(keyword: String) -> AnyPublisher<[MountainInfo], Error> {
         guard !keyword.isEmpty else {
             return Just([])

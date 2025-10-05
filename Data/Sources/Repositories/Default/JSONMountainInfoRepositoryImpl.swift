@@ -13,10 +13,27 @@ import Domain
 public final class JSONMountainInfoRepositoryImpl: MountainInfoRepository {
    
     private let jsonFileName = "MountainInfos"
-    private var mountainInfos = [MountainInfoDTO]()
+    private var mountainInfos = [MountainInfo]()
     
     public init() {
         loadJSON()
+    }
+    
+    // 100대 명산 이름이 겹치지 않음, 추후 API 연결 시 ID로 검색으로 수정
+    public func fetchMountainInfo(name: String, height: Int) -> AnyPublisher<MountainInfo, Error> {
+        let mountains = mountainInfos.filter {
+            $0.name.first == name.first &&
+            abs($0.height - height) < 3
+        }
+        print(mountains.count)
+        if let mountainInfo = mountains.first {
+            return Just(mountainInfo)
+                .setFailureType(to: Error.self)
+                .eraseToAnyPublisher()
+        } else {
+            return Fail(error: NSError(domain: "JSONMountainInfoRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Mountain information not found"]))
+                .eraseToAnyPublisher()
+        }
     }
     
     public func fetchMountains(keyword: String) -> AnyPublisher<[MountainInfo], Error> {
@@ -27,11 +44,11 @@ public final class JSONMountainInfoRepositoryImpl: MountainInfoRepository {
         }
         
         let filtered = mountainInfos.filter { mountain in
-            mountain.MNTN_NM.localizedCaseInsensitiveContains(keyword) ||
-            mountain.MNTN_LOCPLC_REGION_NM.localizedCaseInsensitiveContains(keyword)
+            mountain.name.localizedCaseInsensitiveContains(keyword) ||
+            mountain.address.localizedCaseInsensitiveContains(keyword)
         }
         
-        return Just(filtered.map { $0.toDomain()} )
+        return Just(filtered)
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }
@@ -47,6 +64,7 @@ public final class JSONMountainInfoRepositoryImpl: MountainInfoRepository {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             mountainInfos = try decoder.decode([MountainInfoDTO].self, from: data)
+                .map { $0.toDomain() }
         } catch {
             print("Failed to load JSON: \(error)")
         }

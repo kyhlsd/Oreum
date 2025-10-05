@@ -6,9 +6,11 @@
 //
 
 import UIKit
+import Domain
 
 protocol MapSceneFlowCoordinatorDependencies {
     func makeMapViewController() -> MapViewController
+    func makeMountainInfoViewController(mountainInfo: MountainInfo) -> MountainInfoViewController
 }
 
 public final class MapSceneFlowCoordinator: Coordinator {
@@ -29,6 +31,16 @@ public final class MapSceneFlowCoordinator: Coordinator {
         navigationController.navigationBar.tintColor = AppColor.primary
 
         let mapVC = dependencies.makeMapViewController()
+        mapVC.pushInfoVC = { [weak self] mountainInfo in
+            self?.showMountainInfoFromMap(mountainInfo: mountainInfo)
+        }
+        
         navigationController.pushViewController(mapVC, animated: false)
+    }
+    
+    private func showMountainInfoFromMap(mountainInfo: MountainInfo) {
+        let mountainInfoVC = dependencies.makeMountainInfoViewController(mountainInfo: mountainInfo)
+        
+        navigationController.pushViewController(mountainInfoVC, animated: true)
     }
 }

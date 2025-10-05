@@ -11,7 +11,7 @@ import Domain
 
 final class MeasureViewModel: BaseViewModel {
 
-    private let fetchMountainInfosUseCase: FetchMountainInfosUseCase
+    private let fetchMountainsUseCase: FetchMountainsUseCase
     private let requestTrackActivityAuthorizationUseCase: RequestTrackActivityAuthorizationUseCase
     private let startTrackingActivityUseCase: StartTrackingActivityUseCase
     private let getActivityLogsUseCase: GetActivityLogsUseCase
@@ -28,7 +28,7 @@ final class MeasureViewModel: BaseViewModel {
     private var selectedMountain: Mountain?
 
     init(
-        fetchMountainInfosUseCase: FetchMountainInfosUseCase,
+        fetchMountainsUseCase: FetchMountainsUseCase,
         requestTrackActivityAuthorizationUseCase: RequestTrackActivityAuthorizationUseCase,
         startTrackingActivityUseCase: StartTrackingActivityUseCase,
         getActivityLogsUseCase: GetActivityLogsUseCase,
@@ -39,7 +39,7 @@ final class MeasureViewModel: BaseViewModel {
         getClimbingMountainUseCase: GetClimbingMountainUseCase,
         saveClimbRecordUseCase: SaveClimbRecordUseCase
     ) {
-        self.fetchMountainInfosUseCase = fetchMountainInfosUseCase
+        self.fetchMountainsUseCase = fetchMountainsUseCase
         self.requestTrackActivityAuthorizationUseCase = requestTrackActivityAuthorizationUseCase
         self.startTrackingActivityUseCase = startTrackingActivityUseCase
         self.getActivityLogsUseCase = getActivityLogsUseCase
@@ -142,7 +142,7 @@ final class MeasureViewModel: BaseViewModel {
                 guard let self else {
                     return Just([]).eraseToAnyPublisher()
                 }
-                return self.fetchMountainInfosUseCase.execute(keyword: keyword)
+                return self.fetchMountainsUseCase.execute(keyword: keyword)
                     .catch { _ in Just([]) }
                     .eraseToAnyPublisher()
             }

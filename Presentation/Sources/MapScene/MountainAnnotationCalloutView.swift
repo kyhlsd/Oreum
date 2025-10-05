@@ -19,7 +19,7 @@ final class MountainAnnotationCalloutView: BaseView {
 
     private let distanceTagLabel = TagLabel(text: "", textColor: AppColor.distanceForground, backgroundColor: AppColor.distanceBackground)
 
-    let detailButton = {
+    let infoButton = {
         let button = UIButton()
         button.setTitle("상세 정보 보기", for: .normal)
         button.setTitleColor(.white, for: .normal)
@@ -37,7 +37,7 @@ final class MountainAnnotationCalloutView: BaseView {
     }
 
     override func setupHierarchy() {
-        [nameLabel, heightLabel, distanceTagLabel, addressLabel, detailButton].forEach {
+        [nameLabel, heightLabel, distanceTagLabel, addressLabel, infoButton].forEach {
             addSubview($0)
         }
     }
@@ -63,7 +63,7 @@ final class MountainAnnotationCalloutView: BaseView {
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.small)
         }
 
-        detailButton.snp.makeConstraints { make in
+        infoButton.snp.makeConstraints { make in
             make.top.equalTo(addressLabel.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.small)
             make.bottom.equalToSuperview().inset(AppSpacing.small)

@@ -12,6 +12,8 @@ import Domain
 
 final class MapViewController: UIViewController, BaseViewController {
 
+    var pushInfoVC: ((MountainInfo) -> Void)?
+    
     let mainView = MapView()
     let viewModel: MapViewModel
 
@@ -20,15 +22,7 @@ final class MapViewController: UIViewController, BaseViewController {
 
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let mountainCellTappedSubject = PassthroughSubject<MountainDistance, Never>()
-
-    // MARK: - Map Configuration Constants
-    private enum MapConfig {
-        static let southKoreaCenter = CLLocationCoordinate2D(latitude: 36.5, longitude: 127.5)
-        static let regionLatitudinalMeters: CLLocationDistance = 800000
-        static let regionLongitudinalMeters: CLLocationDistance = 500000
-        static let minZoomDistance: CLLocationDistance = 5000
-        static let maxZoomDistance: CLLocationDistance = 1000000
-    }
+    private let mountainInfoButtonTappedSubject = PassthroughSubject<(String, Int), Never>()
 
     init(viewModel: MapViewModel) {
         self.viewModel = viewModel
@@ -60,7 +54,8 @@ final class MapViewController: UIViewController, BaseViewController {
             viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
             locationButtonTapped: mainView.currentLocationButton.tap,
             mountainCellTapped: mountainCellTappedSubject.eraseToAnyPublisher(),
-            searchText: mainView.searchBar.textDidChange
+            searchText: mainView.searchBar.textDidChange,
+            mountainInfoButtonTapped: mountainInfoButtonTappedSubject.eraseToAnyPublisher()
         )
 
         let output = viewModel.transform(input: input)
@@ -103,6 +98,12 @@ final class MapViewController: UIViewController, BaseViewController {
         output.moveToMountainLocation
             .sink { [weak self] coordinate in
                 self?.mainView.updateMapRegion(coordinate: coordinate)
+            }
+            .store(in: &cancellables)
+        
+        output.pushMountainInfo
+            .sink { [weak self] mountainInfo in
+                self?.pushInfoVC?(mountainInfo)
             }
             .store(in: &cancellables)
     }
@@ -180,6 +181,14 @@ extension MapViewController: UICollectionViewDelegate {
 // MARK: - MKMapViewDelegate + SubMethods
 extension MapViewController: MKMapViewDelegate {
     
+    private enum MapConfig {
+        static let southKoreaCenter = CLLocationCoordinate2D(latitude: 36.5, longitude: 127.5)
+        static let regionLatitudinalMeters: CLLocationDistance = 800000
+        static let regionLongitudinalMeters: CLLocationDistance = 500000
+        static let minZoomDistance: CLLocationDistance = 5000
+        static let maxZoomDistance: CLLocationDistance = 1000000
+    }
+    
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         guard !(annotation is MKUserLocation) else { return nil }
 
@@ -222,7 +231,11 @@ extension MapViewController: MKMapViewDelegate {
     private func configureCalloutView(for annotationView: MKAnnotationView?, with mountainDistance: MountainDistance) {
         let calloutView = MountainAnnotationCalloutView()
         calloutView.configure(with: mountainDistance)
-        // TODO: 화면 이동
+        calloutView.infoButton.tap
+            .sink { [weak self] in
+                self?.mountainInfoButtonTappedSubject.send((mountainDistance.mountainLocation.name, mountainDistance.mountainLocation.height))
+            }
+            .store(in: &cancellables)
         annotationView?.detailCalloutAccessoryView = calloutView
     }
 

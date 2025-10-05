@@ -7,11 +7,11 @@
 
 import Combine
 
-public protocol FetchMountainInfosUseCase {
+public protocol FetchMountainsUseCase {
     func execute(keyword: String) -> AnyPublisher<[MountainInfo], Error>
 }
 
-public final class FetchMountainInfosUseCaseImpl: FetchMountainInfosUseCase {
+public final class FetchMountainsUseCaseImpl: FetchMountainsUseCase {
     private let repository: MountainInfoRepository
 
     public init(repository: MountainInfoRepository) {

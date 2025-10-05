@@ -29,7 +29,7 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
     // MARK: - ViewModels
     private func makeMeasureViewModel() -> MeasureViewModel {
         return MeasureViewModel(
-            fetchMountainInfosUseCase: makeFetchMountainsUseCase(),
+            fetchMountainsUseCase: makeFetchMountainsUseCase(),
             requestTrackActivityAuthorizationUseCase: makeRequestTrackActivityAuthorizationUseCase(),
             startTrackingActivityUseCase: makeStartTrackingActivityUseCase(),
             getActivityLogsUseCase: makeGetActivityLogsUseCase(),
@@ -61,8 +61,8 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
     }
 
     // MARK: - UseCases
-    private func makeFetchMountainsUseCase() -> FetchMountainInfosUseCase {
-        return FetchMountainInfosUseCaseImpl(repository: makeMountainInfoRepository())
+    private func makeFetchMountainsUseCase() -> FetchMountainsUseCase {
+        return FetchMountainsUseCaseImpl(repository: makeMountainInfoRepository())
     }
 
     private func makeRequestTrackActivityAuthorizationUseCase() -> RequestTrackActivityAuthorizationUseCase {
