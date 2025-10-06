@@ -21,6 +21,7 @@ final class MountainInfoView: BaseView {
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         imageView.backgroundColor = AppColor.cardBackground
+        imageView.kf.indicatorType = .activity
         return imageView
     }()
 
@@ -179,11 +180,20 @@ extension MountainInfoView {
 
     func setImage(_ url: URL?) {
         if let url = url {
-            imageView.kf.setImage(with: url, options: [
-                .processor(DownsamplingImageProcessor(size: CGSize(width: DeviceSize.width, height: DeviceSize.width * 0.75))),
-                .scaleFactor(DeviceSize.scale)
-            ])
-            emptyImageView.isHidden = true
+            imageView.kf.setImage(
+                with: url,
+                options: [
+                    .processor(DownsamplingImageProcessor(size: CGSize(width: DeviceSize.width, height: DeviceSize.width * 0.75))),
+                    .scaleFactor(DeviceSize.scale)
+                ]
+            ) { [weak self] result in
+                switch result {
+                case .success:
+                    self?.emptyImageView.isHidden = true
+                case .failure:
+                    self?.emptyImageView.isHidden = false
+                }
+            }
         } else {
             emptyImageView.isHidden = false
         }
