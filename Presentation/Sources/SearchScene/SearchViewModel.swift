@@ -51,23 +51,27 @@ final class SearchViewModel: BaseViewModel {
         let searchResultsSubject = PassthroughSubject<[MountainInfo], Never>()
         let errorMessageSubject = PassthroughSubject<String, Never>()
 
-        let loadRecentSearches = { [weak self] in
-            guard let self else { return }
-            fetchRecentSearchesUseCase.execute()
-                .map { $0.map { $0.keyword } }
-                .catch { error -> Just<[String]> in
-                    errorMessageSubject.send(error.localizedDescription)
-                    return Just([])
-                }
-                .sink { keywords in
-                    recentSearchesSubject.send(keywords)
-                }
-                .store(in: &self.cancellables)
-        }
+        let loadRecentSearchTrigger = PassthroughSubject<Void, Never>()
+
+        loadRecentSearchTrigger
+            .flatMap { [weak self] _ -> AnyPublisher<[String], Never> in
+                guard let self else { return Just([]).eraseToAnyPublisher() }
+                return self.fetchRecentSearchesUseCase.execute()
+                    .map { $0.map { $0.keyword } }
+                    .catch { error -> Just<[String]> in
+                        errorMessageSubject.send(error.localizedDescription)
+                        return Just([])
+                    }
+                    .eraseToAnyPublisher()
+            }
+            .sink { keywords in
+                recentSearchesSubject.send(keywords)
+            }
+            .store(in: &cancellables)
 
         input.viewDidLoad
             .sink { _ in
-                loadRecentSearches()
+                loadRecentSearchTrigger.send(())
             }
             .store(in: &cancellables)
 
@@ -82,7 +86,7 @@ final class SearchViewModel: BaseViewModel {
                     .eraseToAnyPublisher()
             }
             .sink { _ in
-                loadRecentSearches()
+                loadRecentSearchTrigger.send(())
             }
             .store(in: &cancellables)
 
@@ -97,7 +101,7 @@ final class SearchViewModel: BaseViewModel {
                     .eraseToAnyPublisher()
             }
             .sink { _ in
-                loadRecentSearches()
+                loadRecentSearchTrigger.send(())
             }
             .store(in: &cancellables)
 
@@ -133,7 +137,7 @@ final class SearchViewModel: BaseViewModel {
                         return Just(())
                     }
                     .sink { _ in
-                        loadRecentSearches()
+                        loadRecentSearchTrigger.send(())
                     }
                     .store(in: &self.cancellables)
             }
