@@ -9,9 +9,9 @@ import UIKit
 
 final class TagStackView: UIStackView {
     
-    private lazy var firstVisitLabel = createTagLabel(text: "정복", textColor: AppColor.firstVisitForeground, backgroundColor: AppColor.firstVisitBackground)
+    private let firstVisitLabel = TagLabel(text: "정복", textColor: AppColor.firstVisitForeground, backgroundColor: AppColor.firstVisitBackground)
     
-    private lazy var famousLabel = createTagLabel(text: "명산", textColor: AppColor.famousForeground, backgroundColor: AppColor.famousBackground)
+    private let famousLabel = TagLabel(text: "명산", textColor: AppColor.famousForeground, backgroundColor: AppColor.famousBackground)
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -48,14 +48,4 @@ final class TagStackView: UIStackView {
         }
     }
     
-    private func createTagLabel(text: String, textColor: UIColor, backgroundColor: UIColor) -> UILabel {
-        let label = PaddingLabel(padding: UIEdgeInsets(top: 2, left: 6, bottom: 2, right: 6))
-        label.text = text
-        label.font = AppFont.tag
-        label.textColor = textColor
-        label.backgroundColor = backgroundColor
-        label.layer.cornerRadius = AppRadius.radius
-        label.clipsToBounds = true
-        return label
-    }
 }

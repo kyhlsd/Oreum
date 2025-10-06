@@ -48,7 +48,7 @@ final class AddClimbRecordViewController: UIViewController {
         let input = AddClimbRecordViewModel.Input(
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             mountainSelected: mountainSelectedSubject.eraseToAnyPublisher(),
-            cancelMountain: mainView.cancelButton.tap.eraseToAnyPublisher(),
+            cancelMountain: mainView.cancelButton.tap,
             dateChanged: mainView.datePicker.publisher(for: \.date).eraseToAnyPublisher(),
             nextButtonTapped: mainView.nextButton.tap
         )
@@ -58,6 +58,9 @@ final class AddClimbRecordViewController: UIViewController {
         output.searchResults
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
+                if !mountains.isEmpty {
+                    self?.mainView.searchResultsTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: false)
+                }
             }
             .store(in: &cancellables)
 

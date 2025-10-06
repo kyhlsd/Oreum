@@ -32,12 +32,12 @@ public final class FileManagerRecordImageRepositoryImpl: RecordImageRepository {
     public func saveImage(imageData: Data) -> AnyPublisher<String, Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
+                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
                 return
             }
 
             guard let imageDirectory = getImageDirectory() else {
-                promise(.failure(NSError(domain: "DefaultRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image directory"])))
+                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image directory"])))
                 return
             }
 
@@ -57,12 +57,12 @@ public final class FileManagerRecordImageRepositoryImpl: RecordImageRepository {
     public func deleteImage(imageID: String) -> AnyPublisher<Void, Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
+                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
                 return
             }
 
             guard let imageDirectory = getImageDirectory() else {
-                promise(.failure(NSError(domain: "DefaultRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image directory"])))
+                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image directory"])))
                 return
             }
 
@@ -84,12 +84,12 @@ public final class FileManagerRecordImageRepositoryImpl: RecordImageRepository {
     public func fetchImage(imageID: String) -> AnyPublisher<Data, Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
+                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
                 return
             }
 
             guard let imageDirectory = getImageDirectory() else {
-                promise(.failure(NSError(domain: "DefaultRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image directory"])))
+                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image directory"])))
                 return
             }
 

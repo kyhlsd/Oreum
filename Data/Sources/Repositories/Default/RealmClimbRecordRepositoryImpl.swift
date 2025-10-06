@@ -22,7 +22,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
     public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], any Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -1)))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
                 return
             }
 
@@ -48,7 +48,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
     public func save(record: ClimbRecord) -> AnyPublisher<Void, Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -1)))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
                 return
             }
 
@@ -68,13 +68,13 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
     public func toggleBookmark(recordID: String) -> AnyPublisher<Void, any Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -1)))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
                 return
             }
 
             guard let objectId = try? ObjectId(string: recordID),
                   let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
                 return
             }
 
@@ -94,13 +94,13 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
     public func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Void, any Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -1)))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
                 return
             }
 
             guard let objectId = try? ObjectId(string: recordID),
                   let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
                 return
             }
 
@@ -120,13 +120,13 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
     public func delete(recordID: String) -> AnyPublisher<Void, any Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -1)))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
                 return
             }
 
             guard let objectId = try? ObjectId(string: recordID),
                   let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
                 return
             }
 
@@ -150,13 +150,13 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
     public func addImage(recordID: String, imageID: String) -> AnyPublisher<Void, Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -1)))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
                 return
             }
 
             guard let objectId = try? ObjectId(string: recordID),
                   let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
                 return
             }
 
@@ -176,13 +176,13 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
     public func removeImage(imageID: String) -> AnyPublisher<Void, Error> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -1)))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
                 return
             }
 
             guard let imageObjectId = try? ObjectId(string: imageID),
                   let imageRealm = realm.object(ofType: RecordImageRealm.self, forPrimaryKey: imageObjectId) else {
-                promise(.failure(NSError(domain: "DefaultClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Image not found"])))
+                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Image not found"])))
                 return
             }
 

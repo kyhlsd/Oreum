@@ -19,6 +19,6 @@ public final class UpdateClimbRecordUseCaseImpl: UpdateClimbRecordUseCase {
     }
     
     public func execute(recordID: String, rating: Int, comment: String) -> AnyPublisher<Void, any Error> {
-        repository.update(recordID: recordID, rating: rating, comment: comment)
+        return repository.update(recordID: recordID, rating: rating, comment: comment)
     }
 }

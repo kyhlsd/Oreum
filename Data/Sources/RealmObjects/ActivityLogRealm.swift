@@ -11,7 +11,7 @@ import Domain
 
 final class ActivityLogRealm: Object {
     @Persisted(primaryKey: true) private var id: ObjectId
-    @Persisted private var time: Date
+    @Persisted(indexed: true) private var time: Date
     @Persisted private var step: Int
     @Persisted private var distance: Int
     @Persisted(originProperty: "timeLog") private var climbRecordRealm: LinkingObjects<ClimbRecordRealm>

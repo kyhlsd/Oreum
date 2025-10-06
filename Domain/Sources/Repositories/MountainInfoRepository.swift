@@ -9,4 +9,5 @@ import Combine
 
 public protocol MountainInfoRepository {
     func fetchMountains(keyword: String) -> AnyPublisher<[MountainInfo], Error>
+    func fetchMountainInfo(name: String, height: Int) -> AnyPublisher<MountainInfo, Error>
 }

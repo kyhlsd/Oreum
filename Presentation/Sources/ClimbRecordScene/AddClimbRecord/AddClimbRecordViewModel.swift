@@ -32,15 +32,15 @@ final class AddClimbRecordViewModel {
         let errorMessage: AnyPublisher<String, Never>
     }
 
-    private let fetchMountainInfosUseCase: FetchMountainInfosUseCase
+    private let fetchMountainsUseCase: FetchMountainsUseCase
     private let saveClimbRecordUseCase: SaveClimbRecordUseCase
     private var cancellables = Set<AnyCancellable>()
 
     init(
-        fetchMountainInfosUseCase: FetchMountainInfosUseCase,
+        fetchMountainsUseCase: FetchMountainsUseCase,
         saveClimbRecordUseCase: SaveClimbRecordUseCase
     ) {
-        self.fetchMountainInfosUseCase = fetchMountainInfosUseCase
+        self.fetchMountainsUseCase = fetchMountainsUseCase
         self.saveClimbRecordUseCase = saveClimbRecordUseCase
     }
 
@@ -59,7 +59,7 @@ final class AddClimbRecordViewModel {
                 guard let self else {
                     return Just([]).eraseToAnyPublisher()
                 }
-                return self.fetchMountainInfosUseCase.execute(keyword: keyword)
+                return self.fetchMountainsUseCase.execute(keyword: keyword)
                     .map { mountainInfos in
                         mountainInfos.map { $0.toMountain() }
                     }

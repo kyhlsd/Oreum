@@ -25,12 +25,22 @@ let project = Project(
                             ]
                         ]
                     ],
+                    "NSAppTransportSecurity": [
+                        "NSExceptionDomains": [
+                            "forest.go.kr": [
+                                "NSIncludesSubdomains": true,
+                                "NSTemporaryExceptionAllowsInsecureHTTPLoads": true,
+                                "NSTemporaryExceptionMinimumTLSVersion": "TLSv1.0"
+                            ]
+                        ]
+                    ],
                     "UIUserInterfaceStyle": "Light",
                     "UISupportedInterfaceOrientations": [
                         "UIInterfaceOrientationPortrait"
                     ],
                     "NSHealthShareUsageDescription": "등산 기록을 위해 걸음 수와 이동 거리 데이터를 사용합니다.",
-                    "NSHealthUpdateUsageDescription": "등산 활동 데이터를 저장하기 위해 HealthKit 접근이 필요합니다."
+                    "NSHealthUpdateUsageDescription": "등산 활동 데이터를 저장하기 위해 HealthKit 접근이 필요합니다.",
+                    "NSLocationWhenInUseUsageDescription": "내 주위 명산을 표기하기 위해 위치 정보를 사용합니다."
                 ],
             ),
             sources: ["Oreum/Sources/**"],
