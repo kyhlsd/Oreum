@@ -1,0 +1,147 @@
+//
+//  SearchView.swift
+//  Presentation
+//
+//  Created by 김영훈 on 10/6/25.
+//
+
+import UIKit
+import SnapKit
+
+final class SearchView: BaseView {
+
+    let searchBar = {
+        let searchBar = CustomSearchBar()
+        searchBar.placeholder = "산 이름을 입력하세요"
+        return searchBar
+    }()
+
+    private let recentSearchTitleLabel = UILabel.create("최근 검색어", color: AppColor.primaryText, font: AppFont.titleS)
+
+    let clearAllButton = {
+        let button = UIButton()
+        button.setTitle("모두 지우기", for: .normal)
+        button.setTitleColor(AppColor.subText, for: .normal)
+        button.titleLabel?.font = AppFont.description
+        return button
+    }()
+
+    let recentSearchCollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
+        layout.minimumInteritemSpacing = AppSpacing.small
+
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.backgroundColor = .clear
+        collectionView.showsHorizontalScrollIndicator = false
+        return collectionView
+    }()
+
+    let recentSearchEmptyLabel = {
+        let label = UILabel.create("최근 검색어가 없습니다", color: AppColor.subText, font: AppFont.body)
+        label.isHidden = true
+        return label
+    }()
+
+    private let resultTitleLabel = UILabel.create("검색 결과", color: AppColor.primaryText, font: AppFont.titleS)
+
+    lazy var resultCollectionView = {
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
+        collectionView.backgroundColor = .clear
+        collectionView.keyboardDismissMode = .onDrag
+        return collectionView
+    }()
+
+    let emptyLabel = {
+        let label = UILabel.create("검색 결과가 없습니다", color: AppColor.subText, font: AppFont.body)
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
+
+    private func createLayout() -> UICollectionViewCompositionalLayout {
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(120))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(120))
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
+        let section = NSCollectionLayoutSection(group: group)
+        section.interGroupSpacing = AppSpacing.small
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: AppSpacing.regular, bottom: AppSpacing.regular, trailing: AppSpacing.regular)
+
+        return UICollectionViewCompositionalLayout(section: section)
+    }
+
+    override func setupView() {
+        backgroundColor = AppColor.background
+        searchBar.setBorder(false)
+    }
+
+    override func setupHierarchy() {
+        [searchBar, recentSearchTitleLabel, clearAllButton, recentSearchCollectionView, recentSearchEmptyLabel, resultTitleLabel, resultCollectionView, emptyLabel].forEach {
+            addSubview($0)
+        }
+    }
+
+    override func setupLayout() {
+        searchBar.snp.makeConstraints { make in
+            make.top.equalTo(safeAreaLayoutGuide)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
+            make.height.equalTo(40)
+        }
+
+        recentSearchTitleLabel.snp.makeConstraints { make in
+            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.regular)
+            make.leading.equalToSuperview().inset(AppSpacing.regular)
+        }
+
+        clearAllButton.snp.makeConstraints { make in
+            make.lastBaseline.equalTo(recentSearchTitleLabel)
+            make.trailing.equalToSuperview().inset(AppSpacing.regular)
+        }
+
+        recentSearchCollectionView.snp.makeConstraints { make in
+            make.top.equalTo(recentSearchTitleLabel.snp.bottom).offset(AppSpacing.compact)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
+            make.height.equalTo(40)
+        }
+
+        recentSearchEmptyLabel.snp.makeConstraints { make in
+            make.center.equalTo(recentSearchCollectionView)
+        }
+
+        resultTitleLabel.snp.makeConstraints { make in
+            make.top.equalTo(recentSearchCollectionView.snp.bottom).offset(AppSpacing.regular)
+            make.leading.equalToSuperview().inset(AppSpacing.regular)
+        }
+
+        resultCollectionView.snp.makeConstraints { make in
+            make.top.equalTo(resultTitleLabel.snp.bottom).offset(AppSpacing.compact)
+            make.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
+        }
+
+        emptyLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalTo(resultCollectionView)
+        }
+    }
+}
+
+// MARK: - Binding Methods
+extension SearchView {
+    func showEmptyState(_ show: Bool) {
+        emptyLabel.isHidden = !show
+        resultCollectionView.isHidden = show
+    }
+
+    func showRecentSearchEmptyState(_ show: Bool) {
+        recentSearchEmptyLabel.isHidden = !show
+        recentSearchCollectionView.isHidden = show
+    }
+
+    func setSearchBarBorder(isFirstResponder: Bool) {
+        searchBar.setBorder(isFirstResponder)
+    }
+}
