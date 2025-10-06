@@ -77,6 +77,12 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
                 self?.mainView.setImage(imageURL)
             }
             .store(in: &cancellables)
+        
+        output.errorMessage
+            .sink { message in
+                print(message)
+            }
+            .store(in: &cancellables)
     }
 
     private func createIntroductionAttributedString(from text: String) -> NSAttributedString {

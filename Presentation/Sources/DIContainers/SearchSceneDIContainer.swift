@@ -41,7 +41,10 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
     }
 
     private func makeMountainInfoViewModel(mountainInfo: MountainInfo) -> MountainInfoViewModel {
-        return MountainInfoViewModel(mountainInfo: mountainInfo)
+        return MountainInfoViewModel(
+            fetchCoordinateUseCase: makeFetchCoordinateUseCase(),
+            mountainInfo: mountainInfo
+        )
     }
 
     // MARK: - UseCases
@@ -65,6 +68,10 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
         return ClearRecentSearchesUseCaseImpl(repository: makeRecentSearchRepository())
     }
 
+    private func makeFetchCoordinateUseCase() -> FetchCoordinateUseCase {
+        return FetchCoordinateUseCaseImpl(repository: makeGeocodeRepository())
+    }
+
     // MARK: - Repositories
     private func makeMountainInfoRepository() -> MountainInfoRepository {
         return JSONMountainInfoRepositoryImpl()
@@ -78,4 +85,9 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
             return ErrorRecentSearchRepositoryImpl()
         }
     }
+
+    private func makeGeocodeRepository() -> GeocodeRepository {
+        return DefaultGeocodeRepositoryImpl()
+    }
+    
 }
