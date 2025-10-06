@@ -109,7 +109,7 @@ final class MapViewController: UIViewController, BaseViewController {
     }
     
     private func setupNavItem() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "내 주위 명산"))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "명산 지도"))
         navigationItem.backButtonTitle = " "
     }
     
