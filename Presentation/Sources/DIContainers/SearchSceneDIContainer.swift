@@ -71,6 +71,11 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
     }
 
     private func makeRecentSearchRepository() -> RecentSearchRepository {
-        return try! RealmRecentSearchRepositoryImpl()
+        do {
+            return try RealmRecentSearchRepositoryImpl()
+        } catch {
+            print("Failed to initialize Realm: \(error.localizedDescription)")
+            return ErrorRecentSearchRepositoryImpl()
+        }
     }
 }
