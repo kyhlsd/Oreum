@@ -31,7 +31,13 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
 
     // MARK: - ViewModels
     private func makeSearchViewModel() -> SearchViewModel {
-        return SearchViewModel(fetchMountainsUseCase: makeFetchMountainsUseCase())
+        return SearchViewModel(
+            fetchMountainsUseCase: makeFetchMountainsUseCase(),
+            fetchRecentSearchesUseCase: makeFetchRecentSearchesUseCase(),
+            saveRecentSearchUseCase: makeSaveRecentSearchUseCase(),
+            deleteRecentSearchUseCase: makeDeleteRecentSearchUseCase(),
+            clearRecentSearchesUseCase: makeClearRecentSearchesUseCase()
+        )
     }
 
     private func makeMountainInfoViewModel(mountainInfo: MountainInfo) -> MountainInfoViewModel {
@@ -43,8 +49,28 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
         return FetchMountainsUseCaseImpl(repository: makeMountainInfoRepository())
     }
 
+    private func makeFetchRecentSearchesUseCase() -> FetchRecentSearchesUseCase {
+        return FetchRecentSearchesUseCaseImpl(repository: makeRecentSearchRepository())
+    }
+
+    private func makeSaveRecentSearchUseCase() -> SaveRecentSearchUseCase {
+        return SaveRecentSearchUseCaseImpl(repository: makeRecentSearchRepository())
+    }
+
+    private func makeDeleteRecentSearchUseCase() -> DeleteRecentSearchUseCase {
+        return DeleteRecentSearchUseCaseImpl(repository: makeRecentSearchRepository())
+    }
+
+    private func makeClearRecentSearchesUseCase() -> ClearRecentSearchesUseCase {
+        return ClearRecentSearchesUseCaseImpl(repository: makeRecentSearchRepository())
+    }
+
     // MARK: - Repositories
     private func makeMountainInfoRepository() -> MountainInfoRepository {
         return JSONMountainInfoRepositoryImpl()
+    }
+
+    private func makeRecentSearchRepository() -> RecentSearchRepository {
+        return try! RealmRecentSearchRepositoryImpl()
     }
 }

@@ -12,10 +12,24 @@ import Domain
 final class SearchViewModel: BaseViewModel {
 
     private let fetchMountainsUseCase: FetchMountainsUseCase
+    private let fetchRecentSearchesUseCase: FetchRecentSearchesUseCase
+    private let saveRecentSearchUseCase: SaveRecentSearchUseCase
+    private let deleteRecentSearchUseCase: DeleteRecentSearchUseCase
+    private let clearRecentSearchesUseCase: ClearRecentSearchesUseCase
     private var cancellables = Set<AnyCancellable>()
 
-    init(fetchMountainsUseCase: FetchMountainsUseCase) {
+    init(
+        fetchMountainsUseCase: FetchMountainsUseCase,
+        fetchRecentSearchesUseCase: FetchRecentSearchesUseCase,
+        saveRecentSearchUseCase: SaveRecentSearchUseCase,
+        deleteRecentSearchUseCase: DeleteRecentSearchUseCase,
+        clearRecentSearchesUseCase: ClearRecentSearchesUseCase
+    ) {
         self.fetchMountainsUseCase = fetchMountainsUseCase
+        self.fetchRecentSearchesUseCase = fetchRecentSearchesUseCase
+        self.saveRecentSearchUseCase = saveRecentSearchUseCase
+        self.deleteRecentSearchUseCase = deleteRecentSearchUseCase
+        self.clearRecentSearchesUseCase = clearRecentSearchesUseCase
     }
 
     struct Input {
@@ -37,26 +51,53 @@ final class SearchViewModel: BaseViewModel {
         let searchResultsSubject = PassthroughSubject<[MountainInfo], Never>()
         let errorMessageSubject = PassthroughSubject<String, Never>()
 
-        // 더미 최근 검색어
-        var currentRecentSearches = ["북한산", "설악산", "한라산"]
+        let loadRecentSearches = { [weak self] in
+            guard let self else { return }
+            fetchRecentSearchesUseCase.execute()
+                .map { $0.map { $0.keyword } }
+                .catch { error -> Just<[String]> in
+                    errorMessageSubject.send(error.localizedDescription)
+                    return Just([])
+                }
+                .sink { keywords in
+                    recentSearchesSubject.send(keywords)
+                }
+                .store(in: &self.cancellables)
+        }
 
         input.viewDidLoad
-            .sink {
-                recentSearchesSubject.send(currentRecentSearches)
+            .sink { _ in
+                loadRecentSearches()
             }
             .store(in: &cancellables)
 
         input.deleteRecentSearch
-            .sink { searchToDelete in
-                currentRecentSearches.removeAll { $0 == searchToDelete }
-                recentSearchesSubject.send(currentRecentSearches)
+            .flatMap { [weak self] keyword -> AnyPublisher<Void, Never> in
+                guard let self else { return Just(()).eraseToAnyPublisher() }
+                return self.deleteRecentSearchUseCase.execute(keyword: keyword)
+                    .catch { error -> Just<Void> in
+                        errorMessageSubject.send(error.localizedDescription)
+                        return Just(())
+                    }
+                    .eraseToAnyPublisher()
+            }
+            .sink { _ in
+                loadRecentSearches()
             }
             .store(in: &cancellables)
 
         input.clearAllRecentSearches
-            .sink {
-                currentRecentSearches.removeAll()
-                recentSearchesSubject.send(currentRecentSearches)
+            .flatMap { [weak self] _ -> AnyPublisher<Void, Never> in
+                guard let self else { return Just(()).eraseToAnyPublisher() }
+                return self.clearRecentSearchesUseCase.execute()
+                    .catch { error -> Just<Void> in
+                        errorMessageSubject.send(error.localizedDescription)
+                        return Just(())
+                    }
+                    .eraseToAnyPublisher()
+            }
+            .sink { _ in
+                loadRecentSearches()
             }
             .store(in: &cancellables)
 
@@ -66,19 +107,35 @@ final class SearchViewModel: BaseViewModel {
         )
 
         searchPublisher
-            .filter { !$0.isEmpty }
-            .flatMap { [weak self] keyword -> AnyPublisher<[MountainInfo], Never> in
-                guard let self else { return Just([]).eraseToAnyPublisher() }
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .removeDuplicates()
+            .flatMap { [weak self] keyword -> AnyPublisher<(String, [MountainInfo]), Never> in
+                guard let self else { return Just((keyword, [])).eraseToAnyPublisher() }
 
                 return self.fetchMountainsUseCase.execute(keyword: keyword)
-                    .catch { error -> Just<[MountainInfo]> in
+                    .map { (keyword, $0) }
+                    .catch { error -> Just<(String, [MountainInfo])> in
                         errorMessageSubject.send(error.localizedDescription)
-                        return Just([])
+                        return Just((keyword, []))
                     }
                     .eraseToAnyPublisher()
             }
-            .sink { results in
+            .sink { [weak self] (keyword, results) in
+                guard let self else { return }
+
+                // 검색 결과 전송
                 searchResultsSubject.send(results)
+
+                // 최근 검색어 저장 및 새로고침
+                self.saveRecentSearchUseCase.execute(keyword: keyword)
+                    .catch { error -> Just<Void> in
+                        errorMessageSubject.send(error.localizedDescription)
+                        return Just(())
+                    }
+                    .sink { _ in
+                        loadRecentSearches()
+                    }
+                    .store(in: &self.cancellables)
             }
             .store(in: &cancellables)
 

@@ -44,8 +44,7 @@ public final class JSONMountainInfoRepositoryImpl: MountainInfoRepository {
         }
         
         let filtered = mountainInfos.filter { mountain in
-            mountain.name.localizedCaseInsensitiveContains(keyword) ||
-            mountain.address.localizedCaseInsensitiveContains(keyword)
+            mountain.name.localizedCaseInsensitiveContains(keyword)
         }
         
         return Just(filtered)
