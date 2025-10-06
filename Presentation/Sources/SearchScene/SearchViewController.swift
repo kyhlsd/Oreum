@@ -111,22 +111,33 @@ extension SearchViewController {
         case main
     }
 
-    private func createRecentSearchDataSource() -> UICollectionViewDiffableDataSource<Section, String> {
-        let registration = UICollectionView.CellRegistration<RecentSearchCell, String> { [weak self] cell, indexPath, item in
+    private func createRecentSearchRegistration() -> UICollectionView.CellRegistration<RecentSearchCollectionViewCell, String> {
+        return UICollectionView.CellRegistration<RecentSearchCollectionViewCell, String> { [weak self] cell, indexPath, item in
+            guard let self else { return }
             cell.configure(with: item)
-            cell.deleteButtonTapped = {
-                self?.deleteRecentSearchSubject.send(item)
-            }
+            cell.deleteButton.tap
+                .sink {
+                    self.deleteRecentSearchSubject.send(item)
+                }
+                .store(in: &cancellables)
         }
+    }
+    
+    private func createRecentSearchDataSource() -> UICollectionViewDiffableDataSource<Section, String> {
+        let registration = createRecentSearchRegistration()
         return UICollectionViewDiffableDataSource<Section, String>(collectionView: mainView.recentSearchCollectionView) { collectionView, indexPath, item in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
         }
     }
-
-    private func createResultDataSource() -> UICollectionViewDiffableDataSource<Section, MountainInfo> {
-        let registration = UICollectionView.CellRegistration<MountainInfoCollectionViewCell, MountainInfo> { cell, indexPath, item in
+    
+    private func createResultRegistration() -> UICollectionView.CellRegistration<MountainInfoCollectionViewCell, MountainInfo> {
+        return UICollectionView.CellRegistration<MountainInfoCollectionViewCell, MountainInfo> { cell, indexPath, item in
             cell.configure(with: item)
         }
+    }
+
+    private func createResultDataSource() -> UICollectionViewDiffableDataSource<Section, MountainInfo> {
+        let registration = createResultRegistration()
         return UICollectionViewDiffableDataSource<Section, MountainInfo>(collectionView: mainView.resultCollectionView) { collectionView, indexPath, item in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
         }
@@ -175,72 +186,5 @@ extension SearchViewController: UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         searchBar.resignFirstResponder()
         searchTextSubject.send(searchBar.text ?? "")
-    }
-}
-
-// MARK: - RecentSearchCell
-final class RecentSearchCell: UICollectionViewCell {
-
-    var deleteButtonTapped: (() -> Void)?
-
-    private let containerView = {
-        let view = UIView()
-        view.backgroundColor = .white
-        view.layer.cornerRadius = AppRadius.radius
-        view.layer.borderWidth = 1
-        view.layer.borderColor = AppColor.border.cgColor
-        view.clipsToBounds = true
-        return view
-    }()
-
-    private let label = UILabel.create(color: AppColor.primaryText, font: AppFont.tag)
-
-    private lazy var deleteButton = {
-        let button = UIButton()
-        let config = UIImage.SymbolConfiguration(pointSize: 10, weight: .regular)
-        button.setImage(UIImage(systemName: "xmark", withConfiguration: config), for: .normal)
-        button.tintColor = AppColor.subText
-        button.addTarget(self, action: #selector(deleteButtonAction), for: .touchUpInside)
-        return button
-    }()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setup()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private func setup() {
-        contentView.addSubview(containerView)
-        [label, deleteButton].forEach {
-            containerView.addSubview($0)
-        }
-
-        containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-        label.snp.makeConstraints { make in
-            make.verticalEdges.equalToSuperview().inset(AppSpacing.small)
-            make.leading.equalToSuperview().inset(AppSpacing.compact)
-        }
-
-        deleteButton.snp.makeConstraints { make in
-            make.leading.equalTo(label.snp.trailing).offset(AppSpacing.small)
-            make.trailing.equalToSuperview().inset(AppSpacing.small)
-            make.centerY.equalToSuperview()
-            make.size.equalTo(16)
-        }
-    }
-
-    func configure(with text: String) {
-        label.text = text
-    }
-
-    @objc private func deleteButtonAction() {
-        deleteButtonTapped?()
     }
 }
