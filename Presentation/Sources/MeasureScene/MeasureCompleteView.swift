@@ -25,7 +25,7 @@ final class MeasureCompleteView: BaseView {
 
     private let messageLabel = {
         let label = UILabel.create(
-            "'기록'탭에서 사진과 후기를 작성해\n기록을 더 풍성하게 남겨보세요",
+            "'기록'에서 사진과 후기를 추가해\n기록을 더 풍성하게 남겨보세요",
             color: AppColor.subText,
             font: AppFont.body
         )
