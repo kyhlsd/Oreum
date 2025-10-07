@@ -20,4 +20,12 @@ enum AppFormatter {
         formatter.dateFormat = "HH:mm"
         return formatter
     }()
+    
+    static let weekdayFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d E"
+        formatter.locale = Locale(identifier: "ko_KR")
+        return formatter
+    }()
+    
 }

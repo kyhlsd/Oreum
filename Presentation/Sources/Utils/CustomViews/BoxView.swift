@@ -18,12 +18,16 @@ final class BoxView: BaseView {
         return view
     }()
     
-    init(title: String) {
-        super.init(frame: .zero)
+    convenience init(title: String) {
+        self.init()
         configure(title: title)
     }
     
     func configure(title: String) {
+        titleLabel.text = title
+    }
+
+    func setTitle(_ title: String) {
         titleLabel.text = title
     }
     

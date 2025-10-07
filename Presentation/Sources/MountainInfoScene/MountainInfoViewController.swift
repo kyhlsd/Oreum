@@ -49,6 +49,7 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
         output.mountainName
             .sink { [weak self] name in
                 self?.navigationItem.title = name
+                self?.mainView.setMountainName(name)
             }
             .store(in: &cancellables)
 
@@ -68,7 +69,6 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
             .sink { [weak self] introduction in
                 let attributedText = self?.createIntroductionAttributedString(from: introduction) ?? NSAttributedString()
                 self?.mainView.setIntroduction(attributedText)
-                self?.adjustTextViewScroll()
             }
             .store(in: &cancellables)
 
@@ -79,14 +79,15 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
             .store(in: &cancellables)
         
         output.weeklyForecast
-            .sink { weeklyForecast in
-                print(weeklyForecast)
+            .sink { [weak self] weeklyForecast in
+                self?.mainView.setWeeklyForecast(weeklyForecast)
             }
             .store(in: &cancellables)
         
         output.errorMessage
-            .sink { message in
+            .sink { [weak self] message in
                 print(message)
+                self?.mainView.showWeatherLoadingError()
             }
             .store(in: &cancellables)
     }
@@ -112,13 +113,5 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
         }
     }
 
-    private func adjustTextViewScroll() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            let textWidth = self.mainView.bounds.width - AppSpacing.regular * 2 - AppSpacing.compact * 2
-            let shouldEnableScroll = self.mainView.calculateTextViewHeight(width: textWidth) > 180
-            self.mainView.setTextViewScrollEnabled(shouldEnableScroll)
-        }
-    }
 
 }

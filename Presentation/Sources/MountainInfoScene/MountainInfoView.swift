@@ -62,19 +62,43 @@ final class MountainInfoView: BaseView {
         return textView
     }()
 
-    private let weatherView = BoxView(title: "날씨 정보")
+    private let weatherView = BoxView()
+
+    private let weatherScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = false
+        return scrollView
+    }()
 
     private let weatherContentView = UIView()
 
-    override func setupView() {
-        backgroundColor = AppColor.background
-    }
+    private let weatherStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.distribution = .fill
+        stackView.spacing = AppSpacing.small
+        return stackView
+    }()
+
+    private let emptyWeatherLabel = {
+        let label = UILabel.create("날씨 정보를 불러올 수 없습니다", color: AppColor.subText, font: AppFont.body)
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
+
+    private let weatherLoadingIndicator = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+
 
     override func setupHierarchy() {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        [imageView, emptyImageView, infoView, introductionView, weatherView].forEach {
+        [imageView, emptyImageView, infoView, weatherView, introductionView].forEach {
             contentView.addSubview($0)
         }
 
@@ -88,7 +112,11 @@ final class MountainInfoView: BaseView {
 
         introductionView.addSubview(introductionTextView)
 
-        weatherView.addSubview(weatherContentView)
+        weatherView.addSubview(weatherScrollView)
+        weatherScrollView.addSubview(weatherContentView)
+        weatherContentView.addSubview(weatherStackView)
+        weatherView.addSubview(emptyWeatherLabel)
+        weatherView.addSubview(weatherLoadingIndicator)
     }
 
     override func setupLayout() {
@@ -137,34 +165,58 @@ final class MountainInfoView: BaseView {
             make.bottom.equalToSuperview().inset(AppSpacing.compact)
         }
 
-        introductionView.snp.makeConstraints { make in
+        weatherView.snp.makeConstraints { make in
             make.top.equalTo(infoView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
+        }
+
+        introductionView.snp.makeConstraints { make in
+            make.top.equalTo(weatherView.snp.bottom).offset(AppSpacing.regular)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
+            make.bottom.equalToSuperview().inset(AppSpacing.regular)
         }
 
         introductionTextView.snp.makeConstraints { make in
             make.top.equalTo(introductionView.lineView.snp.bottom)
             make.horizontalEdges.bottom.equalToSuperview()
-            make.height.greaterThanOrEqualTo(20)
-            make.height.lessThanOrEqualTo(180)
         }
 
-        weatherView.snp.makeConstraints { make in
-            make.top.equalTo(introductionView.snp.bottom).offset(AppSpacing.regular)
-            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
-            make.bottom.equalToSuperview().inset(AppSpacing.regular)
+        weatherScrollView.snp.makeConstraints { make in
+            make.top.equalTo(weatherView.lineView.snp.bottom).offset(AppSpacing.compact)
+            make.horizontalEdges.bottom.equalToSuperview().inset(AppSpacing.compact)
+            make.height.greaterThanOrEqualTo(100)
         }
 
         weatherContentView.snp.makeConstraints { make in
-            make.top.equalTo(weatherView.lineView.snp.bottom).offset(AppSpacing.compact)
-            make.horizontalEdges.bottom.equalToSuperview().inset(AppSpacing.compact)
-            make.height.equalTo(100)
+            make.edges.equalToSuperview()
+            make.height.equalToSuperview()
         }
+
+        weatherStackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        emptyWeatherLabel.snp.makeConstraints { make in
+            make.center.equalTo(weatherScrollView)
+        }
+
+        weatherLoadingIndicator.snp.makeConstraints { make in
+            make.center.equalTo(weatherScrollView)
+        }
+    }
+
+    override func setupView() {
+        backgroundColor = AppColor.background
+        weatherLoadingIndicator.startAnimating()
     }
 }
 
 // MARK: - Binding Methods
 extension MountainInfoView {
+
+    func setMountainName(_ name: String) {
+        weatherView.setTitle("\(name) 날씨")
+    }
 
     func setAddress(_ address: String) {
         addressView.setTitle(title: address)
@@ -199,12 +251,104 @@ extension MountainInfoView {
         }
     }
 
-    func calculateTextViewHeight(width: CGFloat) -> CGFloat {
-        let size = introductionTextView.sizeThatFits(CGSize(width: width, height: .infinity))
-        return size.height
+
+    func setWeeklyForecast(_ forecasts: [DailyForecast]) {
+        weatherLoadingIndicator.stopAnimating()
+        weatherStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        if forecasts.isEmpty {
+            emptyWeatherLabel.isHidden = false
+            weatherScrollView.isHidden = true
+            return
+        }
+
+        emptyWeatherLabel.isHidden = true
+        weatherScrollView.isHidden = false
+
+        forecasts.forEach { forecast in
+            let forecastItemView = createForecastItemView(forecast: forecast)
+            weatherStackView.addArrangedSubview(forecastItemView)
+        }
     }
 
-    func setTextViewScrollEnabled(_ enabled: Bool) {
-        introductionTextView.isScrollEnabled = enabled
+    func showWeatherLoadingError() {
+        weatherLoadingIndicator.stopAnimating()
+        emptyWeatherLabel.isHidden = false
+        weatherScrollView.isHidden = true
+    }
+
+    private func createForecastItemView(forecast: DailyForecast) -> UIView {
+        let containerView = UIView()
+        containerView.backgroundColor = AppColor.boxBackground
+        containerView.layer.cornerRadius = AppRadius.radius
+        containerView.layer.borderWidth = 1
+        containerView.layer.borderColor = AppColor.border.cgColor
+
+        let dateString = AppFormatter.weekdayFormatter.string(from: forecast.date)
+
+        let dateLabel = UILabel.create("\(dateString)", color: AppColor.primaryText, font: AppFont.body)
+        dateLabel.textAlignment = .center
+
+        let weatherIcon = UIImageView()
+        weatherIcon.contentMode = .scaleAspectFit
+
+        // 강수 형태에 따른 아이콘 및 색상 설정
+        switch forecast.pty {
+        case 1: // 비
+            weatherIcon.image = UIImage(systemName: "cloud.rain")
+            weatherIcon.tintColor = UIColor.systemBlue
+        case 2, 4: // 비/눈
+            weatherIcon.image = UIImage(systemName: "cloud.sleet")
+            weatherIcon.tintColor = UIColor.systemTeal
+        case 3: // 눈
+            weatherIcon.image = UIImage(systemName: "cloud.snow")
+            weatherIcon.tintColor = UIColor.systemCyan
+        default: // 맑음
+            if forecast.pop >= 50 {
+                weatherIcon.image = UIImage(systemName: "cloud")
+                weatherIcon.tintColor = UIColor.systemGray
+            } else {
+                weatherIcon.image = UIImage(systemName: "sun.max.fill")
+                weatherIcon.tintColor = UIColor.systemOrange
+            }
+        }
+
+        let tempLabel = UILabel.create("\(Int(forecast.minTemp))° / \(Int(forecast.maxTemp))°", color: AppColor.subText, font: AppFont.description)
+        tempLabel.textAlignment = .center
+
+        let popLabel = UILabel.create("\(forecast.pop)%", color: AppColor.subText, font: AppFont.description)
+        popLabel.textAlignment = .center
+
+        [dateLabel, weatherIcon, tempLabel, popLabel].forEach {
+            containerView.addSubview($0)
+        }
+
+        containerView.snp.makeConstraints { make in
+            make.width.equalTo(80)
+        }
+
+        dateLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().inset(AppSpacing.small)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        weatherIcon.snp.makeConstraints { make in
+            make.top.equalTo(dateLabel.snp.bottom).offset(AppSpacing.compact)
+            make.centerX.equalToSuperview()
+            make.size.equalTo(32)
+        }
+
+        tempLabel.snp.makeConstraints { make in
+            make.top.equalTo(weatherIcon.snp.bottom).offset(AppSpacing.compact)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        popLabel.snp.makeConstraints { make in
+            make.top.equalTo(tempLabel.snp.bottom).offset(AppSpacing.compact)
+            make.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
+            make.bottom.equalToSuperview().inset(AppSpacing.small)
+        }
+
+        return containerView
     }
 }
