@@ -27,26 +27,40 @@ public final class ActivityStatUseCaseImpl: ActivityStatUseCase {
                 restMinutes: 0
             )
         }
-
-        let totalSteps = last.step // 마지막 로그의 누적 걸음수
-        let totalDistance = last.distance // 마지막 로그의 누적 이동거리
+        
+        let totalSteps = activityLogs.reduce(0) { $0 + $1.step }
+        let totalDistance = activityLogs.reduce(0) { $0 + $1.distance }
         let totalTimeMinutes = Int(last.time.timeIntervalSince(first.time) / 60)
 
-        // 초기값과 종료값을 제외한 중간 로그들만 사용
-        let middleLogs = activityLogs.count > 2 ? Array(activityLogs[1..<activityLogs.count-1]) : []
+        // 초기값을 제외한 로그들 사용 (마지막 로그 포함)
+        let logsToProcess = activityLogs.count > 1 ? Array(activityLogs[1...]) : []
 
         var exerciseMinutes = 0
-        var restMinutes = 0
-        for log in middleLogs {
-            if log.distance >= 100 {
-                exerciseMinutes += 5
+
+        for (index, log) in logsToProcess.enumerated() {
+            let isLastLog = (index == logsToProcess.count - 1)
+
+            if isLastLog {
+                // 마지막 로그: 실제 시간을 계산하고 분당 20보 기준으로 판단
+                let timeInterval = log.time.timeIntervalSince(activityLogs[activityLogs.count - 2].time)
+                let minutes = Int(timeInterval / 60)
+                let stepsPerMinute = minutes > 0 ? Double(log.step) / Double(minutes) : 0
+
+                if stepsPerMinute >= 20 {
+                    exerciseMinutes += minutes
+                }
             } else {
-                restMinutes += 5
+                // 중간 로그들: 5분 간격, 100보 기준
+                if log.step >= 100 {
+                    exerciseMinutes += 5
+                }
             }
         }
+        
+        let restMinutes = totalTimeMinutes - exerciseMinutes
 
-        // 중간 로그가 없는 경우 전체 시간을 운동 시간으로 계산
-        if middleLogs.isEmpty && totalTimeMinutes > 0 {
+        // 로그가 초기값만 있는 경우 전체 시간을 운동 시간으로 계산
+        if logsToProcess.isEmpty && totalTimeMinutes > 0 {
             exerciseMinutes = totalTimeMinutes
         }
 

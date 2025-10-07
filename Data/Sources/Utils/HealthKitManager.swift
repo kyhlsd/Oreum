@@ -200,7 +200,6 @@ public final class HealthKitManager {
                 intervals.append((start: currentStart, end: currentEnd))
                 currentStart = nextInterval
             }
-            print("intervals", intervals)
             
             let group = DispatchGroup()
             var logs: [ActivityLog] = []
