@@ -13,6 +13,7 @@ let project = Project(
             deploymentTargets: .iOS(version),
             infoPlist: .extendingDefault(
                 with: [
+                    "CFBundleDisplayName": "오름",
                     "UILaunchStoryboardName": "LaunchScreen",
                     "UIApplicationSceneManifest": [
                         "UIApplicationSupportsMultipleScenes": false,
@@ -49,8 +50,7 @@ let project = Project(
             dependencies: [
                 .target(name: "Presentation"),
                 .target(name: "Domain"),
-                .target(name: "Data"),
-                .target(name: "Common")
+                .target(name: "Data")
             ],
             settings: .settings(
                 base: [
@@ -66,9 +66,7 @@ let project = Project(
                     deploymentTargets: .iOS(version),
                     sources: ["Domain/Sources/**"],
                     resources: ["Domain/Resources/**"],
-                    dependencies: [
-                        .target(name: "Common")
-                    ]
+                    dependencies: []
                    ),
         
             .target(name: "Data",
@@ -79,7 +77,6 @@ let project = Project(
                     sources: ["Data/Sources/**"],
                     resources: ["Data/Resources/**"],
                     dependencies: [
-                        .target(name: "Common"),
                         .target(name: "Domain"),
                         .external(name: "RealmSwift"),
                         .external(name: "Alamofire")
@@ -94,23 +91,12 @@ let project = Project(
                     sources: ["Presentation/Sources/**"],
                     resources: ["Presentation/Resources/**"],
                     dependencies: [
-                        .target(name: "Common"),
                         .target(name: "Domain"),
                         .target(name: "Data"),
                         .external(name: "Kingfisher"),
                         .external(name: "SnapKit"),
                         .external(name: "Toast")
                     ]
-                   ),
-        
-            .target(name: "Common",
-                    destinations: [.iPhone],
-                    product: .framework,
-                    bundleId: "io.tuist.Common",
-                    deploymentTargets: .iOS(version),
-                    sources: ["Common/Sources/**"],
-                    resources: ["Common/Resources/**"],
-                    dependencies: []
-                   ),
+                   )
     ]
 )
