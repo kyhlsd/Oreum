@@ -9,7 +9,6 @@ import Foundation
 import Combine
 import Domain
 
-// TODO: Realm
 public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
 
     public static let shared = DummyClimbRecordRepositoryImpl()

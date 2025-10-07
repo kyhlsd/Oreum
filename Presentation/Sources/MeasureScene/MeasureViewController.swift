@@ -20,6 +20,8 @@ final class MeasureViewController: UIViewController, BaseViewController {
     private let searchTriggerSubject = PassthroughSubject<String, Never>()
     private let selectMountainSubject = PassthroughSubject<MountainInfo, Never>()
 
+    var showRecordDetail: ((ClimbRecord) -> Void)?
+
     init(viewModel: MeasureViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -47,6 +49,9 @@ final class MeasureViewController: UIViewController, BaseViewController {
             .map { _ in () }
             .eraseToAnyPublisher()
 
+        let cancelMeasuringSubject = PassthroughSubject<Void, Never>()
+        let stopMeasuringSubject = PassthroughSubject<Void, Never>()
+
         let input = MeasureViewModel.Input(
             checkPermissionTrigger: Just(()).eraseToAnyPublisher(),
             checkTrackingStatusTrigger: Just(()).eraseToAnyPublisher(),
@@ -54,8 +59,8 @@ final class MeasureViewController: UIViewController, BaseViewController {
             selectMountain: selectMountainSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap,
             startMeasuring: mainView.startButton.tap,
-            cancelMeasuring: mainView.cancelMeasuringButton.tap,
-            stopMeasuring: mainView.stopButton.tap,
+            cancelMeasuring: cancelMeasuringSubject.eraseToAnyPublisher(),
+            stopMeasuring: stopMeasuringSubject.eraseToAnyPublisher(),
             didBecomeActive: didBecomeActive
         )
 
@@ -64,19 +69,15 @@ final class MeasureViewController: UIViewController, BaseViewController {
         // Permission check가 먼저 완료된 후 tracking status 체크
         output.permissionAuthorized
             .sink { [weak self] authorized in
-                print("✅ Permission authorized: \(authorized)")
                 self?.mainView.updatePermissionRequiredViewIsHidden(authorized)
             }
             .store(in: &cancellables)
 
-        // updateMeasuringStateTrigger는 이미 trackingStatus와 병합된 상태
-        Publishers.CombineLatest(output.permissionAuthorized, output.updateMeasuringStateTrigger)
-            .sink { [weak self] authorized, isMeasuring in
-                print("🔍 ViewController - authorized: \(authorized), isMeasuring: \(isMeasuring)")
-                guard authorized else { return }
-                print("✅ Measuring state: \(isMeasuring)")
-                self?.mainView.updateMeasuringState(isMeasuring: isMeasuring)
-                self?.setNavItem(isMeasuring: isMeasuring)
+        output.authorizedMeasuringState
+            .sink { [weak self] state in
+                guard state.authorized else { return }
+                self?.mainView.updateMeasuringState(isMeasuring: state.isMeasuring)
+                self?.setNavItem(isMeasuring: state.isMeasuring)
             }
             .store(in: &cancellables)
 
@@ -95,7 +96,6 @@ final class MeasureViewController: UIViewController, BaseViewController {
         output.restoreMountainInfoTrigger
             .sink { [weak self] mountainInfo in
                 if let (name, address) = mountainInfo {
-                    print("🔍 ViewController received restoreMountainInfo: \(name), \(address)")
                     self?.mainView.updateMountainLabelTexts(name: name, address: address)
                 }
             }
@@ -133,7 +133,6 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
         output.updateActivityDataTrigger
             .sink { [weak self] time, distance, steps in
-                print(time, distance, steps)
                 self?.mainView.updateMeasuringData(time: time, distance: distance, steps: steps)
             }
             .store(in: &cancellables)
@@ -143,6 +142,33 @@ final class MeasureViewController: UIViewController, BaseViewController {
                 if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(settingsURL)
                 }
+            }
+            .store(in: &cancellables)
+
+        mainView.cancelMeasuringButton.tap
+            .sink { [weak self] in
+                guard let self else { return }
+                
+                showCancelMeasuringAlert {
+                    cancelMeasuringSubject.send()
+                    self.showDefaultToast(message: "기록 측정을 취소했습니다")
+                }
+            }
+            .store(in: &cancellables)
+
+        mainView.stopButton.tap
+            .sink { [weak self] in
+                guard let self else { return }
+
+                presentCancellableAlert(title: "측정 종료", message: "측정을 종료하시겠습니까?") {
+                    stopMeasuringSubject.send()
+                }
+            }
+            .store(in: &cancellables)
+
+        output.savedClimbRecord
+            .sink { [weak self] climbRecord in
+                self?.showMeasureCompleteView(climbRecord: climbRecord)
             }
             .store(in: &cancellables)
     }
@@ -160,7 +186,60 @@ final class MeasureViewController: UIViewController, BaseViewController {
         mainView.searchBar.delegate = self
         mainView.searchResultsTableView.delegate = self
     }
+    
+    private func showMeasureCompleteView(climbRecord: ClimbRecord) {
+        let completeView = MeasureCompleteView()
+        completeView.alpha = 0
+        view.addSubview(completeView)
+        completeView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
 
+        completeView.addDetailButton.tap
+            .sink { [weak self, weak completeView] in
+                UIView.animate(withDuration: 0.3, animations: {
+                    completeView?.alpha = 0
+                }, completion: { [weak self] _ in
+                    completeView?.removeFromSuperview()
+                    self?.showRecordDetail?(climbRecord)
+                })
+            }
+            .store(in: &cancellables)
+
+        completeView.confirmButton.tap
+            .sink { [weak completeView] in
+                UIView.animate(withDuration: 0.3, animations: {
+                    completeView?.alpha = 0
+                }, completion: { _ in
+                    completeView?.removeFromSuperview()
+                })
+            }
+            .store(in: &cancellables)
+
+        UIView.animate(withDuration: 0.3) {
+            completeView.alpha = 1
+        }
+    }
+    
+    private func showCancelMeasuringAlert(completionHanlder: @escaping (() -> Void)) {
+        let alert = UIAlertController(
+            title: "측정 취소",
+            message: "측정을 취소하시겠습니까?\n측정한 데이터는 저장되지 않습니다.",
+            preferredStyle: .alert
+        )
+
+        let cancelAction = UIAlertAction(title: "측정 취소", style: .destructive) { _ in
+            completionHanlder()
+        }
+
+        let continueAction = UIAlertAction(title: "측정 계속하기", style: .cancel)
+
+        alert.addAction(cancelAction)
+        alert.addAction(continueAction)
+
+        present(alert, animated: true)
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         view.endEditing(true)
     }
