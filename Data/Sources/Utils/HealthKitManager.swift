@@ -145,7 +145,7 @@ public final class HealthKitManager {
             healthStore.execute(distanceQuery)
         }
 
-        // Background delivery 활성화
+        // Background delivery 활성화 (포그라운드에서도 더 빠른 알림을 위해)
         healthStore.enableBackgroundDelivery(for: stepType, frequency: .immediate) { success, error in
             if success {
                 print("✅ Background delivery enabled for steps")

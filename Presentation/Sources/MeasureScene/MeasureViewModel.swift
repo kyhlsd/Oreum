@@ -260,11 +260,28 @@ final class MeasureViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        // tracking이 진행 중이면 타이머 시작
+        // Activity 데이터 변경 시 자동 업데이트 (한 번만 구독)
+        observeActivityDataUpdatesUseCase.dataUpdates
+            .sink { [weak self] _ in
+                print("🔍 Activity data changed, fetching new data...")
+                self?.fetchActivityData()
+                self?.updateUI(updateActivityDataSubject: updateActivityDataSubject)
+            }
+            .store(in: &cancellables)
+
+        // tracking이 진행 중이면 타이머 시작 및 Observer 재등록
         trackingStatus
             .filter { $0 }
             .sink { [weak self] _ in
-                self?.startActivityDataTimer(updateActivityDataSubject: updateActivityDataSubject)
+                guard let self else { return }
+
+                // 앱 재시작 시 Observer 재등록을 위해 기존 startDate로 startTracking 다시 호출
+                if let startDate = self.startTrackingActivityUseCase.getStartDate(),
+                   let mountain = self.getClimbingMountainUseCase.execute() {
+                    self.startTrackingActivityUseCase.execute(startDate: startDate, mountain: mountain)
+                }
+
+                self.startActivityDataTimer(updateActivityDataSubject: updateActivityDataSubject)
             }
             .store(in: &cancellables)
 
@@ -309,15 +326,6 @@ final class MeasureViewModel: BaseViewModel {
         timeUpdateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.updateUI(updateActivityDataSubject: updateActivityDataSubject)
         }
-
-        // Activity 데이터 변경 시 자동 업데이트
-        observeActivityDataUpdatesUseCase.dataUpdates
-            .sink { [weak self] _ in
-                print("🔍 Activity data changed, fetching new data...")
-                self?.fetchActivityData()
-                self?.updateUI(updateActivityDataSubject: updateActivityDataSubject)
-            }
-            .store(in: &cancellables)
     }
 
     private func stopActivityDataTimer() {

@@ -19,24 +19,6 @@
       }
     },
     {
-      "identity" : "kingfisherwebp",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/yeatse/KingfisherWebP.git",
-      "state" : {
-        "revision" : "dccea7e92e77b0aa9ae5955c0d8f78c88ac0a950",
-        "version" : "1.7.0"
-      }
-    },
-    {
-      "identity" : "libwebp-xcode",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SDWebImage/libwebp-Xcode",
-      "state" : {
-        "revision" : "0d60654eeefd5d7d2bef3835804892c40225e8b2",
-        "version" : "1.5.0"
-      }
-    },
-    {
       "identity" : "realm-core",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-core.git",
