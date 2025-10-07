@@ -47,6 +47,9 @@ final class MeasureViewController: UIViewController, BaseViewController {
             .map { _ in () }
             .eraseToAnyPublisher()
 
+        let cancelMeasuringSubject = PassthroughSubject<Void, Never>()
+        let stopMeasuringSubject = PassthroughSubject<Void, Never>()
+
         let input = MeasureViewModel.Input(
             checkPermissionTrigger: Just(()).eraseToAnyPublisher(),
             checkTrackingStatusTrigger: Just(()).eraseToAnyPublisher(),
@@ -54,8 +57,8 @@ final class MeasureViewController: UIViewController, BaseViewController {
             selectMountain: selectMountainSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap,
             startMeasuring: mainView.startButton.tap,
-            cancelMeasuring: mainView.cancelMeasuringButton.tap,
-            stopMeasuring: mainView.stopButton.tap,
+            cancelMeasuring: cancelMeasuringSubject.eraseToAnyPublisher(),
+            stopMeasuring: stopMeasuringSubject.eraseToAnyPublisher(),
             didBecomeActive: didBecomeActive
         )
 
@@ -145,6 +148,22 @@ final class MeasureViewController: UIViewController, BaseViewController {
                 }
             }
             .store(in: &cancellables)
+
+        mainView.cancelMeasuringButton.tap
+            .sink { [weak self] in
+                self?.showCancelMeasuringAlert {
+                    cancelMeasuringSubject.send()
+                }
+            }
+            .store(in: &cancellables)
+
+        mainView.stopButton.tap
+            .sink { [weak self] in
+                self?.presentCancellableAlert(title: "측정 종료", message: "측정을 종료하시겠습니까?") {
+                    stopMeasuringSubject.send()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func setNavItem(isMeasuring: Bool) {
@@ -160,7 +179,26 @@ final class MeasureViewController: UIViewController, BaseViewController {
         mainView.searchBar.delegate = self
         mainView.searchResultsTableView.delegate = self
     }
+    
+    private func showCancelMeasuringAlert(completionHanlder: @escaping (() -> Void)) {
+        let alert = UIAlertController(
+            title: "측정 취소",
+            message: "측정을 취소하시겠습니까?\n측정한 데이터는 저장되지 않습니다.",
+            preferredStyle: .alert
+        )
 
+        let cancelAction = UIAlertAction(title: "측정 취소", style: .destructive) { _ in
+            completionHanlder()
+        }
+
+        let continueAction = UIAlertAction(title: "측정 계속하기", style: .cancel)
+
+        alert.addAction(cancelAction)
+        alert.addAction(continueAction)
+
+        present(alert, animated: true)
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         view.endEditing(true)
     }
