@@ -76,6 +76,8 @@ final class MeasureViewModel: BaseViewModel {
         let clearSearchBarTrigger: AnyPublisher<Void, Never>
         let updateActivityDataTrigger: AnyPublisher<(time: String, distance: String, steps: String), Never>
         let restoreMountainInfoTrigger: AnyPublisher<(String, String)?, Never>
+        let savedClimbRecord: AnyPublisher<ClimbRecord, Never>
+        let authorizedMeasuringState: AnyPublisher<(authorized: Bool, isMeasuring: Bool), Never>
     }
 
     func transform(input: Input) -> Output {
@@ -87,6 +89,7 @@ final class MeasureViewModel: BaseViewModel {
         let updateMeasuringStateSubject = PassthroughSubject<Bool, Never>()
         let clearSearchBarSubject = PassthroughSubject<Void, Never>()
         let updateActivityDataSubject = PassthroughSubject<(time: String, distance: String, steps: String), Never>()
+        let savedClimbRecordSubject = PassthroughSubject<ClimbRecord, Never>()
 
         let permissionCheckTrigger = Publishers.Merge(
             input.checkPermissionTrigger,
@@ -114,9 +117,6 @@ final class MeasureViewModel: BaseViewModel {
                 }
                 return self.getTrackingStatusUseCase.execute()
             }
-            .handleEvents(receiveOutput: { isTracking in
-                print("🔍 ViewModel trackingStatus: \(isTracking)")
-            })
             .sink { trackingStatusSubject.send($0) }
             .store(in: &cancellables)
 
@@ -127,9 +127,7 @@ final class MeasureViewModel: BaseViewModel {
             .map { [weak self] isTracking -> (String, String)? in
                 guard isTracking else { return nil }
                 let mountain = self?.getClimbingMountainUseCase.execute()
-                print("🔍 Saved mountain: \(mountain?.name ?? "nil")")
                 if let mountain = mountain {
-                    print("🔍 Restoring mountain info: \(mountain.name), \(mountain.address)")
                     return (mountain.name, mountain.address)
                 }
                 return nil
@@ -195,61 +193,66 @@ final class MeasureViewModel: BaseViewModel {
                 updateMeasuringStateSubject.send(false)
                 self.stopActivityDataTimer()
 
+                // 산 정보가 남아있으면 버튼 활성화
+                if self.selectedMountain != nil {
+                    updateStartButtonIsEnabledSubject.send(true)
+                }
+
                 // 트래킹 중지 (데이터 저장 안 함, UserDefaults clear)
                 self.stopTrackingActivityUseCase.execute(clearData: true)
-                print("✅ Activity tracking canceled")
             }
             .store(in: &cancellables)
 
-        input.stopMeasuring
+        let activityLogs = input.stopMeasuring
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .handleEvents(receiveOutput: { [weak self] _ in
+                self?.stopActivityDataTimer()
+            })
             .flatMap { [weak self] _ -> AnyPublisher<[ActivityLog], Never> in
                 guard let self else { return Just([]).eraseToAnyPublisher() }
-                self.stopActivityDataTimer()
                 return getActivityLogsUseCase.execute()
                     .catch { error -> Just<[ActivityLog]> in
-                        print("❌ Failed to get activity logs: \(error)")
                         return Just([])
                     }.eraseToAnyPublisher()
             }
-            .sink { [weak self] logs in
+            .share()
+
+        activityLogs
+            .compactMap { [weak self] logs -> ClimbRecord? in
+                guard let self else { return nil }
+                guard let mountain = self.getClimbingMountainUseCase.execute() else { return nil }
+                let startDate = logs.first?.time ?? Date()
+                return ClimbRecord(
+                    id: UUID().uuidString,
+                    mountain: mountain,
+                    timeLog: logs,
+                    images: [],
+                    score: 0,
+                    comment: "",
+                    isBookmarked: false,
+                    climbDate: startDate
+                )
+            }
+            .flatMap { [weak self] climbRecord -> AnyPublisher<ClimbRecord, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
+                return self.saveClimbRecordUseCase.execute(record: climbRecord)
+                    .map { climbRecord }
+                    .catch { error -> Just<ClimbRecord> in
+                        return Just(climbRecord)
+                    }
+                    .eraseToAnyPublisher()
+            }
+            .sink { climbRecord in
+                // 저장 성공 시 Notification 전송 (기록 리스트 갱신용)
+                NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
+                // 저장된 ClimbRecord 전달
+                savedClimbRecordSubject.send(climbRecord)
+            }
+            .store(in: &cancellables)
+
+        activityLogs
+            .sink { [weak self] _ in
                 guard let self else { return }
-
-                print("✅ Activity logs (\(logs.count) entries):")
-                for log in logs {
-                    print("  - Time: \(log.time), Steps: \(log.step), Distance: \(log.distance)m")
-                }
-
-                // ClimbRecord 생성 및 저장
-                if let mountain = self.getClimbingMountainUseCase.execute() {
-                    let startDate = logs.first?.time ?? Date()
-                    let climbRecord = ClimbRecord(
-                        id: UUID().uuidString,
-                        mountain: mountain,
-                        timeLog: logs,
-                        images: [],
-                        score: 0,
-                        comment: "",
-                        isBookmarked: false,
-                        climbDate: startDate
-                    )
-
-                    self.saveClimbRecordUseCase.execute(record: climbRecord)
-                        .sink(
-                            receiveCompletion: { completion in
-                                if case .failure(let error) = completion {
-                                    print("❌ Failed to save ClimbRecord: \(error)")
-                                }
-                            },
-                            receiveValue: { _ in
-                                print("✅ ClimbRecord saved successfully")
-                                // 저장 성공 시 Notification 전송
-                                NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
-                            }
-                        )
-                        .store(in: &self.cancellables)
-                }
-
                 updateMeasuringStateSubject.send(false)
                 clearMountainSelectionSubject.send()
                 updateStartButtonIsEnabledSubject.send(false)
@@ -263,7 +266,6 @@ final class MeasureViewModel: BaseViewModel {
         // Activity 데이터 변경 시 자동 업데이트 (한 번만 구독)
         observeActivityDataUpdatesUseCase.dataUpdates
             .sink { [weak self] _ in
-                print("🔍 Activity data changed, fetching new data...")
                 self?.fetchActivityData()
                 self?.updateUI(updateActivityDataSubject: updateActivityDataSubject)
             }
@@ -287,10 +289,12 @@ final class MeasureViewModel: BaseViewModel {
 
         // trackingStatus와 버튼 액션을 병합
         let combinedMeasuringState = Publishers.Merge(trackingStatus, updateMeasuringStateSubject)
-            .handleEvents(receiveOutput: { isMeasuring in
-                print("🔍 combinedMeasuringState: \(isMeasuring)")
-            })
             .removeDuplicates()
+            .eraseToAnyPublisher()
+
+        // permissionAuthorized와 combinedMeasuringState 결합
+        let authorizedMeasuringState = Publishers.CombineLatest(permissionAuthorized, combinedMeasuringState)
+            .map { (authorized: $0, isMeasuring: $1) }
             .eraseToAnyPublisher()
 
         return Output(
@@ -308,13 +312,14 @@ final class MeasureViewModel: BaseViewModel {
             updateMeasuringStateTrigger: combinedMeasuringState,
             clearSearchBarTrigger: clearSearchBarSubject.eraseToAnyPublisher(),
             updateActivityDataTrigger: updateActivityDataSubject.eraseToAnyPublisher(),
-            restoreMountainInfoTrigger: restoreMountainInfo
+            restoreMountainInfoTrigger: restoreMountainInfo,
+            savedClimbRecord: savedClimbRecordSubject.eraseToAnyPublisher(),
+            authorizedMeasuringState: authorizedMeasuringState
         )
     }
 
     // MARK: - Activity Data Timer
     private func startActivityDataTimer(updateActivityDataSubject: PassthroughSubject<(time: String, distance: String, steps: String), Never>) {
-        print("🔍 startActivityDataTimer called")
         stopActivityDataTimer()
 
         // 즉시 한 번 Activity 데이터 가져오기
@@ -338,13 +343,11 @@ final class MeasureViewModel: BaseViewModel {
     private func fetchActivityData() {
         getCurrentActivityDataUseCase.execute()
             .catch { error in
-                print("❌ Failed to get Activity data: \(error)")
                 return Just((time: TimeInterval(0), steps: 0, distance: 0))
             }
             .sink { [weak self] data in
                 self?.currentSteps = data.steps
                 self?.currentDistance = data.distance
-                print("🔍 Activity data updated - steps: \(data.steps), distance: \(data.distance)")
             }
             .store(in: &cancellables)
     }
@@ -357,7 +360,6 @@ final class MeasureViewModel: BaseViewModel {
                 let timeString = self.formatTime(data.time)
                 let distanceString = String(format: "%.2f km", Double(self.currentDistance) / 1000.0)
                 let stepsString = "\(self.currentSteps)"
-                print("🔍 UI updated - time: \(timeString), steps: \(stepsString), distance: \(distanceString)")
                 updateActivityDataSubject.send((time: timeString, distance: distanceString, steps: stepsString))
             }
             .store(in: &cancellables)

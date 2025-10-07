@@ -93,4 +93,23 @@ public final class RecordSceneFlowCoordinator: Coordinator {
         addVC.navigationController?.pushViewController(activityVC, animated: true)
     }
 
+    public func showDetailFromMeasure(climbRecord: ClimbRecord) {
+        // 네비게이션 스택 초기화 후 리스트 VC로 돌아감
+        navigationController.popToRootViewController(animated: false)
+
+        // DetailVC 표시
+        guard let listVC = navigationController.viewControllers.first as? ClimbRecordListViewController else { return }
+
+        let detailVC = dependencies.makeClimbRecordDetailViewController(climbRecord: climbRecord, isFromAddRecord: false)
+        detailVC.popVC = { [weak self] in
+            self?.navigationController.popViewController(animated: true)
+        }
+        detailVC.pushVC = { [weak self] climbRecord in
+            self?.showActivityLog(climbRecord: climbRecord)
+        }
+        detailVC.viewModel.delegate = listVC.viewModel
+
+        navigationController.pushViewController(detailVC, animated: true)
+    }
+
 }
