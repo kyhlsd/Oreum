@@ -138,19 +138,21 @@ final class MapViewModel: NSObject, BaseViewModel {
             .eraseToAnyPublisher()
 
         let displayMountains = Publishers.CombineLatest(
-            nearbyMountainsSubject,
+            allMountainsSubject,
             input.searchText
                 .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
                 .prepend("")
         )
-        .map { nearbyMountains, searchText -> [MountainDistance] in
-            guard !searchText.isEmpty else {
-                return nearbyMountains
+        .map { allMountains, searchText -> [MountainDistance] in
+            let trimmedSearchText = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard !trimmedSearchText.isEmpty else {
+                return Array(allMountains.prefix(20))
             }
 
-            return nearbyMountains.filter { mountain in
-                mountain.mountainLocation.name.localizedCaseInsensitiveContains(searchText) ||
-                mountain.mountainLocation.address.localizedCaseInsensitiveContains(searchText)
+            return allMountains.filter { mountain in
+                mountain.mountainLocation.name.localizedCaseInsensitiveContains(trimmedSearchText) ||
+                mountain.mountainLocation.address.localizedCaseInsensitiveContains(trimmedSearchText)
             }
         }
         .eraseToAnyPublisher()

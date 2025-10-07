@@ -19,13 +19,14 @@ public final class JSONMountainInfoRepositoryImpl: MountainInfoRepository {
         loadJSON()
     }
     
-    // 100대 명산 이름이 겹치지 않음, 추후 API 연결 시 ID로 검색으로 수정
+    // 추후 API 연결 시 ID로 검색으로 수정
     public func fetchMountainInfo(name: String, height: Int) -> AnyPublisher<MountainInfo, Error> {
-        let mountains = mountainInfos.filter {
-            $0.name.first == name.first &&
-            abs($0.height - height) < 3
-        }
-        print(mountains.count)
+        let mountains = mountainInfos
+            .filter { $0.name.first == name.first }
+            .sorted {
+                abs($0.height - height) < abs($1.height - height)
+            }
+        
         if let mountainInfo = mountains.first {
             return Just(mountainInfo)
                 .setFailureType(to: Error.self)
