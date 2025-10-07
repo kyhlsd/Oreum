@@ -13,6 +13,7 @@ protocol Router: URLRequestConvertible {
     var baseURL: String { get }
     var apiKey: String { get }
     var method: HTTPMethod { get }
+    var paths: String? { get }
     var queryItems: [URLQueryItem] { get }
     var errorResponse: APIErrorConvertible.Type { get }
 }
@@ -21,6 +22,9 @@ extension Router {
     
     func asURLRequest() throws -> URLRequest {
         var url = try baseURL.asURL()
+        if let paths {
+            url = url.appendingPathComponent(paths)
+        }
         url = url.appending(queryItems: queryItems)
         return try URLRequest(url: url, method: method)
     }

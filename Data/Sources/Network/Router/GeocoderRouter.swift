@@ -13,23 +13,24 @@ enum GeocoderRouter: Router {
     case getCoordinate(address: String)
     
     var baseURL: String {
-        switch self {
-        case .getCoordinate:
-            return APIInfos.Geocoder.baseURL
-        }
+        return APIInfos.Geocoder.baseURL
     }
     
     var apiKey: String {
-        switch self {
-        case .getCoordinate:
-            return APIInfos.Geocoder.key
-        }
+        return APIInfos.Geocoder.key
     }
     
     var method: HTTPMethod {
         switch self {
         case .getCoordinate:
             return .get
+        }
+    }
+    
+    var paths: String? {
+        switch self {
+        case .getCoordinate:
+            return nil
         }
     }
     
@@ -52,6 +53,6 @@ enum GeocoderRouter: Router {
     }
     
     var errorResponse: APIErrorConvertible.Type {
-        return GeocodeErrorResponse.self
+        return GeocodeErrorResult.self
     }
 }

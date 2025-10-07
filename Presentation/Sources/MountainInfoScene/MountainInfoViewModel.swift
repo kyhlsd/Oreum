@@ -13,10 +13,12 @@ final class MountainInfoViewModel: BaseViewModel {
 
     private let mountainInfo: MountainInfo
     private let fetchCoordinateUseCase: FetchCoordinateUseCase
+    private let fetchWeeklyForecastUseCase: FetchWeeklyForecastUseCase
     private var cancellables = Set<AnyCancellable>()
 
-    init(fetchCoordinateUseCase: FetchCoordinateUseCase, mountainInfo: MountainInfo) {
+    init(fetchCoordinateUseCase: FetchCoordinateUseCase, fetchWeeklyForecastUseCase: FetchWeeklyForecastUseCase, mountainInfo: MountainInfo) {
         self.fetchCoordinateUseCase = fetchCoordinateUseCase
+        self.fetchWeeklyForecastUseCase = fetchWeeklyForecastUseCase
         self.mountainInfo = mountainInfo
     }
 
@@ -30,6 +32,7 @@ final class MountainInfoViewModel: BaseViewModel {
         let height: AnyPublisher<String, Never>
         let introduction: AnyPublisher<String, Never>
         let imageURL: AnyPublisher<URL?, Never>
+        let weeklyForecast: AnyPublisher<[DailyForecast], Never>
         let errorMessage: AnyPublisher<String, Never>
     }
 
@@ -39,9 +42,11 @@ final class MountainInfoViewModel: BaseViewModel {
         let heightSubject = PassthroughSubject<String, Never>()
         let introductionSubject = PassthroughSubject<String, Never>()
         let imageURLSubject = PassthroughSubject<URL?, Never>()
+        let weeklyForecastSubject = PassthroughSubject<[DailyForecast], Never>()
         let errorMessageSubject = PassthroughSubject<String, Never>()
 
         let fetchCoordinateTrigger = PassthroughSubject<String, Never>()
+        let fetchWeeklyForecastTrigger = PassthroughSubject<Coordinate, Never>()
         
         fetchCoordinateTrigger
             .flatMap { [weak self] address -> AnyPublisher<Result<Coordinate, Error>, Never> in
@@ -49,15 +54,30 @@ final class MountainInfoViewModel: BaseViewModel {
                     return Just(.failure(NSError(domain: "SelfDeallocated", code: -1)))
                         .eraseToAnyPublisher()
                 }
-                if address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    return Just(.failure(NSError(domain: "Geocoding", code: -2, userInfo: [NSLocalizedDescriptionKey: "주소 변환에 실패했습니다."]))).eraseToAnyPublisher()
-                }
                 return fetchCoordinateUseCase.execute(address: address)
             }
             .sink { result in
                 switch result {
                 case .success(let coordinate):
-                    print(coordinate)
+                    fetchWeeklyForecastTrigger.send(coordinate)
+                case .failure(let error):
+                    errorMessageSubject.send(error.localizedDescription)
+                }
+            }
+            .store(in: &cancellables)
+        
+        fetchWeeklyForecastTrigger
+            .flatMap { [weak self] coordinate -> AnyPublisher<Result<[DailyForecast], Error>, Never> in
+                guard let self else {
+                    return Just(.failure(NSError(domain: "SelfDeallocated", code: -1)))
+                        .eraseToAnyPublisher()
+                }
+                return fetchWeeklyForecastUseCase.execute(longitude: coordinate.longitude, latitude: coordinate.latitude)
+            }
+            .sink { result in
+                switch result {
+                case .success(let value):
+                    weeklyForecastSubject.send(value)
                 case .failure(let error):
                     errorMessageSubject.send(error.localizedDescription)
                 }
@@ -83,6 +103,7 @@ final class MountainInfoViewModel: BaseViewModel {
             height: heightSubject.eraseToAnyPublisher(),
             introduction: introductionSubject.eraseToAnyPublisher(),
             imageURL: imageURLSubject.eraseToAnyPublisher(),
+            weeklyForecast: weeklyForecastSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher()
         )
     }

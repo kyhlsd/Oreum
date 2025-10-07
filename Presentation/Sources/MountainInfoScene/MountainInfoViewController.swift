@@ -78,6 +78,12 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
         
+        output.weeklyForecast
+            .sink { weeklyForecast in
+                print(weeklyForecast)
+            }
+            .store(in: &cancellables)
+        
         output.errorMessage
             .sink { message in
                 print(message)
