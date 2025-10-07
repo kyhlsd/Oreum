@@ -151,16 +151,22 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
         mainView.cancelMeasuringButton.tap
             .sink { [weak self] in
-                self?.showCancelMeasuringAlert {
+                guard let self else { return }
+                
+                showCancelMeasuringAlert {
                     cancelMeasuringSubject.send()
+                    self.showDefaultToast(message: "기록 측정을 취소했습니다")
                 }
             }
             .store(in: &cancellables)
 
         mainView.stopButton.tap
             .sink { [weak self] in
-                self?.presentCancellableAlert(title: "측정 종료", message: "측정을 종료하시겠습니까?") {
+                guard let self else { return }
+                
+                presentCancellableAlert(title: "측정 종료", message: "측정을 종료하시겠습니까?") {
                     stopMeasuringSubject.send()
+                    self.showDefaultToast(message: "기록이 저장되었습니다")
                 }
             }
             .store(in: &cancellables)
