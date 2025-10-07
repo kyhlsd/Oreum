@@ -86,7 +86,7 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
         
         output.errorMessage
             .sink { [weak self] message in
-                print(message)
+                self?.presentDefaultAlert(title: "날씨 정보 불러오기 실패", message: message)
                 self?.mainView.showWeatherLoadingError()
             }
             .store(in: &cancellables)
