@@ -195,31 +195,28 @@ public final class HealthKitManager {
             var currentStart = startDate
 
             while currentStart < endDate {
-                let currentEnd = min(currentStart.addingTimeInterval(300), endDate)
+                let nextInterval = currentStart.addingTimeInterval(300)
+                let currentEnd = nextInterval < endDate ? nextInterval : endDate
                 intervals.append((start: currentStart, end: currentEnd))
-                currentStart = currentEnd
+                currentStart = nextInterval
             }
-
+            print("intervals", intervals)
+            
             let group = DispatchGroup()
             var logs: [ActivityLog] = []
-            var fetchError: Error?
 
             // 각 구간에 대해 걸음 수와 거리 가져오기
             for interval in intervals {
                 group.enter()
 
-                self.fetchStepsAndDistance(from: interval.start, to: interval.end) { steps, distance, error in
-                    if let error = error {
-                        fetchError = error
-                    } else {
-                        let log = ActivityLog(
-                            id: UUID().uuidString,
-                            time: interval.start,
-                            step: steps,
-                            distance: distance
-                        )
-                        logs.append(log)
-                    }
+                self.fetchStepsAndDistance(from: interval.start, to: interval.end) { steps, distance, _ in
+                    let log = ActivityLog(
+                        id: UUID().uuidString,
+                        time: interval.end,
+                        step: steps,
+                        distance: distance
+                    )
+                    logs.append(log)
                     group.leave()
                 }
             }
@@ -232,15 +229,10 @@ public final class HealthKitManager {
                     distance: 0
                 )
 
-                if let fetchError {
-                    // 에러가 발생해도 초기값은 반환
-                    promise(.success([initialLog]))
-                } else {
-                    // 시간 순으로 정렬
-                    logs.sort { $0.time < $1.time }
-                    logs.insert(initialLog, at: 0)
-                    promise(.success(logs))
-                }
+                // 시간 순으로 정렬
+                logs.sort { $0.time < $1.time }
+                logs.insert(initialLog, at: 0)
+                promise(.success(logs))
             }
         }
         .receive(on: DispatchQueue.main)
@@ -258,33 +250,30 @@ public final class HealthKitManager {
         var distance: Int = 0
         var stepsCompleted = false
         var distanceCompleted = false
-        var queryError: Error?
 
         // 걸음 수 쿼리
         let stepQuery = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
-            if let error = error {
-                queryError = error
-            } else if let sum = result?.sumQuantity() {
+            if let sum = result?.sumQuantity() {
                 steps = Int(sum.doubleValue(for: HKUnit.count()))
             }
+            // 에러가 발생하거나 데이터가 없으면 steps는 0으로 유지
             stepsCompleted = true
 
             if distanceCompleted {
-                completion(steps, distance, queryError)
+                completion(steps, distance, nil)
             }
         }
 
         // 거리 쿼리
         let distanceQuery = HKStatisticsQuery(quantityType: distanceType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
-            if let error = error {
-                queryError = error
-            } else if let sum = result?.sumQuantity() {
+            if let sum = result?.sumQuantity() {
                 distance = Int(sum.doubleValue(for: HKUnit.meter()))
             }
+            // 에러가 발생하거나 데이터가 없으면 distance는 0으로 유지
             distanceCompleted = true
 
             if stepsCompleted {
-                completion(steps, distance, queryError)
+                completion(steps, distance, nil)
             }
         }
 
