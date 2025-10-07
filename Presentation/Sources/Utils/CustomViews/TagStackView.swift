@@ -11,7 +11,7 @@ final class TagStackView: UIStackView {
     
     private let firstVisitLabel = TagLabel(text: "정복", textColor: AppColor.firstVisitForeground, backgroundColor: AppColor.firstVisitBackground)
     
-    private let famousLabel = TagLabel(text: "명산", textColor: AppColor.famousForeground, backgroundColor: AppColor.famousBackground)
+    private let hasLogLabel = TagLabel(text: "기록", textColor: AppColor.famousForeground, backgroundColor: AppColor.famousBackground)
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -21,7 +21,7 @@ final class TagStackView: UIStackView {
         alignment = .center
         
         firstVisitLabel.setContentHuggingPriority(.required, for: .horizontal)
-        famousLabel.setContentHuggingPriority(.required, for: .horizontal)
+        hasLogLabel.setContentHuggingPriority(.required, for: .horizontal)
     }
     
     @available(*, unavailable)
@@ -29,15 +29,15 @@ final class TagStackView: UIStackView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func setData(isFirstVisit: Bool, isFamous: Bool) {
+    func setData(isFirstVisit: Bool, hasLog: Bool) {
         clear()
         
         if isFirstVisit {
             addArrangedSubview(firstVisitLabel)
         }
         
-        if isFamous {
-            addArrangedSubview(famousLabel)
+        if hasLog {
+            addArrangedSubview(hasLogLabel)
         }
     }
     

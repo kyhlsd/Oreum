@@ -55,25 +55,17 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         cancellables = Set<AnyCancellable>()
     }
     
-    final func setData(_ data: ClimbRecord) {
-        // TODO: DTO, model 재정의, isFirstVisit 관련 로직
-        let record = ClimbRecord.dummy.filter { $0.mountain.id == data.mountain.id }.first
-        let isFirstVisit: Bool
-        if let record {
-            isFirstVisit = record.id == data.id
-        } else {
-            isFirstVisit = true
-        }
+    final func setData(_ data: ClimbRecord, isFirstVisit: Bool) {
         let name = data.mountain.name
-        
+
         mountainImageView.image = getMountainImage(date: data.climbDate)
         nameLabel.text = name
         dateLabel.text = AppFormatter.dateFormatter.string(from: data.climbDate)
-        
+
         let image = data.isBookmarked ? AppIcon.bookmarkFill : AppIcon.bookmark
         bookmarkButton.setImage(image, for: .normal)
 
-        tagStackView.setData(isFirstVisit: isFirstVisit, isFamous: data.mountain.isFamous)
+        tagStackView.setData(isFirstVisit: isFirstVisit, hasLog: !data.timeLog.isEmpty)
 
         bookmarkButton.tap
             .sink { [weak self] in
@@ -171,7 +163,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         nameLabel.snp.makeConstraints { make in
             make.bottom.equalTo(mountainImageView.snp.centerY)
-            make.leading.equalTo(mountainImageView.snp.trailing).offset(AppSpacing.regular)
+            make.leading.equalTo(mountainImageView.snp.trailing).offset(AppSpacing.compact)
             make.trailing.equalTo(tagStackView.snp.leading).offset(-AppSpacing.small)
         }
         

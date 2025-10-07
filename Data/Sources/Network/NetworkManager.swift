@@ -10,9 +10,9 @@ import Combine
 import Network
 import Alamofire
 
-final class NetworkManager {
+public final class NetworkManager {
     
-    static let shared = NetworkManager()
+    public static let shared = NetworkManager()
     private init() {}
     
     private let queue = DispatchQueue.global(qos: .background)
@@ -20,7 +20,7 @@ final class NetworkManager {
     
     private(set) var isConnected = true
     
-    func startMonitoring() {
+    public func startMonitoring() {
         monitor.pathUpdateHandler = { [weak self] path in
             guard let self else { return }
             
@@ -33,7 +33,7 @@ final class NetworkManager {
         monitor.start(queue: queue)
     }
     
-    func stopMonitoring() {
+    public func stopMonitoring() {
         monitor.cancel()
     }
     
