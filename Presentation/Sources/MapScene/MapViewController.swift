@@ -70,6 +70,7 @@ final class MapViewController: UIViewController, BaseViewController {
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
                 self?.mainView.showEmptyState(mountains.isEmpty)
+                self?.mainView.collectionView.setContentOffset(.zero, animated: false)
             }
             .store(in: &cancellables)
 

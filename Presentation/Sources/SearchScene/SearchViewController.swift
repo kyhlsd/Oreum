@@ -78,6 +78,7 @@ final class SearchViewController: UIViewController, BaseViewController {
             .sink { [weak self] results in
                 self?.applyResultSnapshot(results: results)
                 self?.mainView.showEmptyState(results.isEmpty)
+                self?.mainView.resultCollectionView.setContentOffset(.zero, animated: false)
             }
             .store(in: &cancellables)
 
