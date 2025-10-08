@@ -113,8 +113,6 @@ final class ClimbRecordListViewController: UIViewController {
     }
     
     @objc private func addButtonTapped() {
-        let a = [Int]()
-        let b = a.first!
         presentAddVC?()
     }
     
