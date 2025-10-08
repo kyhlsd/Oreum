@@ -11,12 +11,14 @@ import Domain
 
 public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
 
+    public static let shared = DummyTrackActivityRepositoryImpl()
+
     private var startDate: Date?
     private var climbingMountain: Mountain?
     private let dataUpdateSubject = PassthroughSubject<Void, Never>()
     private var timer: Timer?
 
-    public init() {}
+    private init() {}
 
     public func requestAuthorization() -> AnyPublisher<Bool, Error> {
         return Just(true)

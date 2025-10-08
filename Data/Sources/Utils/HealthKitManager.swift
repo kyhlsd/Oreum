@@ -108,7 +108,6 @@ public final class HealthKitManager {
     public func startTracking(startDate: Date) {
         self.startDate = startDate
         startObservingHealthKitChanges()
-        print("✅ Tracking started at: \(startDate)")
     }
 
     // MARK: - Observe HealthKit Changes
@@ -118,10 +117,7 @@ public final class HealthKitManager {
 
         // Step Observer
         stepObserverQuery = HKObserverQuery(sampleType: stepType, predicate: nil) { [weak self] _, completionHandler, error in
-            if let error = error {
-                print("❌ Step observer error: \(error)")
-            } else {
-                print("✅ Step data changed")
+            if error != nil {
                 self?.healthKitUpdateSubject.send()
             }
             completionHandler()
@@ -129,10 +125,7 @@ public final class HealthKitManager {
 
         // Distance Observer
         distanceObserverQuery = HKObserverQuery(sampleType: distanceType, predicate: nil) { [weak self] _, completionHandler, error in
-            if let error = error {
-                print("❌ Distance observer error: \(error)")
-            } else {
-                print("✅ Distance data changed")
+            if error != nil {
                 self?.healthKitUpdateSubject.send()
             }
             completionHandler()
@@ -146,21 +139,10 @@ public final class HealthKitManager {
         }
 
         // Background delivery 활성화 (포그라운드에서도 더 빠른 알림을 위해)
-        healthStore.enableBackgroundDelivery(for: stepType, frequency: .immediate) { success, error in
-            if success {
-                print("✅ Background delivery enabled for steps")
-            } else {
-                print("❌ Failed to enable background delivery for steps: \(String(describing: error))")
-            }
-        }
+        healthStore.enableBackgroundDelivery(for: stepType, frequency: .immediate) { _, _ in }
 
-        healthStore.enableBackgroundDelivery(for: distanceType, frequency: .immediate) { success, error in
-            if success {
-                print("✅ Background delivery enabled for distance")
-            } else {
-                print("❌ Failed to enable background delivery for distance: \(String(describing: error))")
-            }
-        }
+        healthStore.enableBackgroundDelivery(for: distanceType, frequency: .immediate) { _, _ in }
+        
     }
 
     private func stopObservingHealthKitChanges() {
@@ -284,7 +266,6 @@ public final class HealthKitManager {
     public func stopTracking() {
         stopObservingHealthKitChanges()
         startDate = nil
-        print("✅ Tracking stopped")
     }
 
     // MARK: - Check Tracking Status

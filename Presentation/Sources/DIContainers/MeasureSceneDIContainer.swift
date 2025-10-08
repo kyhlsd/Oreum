@@ -71,7 +71,7 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
         case .release, .dev:
             return HealthKitTrackActivityRepositoryImpl()
         case .dummy:
-            return DummyTrackActivityRepositoryImpl()
+            return DummyTrackActivityRepositoryImpl.shared
         }
     }
 

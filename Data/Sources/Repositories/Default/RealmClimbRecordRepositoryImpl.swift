@@ -45,7 +45,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
         .eraseToAnyPublisher()
     }
 
-    public func save(record: ClimbRecord) -> AnyPublisher<Void, Error> {
+    public func save(record: ClimbRecord) -> AnyPublisher<ClimbRecord, Error> {
         return Future { [weak self] promise in
             guard let self else {
                 promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
@@ -53,11 +53,12 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
             }
 
             do {
+                let realmRecord = ClimbRecordRealm(from: record)
                 try realm.write {
-                    let realmRecord = ClimbRecordRealm(from: record)
                     self.realm.add(realmRecord)
                 }
-                promise(.success(()))
+                let savedRecord = realmRecord.toDomain()
+                promise(.success(savedRecord))
             } catch {
                 promise(.failure(error))
             }

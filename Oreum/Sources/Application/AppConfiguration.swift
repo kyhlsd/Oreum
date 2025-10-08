@@ -15,4 +15,5 @@ struct AppConfiguration: EnvironmentConfigurable {
     static let current: AppConfiguration = {
         return AppConfiguration(environment: .dev)
     }()
+    
 }
