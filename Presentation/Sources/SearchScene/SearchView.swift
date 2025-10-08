@@ -29,7 +29,7 @@ final class SearchView: BaseView {
     let recentSearchCollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
-        layout.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
+        layout.estimatedItemSize = CGSize(width: 100, height: 32)
         layout.minimumInteritemSpacing = AppSpacing.small
 
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
