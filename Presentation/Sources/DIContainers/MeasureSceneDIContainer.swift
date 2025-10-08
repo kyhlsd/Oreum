@@ -8,10 +8,15 @@
 import UIKit
 import Domain
 import Data
+import Core
 
 public final class MeasureSceneDIContainer {
 
-    public init() {}
+    private let configuration: EnvironmentConfigurable
+
+    public init(configuration: EnvironmentConfigurable) {
+        self.configuration = configuration
+    }
 
     public func makeMeasureSceneFlowCoordinator(navigationController: UINavigationController) -> MeasureSceneFlowCoordinator {
         return MeasureSceneFlowCoordinator(navigationController: navigationController, dependencies: self)
@@ -57,7 +62,12 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
     }
 
     private func makeTrackActivityRepository() -> TrackActivityRepository {
-        return HealthKitTrackActivityRepositoryImpl()
+        switch configuration.environment {
+        case .release, .dev:
+            return HealthKitTrackActivityRepositoryImpl()
+        case .dummy:
+            return DummyTrackActivityRepositoryImpl()
+        }
     }
 
     // MARK: - UseCases

@@ -50,7 +50,8 @@ let project = Project(
             dependencies: [
                 .target(name: "Presentation"),
                 .target(name: "Domain"),
-                .target(name: "Data")
+                .target(name: "Data"),
+                .target(name: "Core")
             ],
             settings: .settings(
                 base: [
@@ -58,14 +59,22 @@ let project = Project(
                 ]
             )
         ),
-        
+
+            .target(name: "Core",
+                    destinations: [.iPhone],
+                    product: .framework,
+                    bundleId: "io.tuist.Core",
+                    deploymentTargets: .iOS(version),
+                    sources: ["Core/Sources/**"],
+                    dependencies: []
+                   ),
+
             .target(name: "Domain",
                     destinations: [.iPhone],
                     product: .framework,
                     bundleId: "io.tuist.Domain",
                     deploymentTargets: .iOS(version),
                     sources: ["Domain/Sources/**"],
-                    resources: ["Domain/Resources/**"],
                     dependencies: []
                    ),
         
@@ -93,6 +102,7 @@ let project = Project(
                     dependencies: [
                         .target(name: "Domain"),
                         .target(name: "Data"),
+                        .target(name: "Core"),
                         .external(name: "Kingfisher"),
                         .external(name: "SnapKit"),
                         .external(name: "Toast")

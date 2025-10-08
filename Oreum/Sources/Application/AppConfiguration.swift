@@ -6,16 +6,13 @@
 //
 
 import Foundation
+import Core
 
-struct AppConfiguration {
-    
-    enum Environment {
-        case dev
-    }
-    
+struct AppConfiguration: EnvironmentConfigurable {
+
     let environment: Environment
-    
+
     static let current: AppConfiguration = {
-        return AppConfiguration(environment: .dev)
+        return AppConfiguration(environment: .dummy)
     }()
 }

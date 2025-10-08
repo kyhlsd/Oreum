@@ -8,10 +8,15 @@
 import UIKit
 import Domain
 import Data
+import Core
 
 public final class MapSceneDIContainer {
 
-    public init() { }
+    private let configuration: EnvironmentConfigurable
+
+    public init(configuration: EnvironmentConfigurable) {
+        self.configuration = configuration
+    }
 
     public func makeMapSceneFlowCoordinator(navigationController: UINavigationController) -> MapSceneFlowCoordinator {
         return MapSceneFlowCoordinator(navigationController: navigationController, dependencies: self)
@@ -65,10 +70,20 @@ extension MapSceneDIContainer: MapSceneFlowCoordinatorDependencies {
     }
     
     private func makeGeocodeRepository() -> GeocodeRepository {
-        return DefaultGeocodeRepositoryImpl()
+        switch configuration.environment {
+        case .release, .dev:
+            return DefaultGeocodeRepositoryImpl()
+        case .dummy:
+            return DummyGeocodeRepositoryImpl()
+        }
     }
-    
+
     private func makeForecastRepository() -> ForecastRepository {
-        return DefaultForecastRepositoryImpl()
+        switch configuration.environment {
+        case .release, .dev:
+            return DefaultForecastRepositoryImpl()
+        case .dummy:
+            return DummyForecastRepositoryImpl()
+        }
     }
 }
