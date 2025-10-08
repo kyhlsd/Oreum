@@ -29,7 +29,7 @@ final class CustomButton: UIButton {
         config.baseForegroundColor = nil
         config.imagePadding = AppSpacing.small
         
-        config.attributedTitle = AttributedString(title, attributes: AttributeContainer([.font: AppFont.button, .foregroundColor: foreground]))
+        config.attributedTitle = AttributedString(title, attributes: AttributeContainer([.font: AppFont.titleM, .foregroundColor: foreground]))
         
         configuration = config
         backgroundColor = background
@@ -53,7 +53,7 @@ final class CustomButton: UIButton {
             config.image = coloredImage.applyingSymbolConfiguration(.init(pointSize: 12))
         }
 
-        config.attributedTitle = AttributedString(title, attributes: AttributeContainer([.font: AppFont.button, .foregroundColor: foreground]))
+        config.attributedTitle = AttributedString(title, attributes: AttributeContainer([.font: AppFont.titleM, .foregroundColor: foreground]))
 
         configuration = config
     }

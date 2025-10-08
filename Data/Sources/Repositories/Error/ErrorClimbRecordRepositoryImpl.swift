@@ -21,7 +21,7 @@ public final class ErrorClimbRecordRepositoryImpl: ClimbRecordRepository {
             .eraseToAnyPublisher()
     }
 
-    public func save(record: ClimbRecord) -> AnyPublisher<Void, Error> {
+    public func save(record: ClimbRecord) -> AnyPublisher<ClimbRecord, Error> {
         return Fail(error: error)
             .eraseToAnyPublisher()
     }

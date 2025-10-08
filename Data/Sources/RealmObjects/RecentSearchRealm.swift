@@ -10,13 +10,14 @@ import RealmSwift
 import Domain
 
 final class RecentSearchRealm: Object {
-    @Persisted(primaryKey: true) private var keyword: String
+    @Persisted(primaryKey: true) private var id: ObjectId
+    @Persisted private var keyword: String
     @Persisted private var searchedAt: Date
 }
 
 extension RecentSearchRealm {
     func toDomain() -> RecentSearch {
-        return RecentSearch(keyword: keyword, searchedAt: searchedAt)
+        return RecentSearch(id: id.stringValue, keyword: keyword, searchedAt: searchedAt)
     }
 
     convenience init(keyword: String, searchedAt: Date) {

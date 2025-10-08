@@ -7,28 +7,29 @@
 
 import Foundation
 import Presentation
+import Core
 
 final class AppDIContainer {
-    
+
     let appConfiguration: AppConfiguration
-    
+
     init(appConfiguration: AppConfiguration) {
         self.appConfiguration = appConfiguration
     }
-    
+
     func makeRecordSceneDIContainer() -> RecordSceneDIContainer {
-        return RecordSceneDIContainer()
+        return RecordSceneDIContainer(configuration: appConfiguration)
     }
-    
+
     func makeMeasureSceneDIContainer() -> MeasureSceneDIContainer {
-        return MeasureSceneDIContainer()
+        return MeasureSceneDIContainer(configuration: appConfiguration)
     }
-    
+
     func makeMapSceneDIContainer() -> MapSceneDIContainer {
-        return MapSceneDIContainer()
+        return MapSceneDIContainer(configuration: appConfiguration)
     }
-    
+
     func makeSearchSceneDIContainer() -> SearchSceneDIContainer {
-        return SearchSceneDIContainer()
+        return SearchSceneDIContainer(configuration: appConfiguration)
     }
 }

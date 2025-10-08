@@ -84,6 +84,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
         output.searchResults
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
+                self?.mainView.searchResultsTableView.setContentOffset(.zero, animated: false)
             }
             .store(in: &cancellables)
 

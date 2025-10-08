@@ -203,29 +203,37 @@ final class MeasureViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        let activityLogs = input.stopMeasuring
+        input.stopMeasuring
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .handleEvents(receiveOutput: { [weak self] _ in
                 self?.stopActivityDataTimer()
             })
-            .flatMap { [weak self] _ -> AnyPublisher<[ActivityLog], Never> in
-                guard let self else { return Just([]).eraseToAnyPublisher() }
+            .flatMap { [weak self] _ -> AnyPublisher<(logs: [ActivityLog], mountain: Mountain?), Never> in
+                guard let self else { return Just((logs: [], mountain: nil)).eraseToAnyPublisher() }
+                let mountain = self.getClimbingMountainUseCase.execute()
                 return getActivityLogsUseCase.execute()
-                    .catch { error -> Just<[ActivityLog]> in
-                        return Just([])
+                    .map { (logs: $0, mountain: mountain) }
+                    .catch { error -> Just<(logs: [ActivityLog], mountain: Mountain?)> in
+                        return Just((logs: [], mountain: mountain))
                     }.eraseToAnyPublisher()
             }
-            .share()
+            .handleEvents(receiveOutput: { [weak self] _ in
+                guard let self else { return }
+                updateMeasuringStateSubject.send(false)
+                clearMountainSelectionSubject.send()
+                updateStartButtonIsEnabledSubject.send(false)
+                clearSearchBarSubject.send()
 
-        activityLogs
-            .compactMap { [weak self] logs -> ClimbRecord? in
-                guard let self else { return nil }
-                guard let mountain = self.getClimbingMountainUseCase.execute() else { return nil }
-                let startDate = logs.first?.time ?? Date()
+                // 트래킹 중지 및 UserDefaults clear
+                self.stopTrackingActivityUseCase.execute(clearData: true)
+            })
+            .compactMap { data -> ClimbRecord? in
+                guard let mountain = data.mountain else { return nil }
+                let startDate = data.logs.first?.time ?? Date()
                 return ClimbRecord(
                     id: UUID().uuidString,
                     mountain: mountain,
-                    timeLog: logs,
+                    timeLog: data.logs,
                     images: [],
                     score: 0,
                     comment: "",
@@ -236,32 +244,17 @@ final class MeasureViewModel: BaseViewModel {
             .flatMap { [weak self] climbRecord -> AnyPublisher<ClimbRecord, Never> in
                 guard let self else { return Empty().eraseToAnyPublisher() }
                 return self.saveClimbRecordUseCase.execute(record: climbRecord)
-                    .map { climbRecord }
-                    .catch { error -> Just<ClimbRecord> in
-                        return Just(climbRecord)
-                    }
+                    .catch { _ in Just(climbRecord) }
                     .eraseToAnyPublisher()
             }
-            .sink { climbRecord in
-                // 저장 성공 시 Notification 전송 (기록 리스트 갱신용)
+            .sink { savedRecord in
+                // 저장 완료 후 Notification 전송
                 NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
-                // 저장된 ClimbRecord 전달
-                savedClimbRecordSubject.send(climbRecord)
+                // 저장된 ClimbRecord 전달 (Realm에서 생성한 ObjectId 포함)
+                savedClimbRecordSubject.send(savedRecord)
             }
             .store(in: &cancellables)
 
-        activityLogs
-            .sink { [weak self] _ in
-                guard let self else { return }
-                updateMeasuringStateSubject.send(false)
-                clearMountainSelectionSubject.send()
-                updateStartButtonIsEnabledSubject.send(false)
-                clearSearchBarSubject.send()
-
-                // 트래킹 중지 및 UserDefaults clear
-                self.stopTrackingActivityUseCase.execute(clearData: true)
-            }
-            .store(in: &cancellables)
 
         // Activity 데이터 변경 시 자동 업데이트 (한 번만 구독)
         observeActivityDataUpdatesUseCase.dataUpdates

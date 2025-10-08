@@ -43,6 +43,7 @@ final class RecentSearchCollectionViewCell: BaseCollectionViewCell {
     override func setupLayout() {
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
+            make.height.equalTo(32)
         }
 
         label.snp.makeConstraints { make in

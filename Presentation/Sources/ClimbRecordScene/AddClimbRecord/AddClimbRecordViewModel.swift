@@ -46,7 +46,7 @@ final class AddClimbRecordViewModel {
 
     func transform(input: Input) -> Output {
         let selectedMountainSubject = CurrentValueSubject<Mountain?, Never>(nil)
-        let selectedDateSubject = CurrentValueSubject<Date?, Never>(Date())
+        let selectedDateSubject = CurrentValueSubject<Date, Never>(Date())
         let errorSubject = PassthroughSubject<String, Never>()
         let pushDetailVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
@@ -130,12 +130,12 @@ final class AddClimbRecordViewModel {
         input.nextButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink {
-
-                guard let mountain = selectedMountainSubject.value,
-                      let date = selectedDateSubject.value else {
-                    errorSubject.send("산과 날짜를 선택해주세요.")
+                guard let mountain = selectedMountainSubject.value else {
+                    errorSubject.send("산을 선택해주세요.")
                     return
                 }
+
+                let date = selectedDateSubject.value
 
                 let record = ClimbRecord(
                     id: UUID().uuidString,

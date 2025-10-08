@@ -41,7 +41,7 @@ final class MountainInfoView: BaseView {
     }()
 
     private let photoLabel = {
-        let label = UILabel.create("이미지가 없습니다", color: AppColor.subText, font: AppFont.label)
+        let label = UILabel.create("이미지가 없습니다", color: AppColor.subText, font: AppFont.titleM)
         label.textAlignment = .center
         return label
     }()

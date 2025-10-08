@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 public protocol SaveClimbRecordUseCase {
-    func execute(record: ClimbRecord) -> AnyPublisher<Void, Error>
+    func execute(record: ClimbRecord) -> AnyPublisher<ClimbRecord, Error>
 }
 
 public final class SaveClimbRecordUseCaseImpl: SaveClimbRecordUseCase {
@@ -19,7 +19,7 @@ public final class SaveClimbRecordUseCaseImpl: SaveClimbRecordUseCase {
         self.repository = repository
     }
 
-    public func execute(record: ClimbRecord) -> AnyPublisher<Void, Error> {
+    public func execute(record: ClimbRecord) -> AnyPublisher<ClimbRecord, Error> {
         return repository.save(record: record)
     }
 }

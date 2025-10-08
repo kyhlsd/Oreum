@@ -21,6 +21,7 @@ final class AddClimbRecordViewController: UIViewController {
 
     private let searchTriggerSubject = PassthroughSubject<String, Never>()
     private let mountainSelectedSubject = PassthroughSubject<Mountain, Never>()
+    private let dateChangedSubject = PassthroughSubject<Date, Never>()
 
     init(viewModel: AddClimbRecordViewModel) {
         self.viewModel = viewModel
@@ -49,7 +50,7 @@ final class AddClimbRecordViewController: UIViewController {
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             mountainSelected: mountainSelectedSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap,
-            dateChanged: mainView.datePicker.publisher(for: \.date).eraseToAnyPublisher(),
+            dateChanged: dateChangedSubject.eraseToAnyPublisher(),
             nextButtonTapped: mainView.nextButton.tap
         )
 
@@ -117,6 +118,8 @@ final class AddClimbRecordViewController: UIViewController {
                 print(errorMessage)
             }
             .store(in: &cancellables)
+        
+        mainView.datePicker.addTarget(self, action: #selector(datePickerValueChanged), for: .valueChanged)
     }
 
     private func setupNavItem() {
@@ -127,13 +130,17 @@ final class AddClimbRecordViewController: UIViewController {
         navigationItem.leftBarButtonItem = cancelButton
     }
 
+    private func setupDelegates() {
+        mainView.searchBar.delegate = self
+        mainView.searchResultsTableView.delegate = self
+    }
+    
     @objc private func cancelButtonTapped() {
         dismissVC?()
     }
 
-    private func setupDelegates() {
-        mainView.searchBar.delegate = self
-        mainView.searchResultsTableView.delegate = self
+    @objc private func datePickerValueChanged() {
+        dateChangedSubject.send(mainView.datePicker.date)
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {

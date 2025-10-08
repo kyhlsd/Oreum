@@ -39,10 +39,9 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
             .eraseToAnyPublisher()
     }
 
-    public func save(record: ClimbRecord) -> AnyPublisher<Void, Error> {
+    public func save(record: ClimbRecord) -> AnyPublisher<ClimbRecord, Error> {
         dummyClimbRecords.append(record)
-        print("✅ ClimbRecord saved: \(record.mountain.name)")
-        return Just(())
+        return Just(record)
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
     }

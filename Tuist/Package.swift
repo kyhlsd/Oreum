@@ -22,6 +22,7 @@ let package = Package(
         .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.10.2"), // Alamofire
         .package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.5.0"), // Kingfisher
         .package(url: "https://github.com/SnapKit/SnapKit.git", from: "5.7.1"), // SnapKit
-        .package(url: "https://github.com/scalessec/Toast-Swift.git", from: "5.1.1") // Toast
+        .package(url: "https://github.com/scalessec/Toast-Swift.git", from: "5.1.1"), // Toast
+        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "11.0.0") // Firebase
     ]
 )

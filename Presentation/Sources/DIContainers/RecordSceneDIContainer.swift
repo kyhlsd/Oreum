@@ -8,13 +8,17 @@
 import UIKit
 import Domain
 import Data
+import Core
 
 public final class RecordSceneDIContainer {
-    
+
+    private let configuration: EnvironmentConfigurable
     private lazy var climbRecordRepository = makeClimbRecordRepository()
     private lazy var recordImageRepository = makeRecordImageRepository()
-    
-    public init() {}
+
+    public init(configuration: EnvironmentConfigurable) {
+        self.configuration = configuration
+    }
     
     public func makeRecordSceneFlowCoordinator(navigationController: UINavigationController) -> RecordSceneFlowCoordinator {
         return RecordSceneFlowCoordinator(navigationController: navigationController, dependencies: self)
@@ -111,11 +115,16 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
 
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
-        do {
-            return try RealmClimbRecordRepositoryImpl()
-        } catch {
-            print("Failed to initialize Realm: \(error.localizedDescription)")
-            return ErrorClimbRecordRepositoryImpl()
+        switch configuration.environment {
+        case .release, .dev:
+            do {
+                return try RealmClimbRecordRepositoryImpl()
+            } catch {
+                print("Failed to initialize Realm: \(error.localizedDescription)")
+                return ErrorClimbRecordRepositoryImpl()
+            }
+        case .dummy:
+            return DummyClimbRecordRepositoryImpl.shared
         }
     }
     
@@ -124,6 +133,11 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeRecordImageRepository() -> RecordImageRepository {
-        return FileManagerRecordImageRepositoryImpl()
+        switch configuration.environment {
+        case .release, .dev:
+            return FileManagerRecordImageRepositoryImpl()
+        case .dummy:
+            return DummyRecordImageRepositoryImpl.shared
+        }
     }
 }

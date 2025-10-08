@@ -43,9 +43,8 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
 
             do {
                 try realm.write {
-                    if let existing = self.realm.object(ofType: RecentSearchRealm.self, forPrimaryKey: keyword) {
-                        self.realm.delete(existing)
-                    }
+                    let objects = self.realm.objects(RecentSearchRealm.self).filter( "keyword == %@", keyword )
+                    self.realm.delete(objects)
                     let recentSearch = RecentSearchRealm(keyword: keyword, searchedAt: Date())
                     self.realm.add(recentSearch)
                 }
@@ -64,14 +63,16 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
                 return
             }
 
-            guard let recentSearch = realm.object(ofType: RecentSearchRealm.self, forPrimaryKey: keyword) else {
+            let objects = realm.objects(RecentSearchRealm.self).filter("keyword == %@", keyword)
+
+            guard !objects.isEmpty else {
                 promise(.failure(NSError(domain: "RealmRecentSearchRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Recent search not found"])))
                 return
             }
 
             do {
                 try realm.write {
-                    self.realm.delete(recentSearch)
+                    self.realm.delete(objects)
                 }
                 promise(.success(()))
             } catch {

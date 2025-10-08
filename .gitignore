@@ -75,3 +75,6 @@ Tuist/.build
 ### Secrets ###
 **/Secrets/
 Data/Resources/
+
+### Firebase ###
+GoogleService-Info.plist

@@ -143,8 +143,15 @@ extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionV
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(for: indexPath, cellClass: ClimbRecordCollectionViewCell.self)
 
+        let climbRecord = viewModel.climbRecordList[indexPath.item]
+
+        let firstRecordOfMountain = viewModel.climbRecordList
+            .filter { $0.mountain.address == climbRecord.mountain.address }
+            .min { $0.climbDate < $1.climbDate }
+        let isFirstVisit = firstRecordOfMountain?.id == climbRecord.id
+
         cell.setImages(row: indexPath.item, total: viewModel.climbRecordList.count)
-        cell.setData(viewModel.climbRecordList[indexPath.item])
+        cell.setData(climbRecord, isFirstVisit: isFirstVisit)
         cell.bookmarkTapped = { [weak self] recordId in
             self?.cellBookmarkTapSubject.send(recordId)
         }

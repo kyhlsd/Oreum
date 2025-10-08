@@ -9,10 +9,11 @@ let project = Project(
             name: "Oreum",
             destinations: [.iPhone],
             product: .app,
-            bundleId: "io.tuist.Oreum",
+            bundleId: "com.kyh.Oreum",
             deploymentTargets: .iOS(version),
             infoPlist: .extendingDefault(
                 with: [
+                    "CFBundleDisplayName": "오름",
                     "UILaunchStoryboardName": "LaunchScreen",
                     "UIApplicationSceneManifest": [
                         "UIApplicationSupportsMultipleScenes": false,
@@ -46,40 +47,65 @@ let project = Project(
             sources: ["Oreum/Sources/**"],
             resources: ["Oreum/Resources/**"],
             entitlements: .file(path: "Oreum/Oreum.entitlements"),
+            scripts: [
+                .post(
+                    script: """
+                    "${PROJECT_DIR}/Tuist/.build/checkouts/firebase-ios-sdk/Crashlytics/run"
+                    """,
+                    name: "Crashlytics",
+                    inputPaths: [
+                        "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+                        "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+                        "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+                        "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+                        "$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+                        "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}.debug.dylib"
+                    ]
+                )
+            ],
             dependencies: [
                 .target(name: "Presentation"),
                 .target(name: "Domain"),
                 .target(name: "Data"),
-                .target(name: "Common")
+                .target(name: "Core"),
+                .external(name: "FirebaseAnalytics"),
+                .external(name: "FirebaseCrashlytics")
             ],
             settings: .settings(
                 base: [
-                    "CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION": "YES"
+                    "DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym",
+                    "CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION": "YES",
+                    "OTHER_LDFLAGS": "$(inherited) -ObjC"
                 ]
             )
         ),
-        
+
+            .target(name: "Core",
+                    destinations: [.iPhone],
+                    product: .framework,
+                    bundleId: "com.kyh.Core",
+                    deploymentTargets: .iOS(version),
+                    sources: ["Core/Sources/**"],
+                    dependencies: []
+                   ),
+
             .target(name: "Domain",
                     destinations: [.iPhone],
                     product: .framework,
-                    bundleId: "io.tuist.Domain",
+                    bundleId: "com.kyh.Domain",
                     deploymentTargets: .iOS(version),
                     sources: ["Domain/Sources/**"],
-                    resources: ["Domain/Resources/**"],
-                    dependencies: [
-                        .target(name: "Common")
-                    ]
+                    dependencies: []
                    ),
         
             .target(name: "Data",
                     destinations: [.iPhone],
                     product: .framework,
-                    bundleId: "io.tuist.Data",
+                    bundleId: "com.kyh.Data",
                     deploymentTargets: .iOS(version),
                     sources: ["Data/Sources/**"],
                     resources: ["Data/Resources/**"],
                     dependencies: [
-                        .target(name: "Common"),
                         .target(name: "Domain"),
                         .external(name: "RealmSwift"),
                         .external(name: "Alamofire")
@@ -89,28 +115,18 @@ let project = Project(
             .target(name: "Presentation",
                     destinations: [.iPhone],
                     product: .framework,
-                    bundleId: "io.tuist.Presentation",
+                    bundleId: "com.kyh.Presentation",
                     deploymentTargets: .iOS(version),
                     sources: ["Presentation/Sources/**"],
                     resources: ["Presentation/Resources/**"],
                     dependencies: [
-                        .target(name: "Common"),
                         .target(name: "Domain"),
                         .target(name: "Data"),
+                        .target(name: "Core"),
                         .external(name: "Kingfisher"),
                         .external(name: "SnapKit"),
                         .external(name: "Toast")
                     ]
-                   ),
-        
-            .target(name: "Common",
-                    destinations: [.iPhone],
-                    product: .framework,
-                    bundleId: "io.tuist.Common",
-                    deploymentTargets: .iOS(version),
-                    sources: ["Common/Sources/**"],
-                    resources: ["Common/Resources/**"],
-                    dependencies: []
-                   ),
+                   )
     ]
 )

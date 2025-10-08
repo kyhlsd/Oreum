@@ -53,7 +53,7 @@ final class ClimbRecordDetailView: BaseView {
     }()
 
     private let photoLabel = {
-        let label = UILabel.create("산에서 담은 순간을 추가해 보세요", color: AppColor.subText, font: AppFont.label)
+        let label = UILabel.create("산에서 담은 순간을 추가해 보세요", color: AppColor.subText, font: AppFont.titleM)
         label.textAlignment = .center
         return label
     }()
