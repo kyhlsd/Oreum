@@ -49,11 +49,16 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
     
     // MARK: - Repositories
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
-        do {
-            return try RealmClimbRecordRepositoryImpl()
-        } catch {
-            print("Failed to initialize Realm: \(error.localizedDescription)")
-            return ErrorClimbRecordRepositoryImpl()
+        switch configuration.environment {
+        case .release, .dev:
+            do {
+                return try RealmClimbRecordRepositoryImpl()
+            } catch {
+                print("Failed to initialize Realm: \(error.localizedDescription)")
+                return ErrorClimbRecordRepositoryImpl()
+            }
+        case .dummy:
+            return DummyClimbRecordRepositoryImpl.shared
         }
     }
 

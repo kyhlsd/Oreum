@@ -13,6 +13,6 @@ struct AppConfiguration: EnvironmentConfigurable {
     let environment: Environment
 
     static let current: AppConfiguration = {
-        return AppConfiguration(environment: .dummy)
+        return AppConfiguration(environment: .dev)
     }()
 }
