@@ -101,7 +101,7 @@ final class MeasureView: BaseView {
         return label
     }()
     
-    private let timeSubLabel = UILabel.create("경과 시간", color:AppColor.subText, font: AppFont.label)
+    private let timeSubLabel = UILabel.create("경과 시간", color:AppColor.subText, font: AppFont.titleM)
 
     private let updateInfoLabel = {
         let label = UILabel.create("데이터 업데이트는 약간의 지연이 있습니다", color: AppColor.subText, font: AppFont.description)
