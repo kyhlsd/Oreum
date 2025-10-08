@@ -26,7 +26,7 @@ public final class DummyRecentSearchRepositoryImpl: RecentSearchRepository {
 
     public func save(keyword: String) -> AnyPublisher<Void, Error> {
         recentSearches.removeAll { $0.keyword == keyword }
-        let newSearch = RecentSearch(keyword: keyword, searchedAt: Date())
+        let newSearch = RecentSearch(id: UUID().uuidString, keyword: keyword, searchedAt: Date())
         recentSearches.append(newSearch)
         return Just(())
             .setFailureType(to: Error.self)

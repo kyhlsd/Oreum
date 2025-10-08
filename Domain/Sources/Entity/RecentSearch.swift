@@ -8,10 +8,12 @@
 import Foundation
 
 public struct RecentSearch: Hashable {
+    public let id: String
     public let keyword: String
     public let searchedAt: Date
 
-    public init(keyword: String, searchedAt: Date) {
+    public init(id: String, keyword: String, searchedAt: Date) {
+        self.id = id
         self.keyword = keyword
         self.searchedAt = searchedAt
     }
