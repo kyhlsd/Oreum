@@ -51,11 +51,14 @@ let project = Project(
                 .target(name: "Presentation"),
                 .target(name: "Domain"),
                 .target(name: "Data"),
-                .target(name: "Core")
+                .target(name: "Core"),
+                .external(name: "FirebaseAnalytics"),
+                .external(name: "FirebaseCrashlytics")
             ],
             settings: .settings(
                 base: [
-                    "CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION": "YES"
+                    "CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION": "YES",
+                    "OTHER_LDFLAGS": "$(inherited) -ObjC"
                 ]
             )
         ),
