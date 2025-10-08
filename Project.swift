@@ -9,7 +9,7 @@ let project = Project(
             name: "Oreum",
             destinations: [.iPhone],
             product: .app,
-            bundleId: "io.tuist.Oreum",
+            bundleId: "com.kyh.Oreum",
             deploymentTargets: .iOS(version),
             infoPlist: .extendingDefault(
                 with: [
@@ -63,7 +63,7 @@ let project = Project(
             .target(name: "Core",
                     destinations: [.iPhone],
                     product: .framework,
-                    bundleId: "io.tuist.Core",
+                    bundleId: "com.kyh.Core",
                     deploymentTargets: .iOS(version),
                     sources: ["Core/Sources/**"],
                     dependencies: []
@@ -72,7 +72,7 @@ let project = Project(
             .target(name: "Domain",
                     destinations: [.iPhone],
                     product: .framework,
-                    bundleId: "io.tuist.Domain",
+                    bundleId: "com.kyh.Domain",
                     deploymentTargets: .iOS(version),
                     sources: ["Domain/Sources/**"],
                     dependencies: []
@@ -81,7 +81,7 @@ let project = Project(
             .target(name: "Data",
                     destinations: [.iPhone],
                     product: .framework,
-                    bundleId: "io.tuist.Data",
+                    bundleId: "com.kyh.Data",
                     deploymentTargets: .iOS(version),
                     sources: ["Data/Sources/**"],
                     resources: ["Data/Resources/**"],
@@ -95,7 +95,7 @@ let project = Project(
             .target(name: "Presentation",
                     destinations: [.iPhone],
                     product: .framework,
-                    bundleId: "io.tuist.Presentation",
+                    bundleId: "com.kyh.Presentation",
                     deploymentTargets: .iOS(version),
                     sources: ["Presentation/Sources/**"],
                     resources: ["Presentation/Resources/**"],
