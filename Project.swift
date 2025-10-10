@@ -2,6 +2,8 @@ import ProjectDescription
 
 let iOSVersion = "16.0"
 let teamID = "4QUWH828P3"
+let appVersion = "1.0.1"
+let buildNumber = "1"
 
 let project = Project(
     name: "Oreum",
@@ -78,7 +80,9 @@ let project = Project(
                     "DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym",
                     "CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION": "YES",
                     "OTHER_LDFLAGS": "$(inherited) -ObjC",
-                    "DEVELOPMENT_TEAM": .string(teamID)
+                    "DEVELOPMENT_TEAM": .string(teamID),
+                    "MARKETING_VERSION": .string(appVersion),
+                    "CURRENT_PROJECT_VERSION": .string(buildNumber)
                 ]
             )
         ),
