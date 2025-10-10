@@ -38,6 +38,7 @@ let project = Project(
                             ]
                         ]
                     ],
+                    "CFBundleShortVersionString": .string(appVersion),
                     "UIUserInterfaceStyle": "Light",
                     "App Uses Non-Exempty Encryption": false,
                     "UISupportedInterfaceOrientations": [
