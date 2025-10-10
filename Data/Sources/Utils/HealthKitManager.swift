@@ -117,7 +117,7 @@ public final class HealthKitManager {
 
         // Step Observer
         stepObserverQuery = HKObserverQuery(sampleType: stepType, predicate: nil) { [weak self] _, completionHandler, error in
-            if error != nil {
+            if error == nil {
                 self?.healthKitUpdateSubject.send()
             }
             completionHandler()
@@ -125,7 +125,7 @@ public final class HealthKitManager {
 
         // Distance Observer
         distanceObserverQuery = HKObserverQuery(sampleType: distanceType, predicate: nil) { [weak self] _, completionHandler, error in
-            if error != nil {
+            if error == nil {
                 self?.healthKitUpdateSubject.send()
             }
             completionHandler()

@@ -1,6 +1,9 @@
 import ProjectDescription
 
-let version = "16.0"
+let iOSVersion = "16.0"
+let teamID = "4QUWH828P3"
+let appVersion = "1.0.1"
+let buildNumber = "1"
 
 let project = Project(
     name: "Oreum",
@@ -10,7 +13,7 @@ let project = Project(
             destinations: [.iPhone],
             product: .app,
             bundleId: "com.kyh.Oreum",
-            deploymentTargets: .iOS(version),
+            deploymentTargets: .iOS(iOSVersion),
             infoPlist: .extendingDefault(
                 with: [
                     "CFBundleDisplayName": "오름",
@@ -36,6 +39,7 @@ let project = Project(
                         ]
                     ],
                     "UIUserInterfaceStyle": "Light",
+                    "App Uses Non-Exempty Encryption": false,
                     "UISupportedInterfaceOrientations": [
                         "UIInterfaceOrientationPortrait"
                     ],
@@ -75,7 +79,10 @@ let project = Project(
                 base: [
                     "DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym",
                     "CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION": "YES",
-                    "OTHER_LDFLAGS": "$(inherited) -ObjC"
+                    "OTHER_LDFLAGS": "$(inherited) -ObjC",
+                    "DEVELOPMENT_TEAM": .string(teamID),
+                    "MARKETING_VERSION": .string(appVersion),
+                    "CURRENT_PROJECT_VERSION": .string(buildNumber)
                 ]
             )
         ),
@@ -84,39 +91,54 @@ let project = Project(
                     destinations: [.iPhone],
                     product: .framework,
                     bundleId: "com.kyh.Core",
-                    deploymentTargets: .iOS(version),
+                    deploymentTargets: .iOS(iOSVersion),
                     sources: ["Core/Sources/**"],
-                    dependencies: []
+                    dependencies: [],
+                    settings: .settings(
+                        base: [
+                            "DEVELOPMENT_TEAM": .string(teamID)
+                        ]
+                    )
                    ),
 
             .target(name: "Domain",
                     destinations: [.iPhone],
                     product: .framework,
                     bundleId: "com.kyh.Domain",
-                    deploymentTargets: .iOS(version),
+                    deploymentTargets: .iOS(iOSVersion),
                     sources: ["Domain/Sources/**"],
-                    dependencies: []
+                    dependencies: [],
+                    settings: .settings(
+                        base: [
+                            "DEVELOPMENT_TEAM": .string(teamID)
+                        ]
+                    )
                    ),
         
             .target(name: "Data",
                     destinations: [.iPhone],
                     product: .framework,
                     bundleId: "com.kyh.Data",
-                    deploymentTargets: .iOS(version),
+                    deploymentTargets: .iOS(iOSVersion),
                     sources: ["Data/Sources/**"],
                     resources: ["Data/Resources/**"],
                     dependencies: [
                         .target(name: "Domain"),
                         .external(name: "RealmSwift"),
                         .external(name: "Alamofire")
-                    ]
+                    ],
+                    settings: .settings(
+                        base: [
+                            "DEVELOPMENT_TEAM": .string(teamID)
+                        ]
+                    )
                    ),
         
             .target(name: "Presentation",
                     destinations: [.iPhone],
                     product: .framework,
                     bundleId: "com.kyh.Presentation",
-                    deploymentTargets: .iOS(version),
+                    deploymentTargets: .iOS(iOSVersion),
                     sources: ["Presentation/Sources/**"],
                     resources: ["Presentation/Resources/**"],
                     dependencies: [
@@ -126,7 +148,13 @@ let project = Project(
                         .external(name: "Kingfisher"),
                         .external(name: "SnapKit"),
                         .external(name: "Toast")
-                    ]
+                    ],
+                    settings: .settings(
+                        base: [
+                            "DEVELOPMENT_TEAM": .string(teamID)
+                        ]
+                    )
                    )
     ]
 )
+
