@@ -169,6 +169,13 @@ final class MeasureView: BaseView {
 
     let stopButton = CustomButton(title: "측정 종료", image: AppIcon.stop, foreground: .white, background: AppColor.primary)
 
+    private let backgroundMeasurementInfoLabel = {
+        let label = UILabel.create("앱을 종료해도 측정이 가능합니다", color: AppColor.subText, font: AppFont.description)
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
+
     // MARK: - Permission Required View
     private let permissionRequiredView = {
         let view = UIView()
@@ -216,7 +223,7 @@ final class MeasureView: BaseView {
             searchResultsOverlay.addSubview($0)
         }
 
-        [startButton, measuringBoxView, measuringButtonsStackView].forEach {
+        [startButton, measuringBoxView, backgroundMeasurementInfoLabel, measuringButtonsStackView].forEach {
             stackView.addArrangedSubview($0)
         }
 
@@ -456,6 +463,7 @@ extension MeasureView {
             startButton.isHidden = true
             measuringBoxView.isHidden = false
             measuringButtonsStackView.isHidden = false
+            backgroundMeasurementInfoLabel.isHidden = false
             cancelButton.isEnabled = false
             mountainBoxView.alpha = 0.5
             selectLabel.isEnabled = false
@@ -471,6 +479,7 @@ extension MeasureView {
             startButton.isHidden = false
             measuringBoxView.isHidden = true
             measuringButtonsStackView.isHidden = true
+            backgroundMeasurementInfoLabel.isHidden = true
             cancelButton.isEnabled = true
             mountainBoxView.alpha = 1.0
             selectLabel.isEnabled = true

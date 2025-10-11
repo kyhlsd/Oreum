@@ -10,11 +10,7 @@ import SnapKit
 
 final class SearchView: BaseView {
 
-    let searchBar = {
-        let searchBar = CustomSearchBar()
-        searchBar.placeholder = "산 이름을 입력하세요"
-        return searchBar
-    }()
+    let searchBar = CustomSearchBar()
 
     private let recentSearchTitleLabel = UILabel.create("최근 검색어", color: AppColor.primaryText, font: AppFont.titleS)
 
