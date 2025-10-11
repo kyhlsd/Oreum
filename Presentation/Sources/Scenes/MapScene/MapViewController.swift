@@ -13,7 +13,7 @@ import Domain
 final class MapViewController: UIViewController, BaseViewController {
 
     var pushInfoVC: ((MountainInfo) -> Void)?
-    
+
     let mainView = MapView()
     let viewModel: MapViewModel
 
@@ -23,6 +23,12 @@ final class MapViewController: UIViewController, BaseViewController {
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let mountainCellTappedSubject = PassthroughSubject<MountainDistance, Never>()
     private let mountainInfoButtonTappedSubject = PassthroughSubject<(String, Int), Never>()
+
+    // Custom clustering
+    private let annotationManager = MapAnnotationManager()
+    private let annotationViewBuilder = MapAnnotationViewBuilder()
+    private let regionDidChangeSubject = PassthroughSubject<Void, Never>()
+    private var lastAltitude: CLLocationDistance = 0
 
     init(viewModel: MapViewModel) {
         self.viewModel = viewModel
@@ -44,9 +50,37 @@ final class MapViewController: UIViewController, BaseViewController {
         setupNavItem()
         setupDelegates()
         setupMapBoundary()
+        setupAnnotationViewBuilder()
         bind()
 
         viewDidLoadSubject.send(())
+    }
+
+    private func setupAnnotationViewBuilder() {
+        annotationViewBuilder.mountainInfoButtonTapped
+            .sink { [weak self] name, height in
+                self?.mountainInfoButtonTappedSubject.send((name, height))
+            }
+            .store(in: &cancellables)
+
+        annotationViewBuilder.clusterMountainSelected
+            .sink { [weak self] mountain in
+                self?.zoomToMountain(mountain)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func zoomToMountain(_ mountain: MountainDistance) {
+        let coordinate = CLLocationCoordinate2D(
+            latitude: mountain.mountainLocation.latitude,
+            longitude: mountain.mountainLocation.longitude
+        )
+
+        // 선택된 callout 닫기
+        mainView.mapView.deselectAnnotation(mainView.mapView.selectedAnnotations.first, animated: false)
+
+        // 해당 산으로 줌
+        mainView.updateMapRegion(coordinate: coordinate)
     }
 
     func bind() {
@@ -76,7 +110,8 @@ final class MapViewController: UIViewController, BaseViewController {
 
         output.allMountains
             .sink { [weak self] mountains in
-                self?.updateMapAnnotations(mountains: mountains)
+                self?.annotationManager.updateMountains(mountains)
+                self?.updateClusteredAnnotations()
             }
             .store(in: &cancellables)
 
@@ -105,6 +140,14 @@ final class MapViewController: UIViewController, BaseViewController {
         output.pushMountainInfo
             .sink { [weak self] mountainInfo in
                 self?.pushInfoVC?(mountainInfo)
+            }
+            .store(in: &cancellables)
+
+        // 지도 영역 변경 debounce
+        regionDidChangeSubject
+            .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
+            .sink { [weak self] in
+                self?.updateClusteredAnnotations()
             }
             .store(in: &cancellables)
     }
@@ -149,20 +192,14 @@ extension MapViewController {
         dataSource.apply(snapshot, animatingDifferences: true)
     }
 
-    private func updateMapAnnotations(mountains: [MountainDistance]) {
-        mainView.mapView.removeAnnotations(mainView.mapView.annotations)
+    private func updateClusteredAnnotations() {
+        let (toAdd, toRemove) = annotationManager.updateAnnotations(on: mainView.mapView)
 
-        let annotations = mountains.map { mountain -> MountainAnnotation in
-            let annotation = MountainAnnotation()
-            annotation.coordinate = CLLocationCoordinate2D(
-                latitude: mountain.mountainLocation.latitude,
-                longitude: mountain.mountainLocation.longitude
-            )
-            annotation.mountainDistance = mountain
-            return annotation
+        // 변경사항이 있을 때만 업데이트
+        if !toRemove.isEmpty || !toAdd.isEmpty {
+            mainView.mapView.removeAnnotations(toRemove)
+            mainView.mapView.addAnnotations(toAdd)
         }
-
-        mainView.mapView.addAnnotations(annotations)
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -181,7 +218,7 @@ extension MapViewController: UICollectionViewDelegate {
 
 // MARK: - MKMapViewDelegate + SubMethods
 extension MapViewController: MKMapViewDelegate {
-    
+
     private enum MapConfig {
         static let southKoreaCenter = CLLocationCoordinate2D(latitude: 36.5, longitude: 127.5)
         static let regionLatitudinalMeters: CLLocationDistance = 800000
@@ -189,10 +226,41 @@ extension MapViewController: MKMapViewDelegate {
         static let minZoomDistance: CLLocationDistance = 5000
         static let maxZoomDistance: CLLocationDistance = 1000000
     }
+
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        let currentAltitude = mapView.camera.altitude
+
+        // altitude 변화가 있을 때만 재클러스터링
+        let altitudeDifference = abs(currentAltitude - lastAltitude)
+        let altitudeChangeThreshold = currentAltitude * 0.1 // 10% 변화
+
+        // 첫 로드이거나 altitude가 충분히 변했을 때만
+        if lastAltitude == 0 || altitudeDifference >= altitudeChangeThreshold {
+            lastAltitude = currentAltitude
+            regionDidChangeSubject.send(())
+        }
+    }
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         guard !(annotation is MKUserLocation) else { return nil }
 
+        // Handle custom cluster annotation
+        if let cluster = annotation as? CustomClusterAnnotation {
+            let identifier = "CustomClusterAnnotation"
+            var clusterView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+
+            if clusterView == nil {
+                clusterView = MKAnnotationView(annotation: cluster, reuseIdentifier: identifier)
+                clusterView?.canShowCallout = true
+            } else {
+                clusterView?.annotation = cluster
+            }
+
+            annotationViewBuilder.configureClusterView(clusterView, cluster: cluster)
+            return clusterView
+        }
+
+        // Handle individual mountain annotation
         let identifier = "MountainAnnotation"
         var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
 
@@ -205,8 +273,7 @@ extension MapViewController: MKMapViewDelegate {
 
         if let mountainAnnotation = annotation as? MountainAnnotation,
            let mountainDistance = mountainAnnotation.mountainDistance {
-            configureAnnotationView(annotationView, with: mountainDistance.mountainLocation.name)
-            configureCalloutView(for: annotationView, with: mountainDistance)
+            annotationViewBuilder.configureMountainView(annotationView, mountainDistance: mountainDistance)
         }
 
         return annotationView
@@ -229,71 +296,6 @@ extension MapViewController: MKMapViewDelegate {
         }
     }
 
-    private func configureCalloutView(for annotationView: MKAnnotationView?, with mountainDistance: MountainDistance) {
-        let calloutView = MountainAnnotationCalloutView()
-        calloutView.configure(with: mountainDistance)
-        calloutView.infoButton.tap
-            .sink { [weak self] in
-                self?.mountainInfoButtonTappedSubject.send((mountainDistance.mountainLocation.name, mountainDistance.mountainLocation.height))
-            }
-            .store(in: &cancellables)
-        annotationView?.detailCalloutAccessoryView = calloutView
-    }
-
-    private func configureAnnotationView(_ annotationView: MKAnnotationView?, with title: String) {
-        guard let combinedImage = createAnnotationImage(with: title) else { return }
-
-        let imageSize = CGSize(width: 40, height: 60)
-        let textAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 12, weight: .medium),
-            .foregroundColor: AppColor.primaryText
-        ]
-        let textSize = (title as NSString).size(withAttributes: textAttributes)
-        let padding: CGFloat = 8
-        let backgroundHeight = textSize.height + padding
-        let totalHeight = imageSize.height + backgroundHeight + 4
-
-        annotationView?.image = combinedImage
-        annotationView?.centerOffset = CGPoint(x: 0, y: -totalHeight / 2)
-    }
-
-    private func createAnnotationImage(with title: String) -> UIImage? {
-        guard let originalImage = UIImage(named: "MapPin", in: .module, with: nil) else { return nil }
-
-        let imageSize = CGSize(width: 40, height: 60)
-        let textAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 12, weight: .medium),
-            .foregroundColor: AppColor.primaryText
-        ]
-        let textSize = (title as NSString).size(withAttributes: textAttributes)
-        let padding: CGFloat = 8
-        let backgroundWidth = textSize.width + padding * 2
-        let backgroundHeight = textSize.height + padding
-        let totalWidth = max(imageSize.width, backgroundWidth)
-        let totalHeight = imageSize.height + backgroundHeight + 4
-
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: totalWidth, height: totalHeight))
-        return renderer.image { context in
-            let imageX = (totalWidth - imageSize.width) / 2
-            originalImage.draw(in: CGRect(x: imageX, y: 0, width: imageSize.width, height: imageSize.height))
-
-            let backgroundX = (totalWidth - backgroundWidth) / 2
-            let backgroundY = imageSize.height - 8
-            let backgroundRect = CGRect(x: backgroundX, y: backgroundY, width: backgroundWidth, height: backgroundHeight)
-            let path = UIBezierPath(roundedRect: backgroundRect, cornerRadius: 8)
-            UIColor.white.setFill()
-            path.fill()
-
-            let textX = backgroundX + padding
-            let textY = backgroundY + padding / 2
-            (title as NSString).draw(at: CGPoint(x: textX, y: textY), withAttributes: textAttributes)
-        }
-    }
-}
-
-// MARK: - MountainAnnotation
-final class MountainAnnotation: MKPointAnnotation {
-    var mountainDistance: MountainDistance?
 }
 
 // MARK: - UISearchBarDelegate
