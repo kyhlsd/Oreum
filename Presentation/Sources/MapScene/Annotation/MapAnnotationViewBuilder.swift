@@ -15,6 +15,7 @@ final class MapAnnotationViewBuilder {
 
     private var cancellables = Set<AnyCancellable>()
     var onMountainInfoButtonTapped: ((String, Int) -> Void)?
+    var onClusterMountainSelected: ((MountainDistance) -> Void)?
 
     // 클러스터 annotation view 구성
     func configureClusterView(
@@ -59,11 +60,11 @@ final class MapAnnotationViewBuilder {
     }
 
     private func configureClusterCalloutView(for annotationView: MKAnnotationView, with mountains: [MountainDistance]) {
-        // 클러스터 callout은 간단한 뷰로 표시
-        let calloutView = UILabel()
-        calloutView.text = "\(mountains.count)개의 산"
-        calloutView.font = AppFont.body
-        calloutView.textColor = AppColor.primaryText
+        let calloutView = ClusterCalloutView()
+        calloutView.configure(with: mountains)
+        calloutView.onMountainSelected = { [weak self] mountain in
+            self?.onClusterMountainSelected?(mountain)
+        }
         annotationView.detailCalloutAccessoryView = calloutView
     }
 

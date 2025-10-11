@@ -60,6 +60,23 @@ final class MapViewController: UIViewController, BaseViewController {
         annotationViewBuilder.onMountainInfoButtonTapped = { [weak self] name, height in
             self?.mountainInfoButtonTappedSubject.send((name, height))
         }
+
+        annotationViewBuilder.onClusterMountainSelected = { [weak self] mountain in
+            self?.zoomToMountain(mountain)
+        }
+    }
+
+    private func zoomToMountain(_ mountain: MountainDistance) {
+        let coordinate = CLLocationCoordinate2D(
+            latitude: mountain.mountainLocation.latitude,
+            longitude: mountain.mountainLocation.longitude
+        )
+
+        // 선택된 callout 닫기
+        mainView.mapView.deselectAnnotation(mainView.mapView.selectedAnnotations.first, animated: false)
+
+        // 해당 산으로 줌
+        mainView.updateMapRegion(coordinate: coordinate)
     }
 
     func bind() {
