@@ -25,7 +25,7 @@ final class CustomSearchBar: UISearchBar {
     }
     
     private func setup() {
-        placeholder = "산 이름 검색하세요"
+        placeholder = "산 이름을 입력하세요"
         searchTextField.font = AppFont.input
         searchTextField.textColor = AppColor.inputText
         searchTextField.leftView?.tintColor = AppColor.mossGreen

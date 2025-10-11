@@ -190,16 +190,23 @@ final class MeasureViewModel: BaseViewModel {
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
                 guard let self else { return }
-                updateMeasuringStateSubject.send(false)
+
+                // 트래킹 중지만 먼저 수행 (데이터는 아직 clear하지 않음)
+                self.stopTrackingActivityUseCase.execute(clearData: false)
                 self.stopActivityDataTimer()
 
-                // 산 정보가 남아있으면 버튼 활성화
-                if self.selectedMountain != nil {
+                // 산 정보가 남아있으면 selectedMountain에 복원하고 버튼 활성화
+                if let mountain = self.getClimbingMountainUseCase.execute() {
+                    self.selectedMountain = mountain
                     updateStartButtonIsEnabledSubject.send(true)
                 }
 
-                // 트래킹 중지 (데이터 저장 안 함, UserDefaults clear)
+                // 이제 clear
                 self.stopTrackingActivityUseCase.execute(clearData: true)
+
+                // 상태 업데이트
+                updateMeasuringStateSubject.send(false)
+                trackingStatusSubject.send(false)
             }
             .store(in: &cancellables)
 
