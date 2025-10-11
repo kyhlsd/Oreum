@@ -14,8 +14,8 @@ import Domain
 final class MapAnnotationViewBuilder {
 
     private var cancellables = Set<AnyCancellable>()
-    var onMountainInfoButtonTapped: ((String, Int) -> Void)?
-    var onClusterMountainSelected: ((MountainDistance) -> Void)?
+    let mountainInfoButtonTapped = PassthroughSubject<(String, Int), Never>()
+    let clusterMountainSelected = PassthroughSubject<MountainDistance, Never>()
 
     // 클러스터 annotation view 구성
     func configureClusterView(
@@ -62,9 +62,11 @@ final class MapAnnotationViewBuilder {
     private func configureClusterCalloutView(for annotationView: MKAnnotationView, with mountains: [MountainDistance]) {
         let calloutView = ClusterCalloutView()
         calloutView.configure(with: mountains)
-        calloutView.onMountainSelected = { [weak self] mountain in
-            self?.onClusterMountainSelected?(mountain)
-        }
+        calloutView.mountainSelected
+            .sink { [weak self] mountain in
+                self?.clusterMountainSelected.send(mountain)
+            }
+            .store(in: &cancellables)
         annotationView.detailCalloutAccessoryView = calloutView
     }
 
@@ -73,10 +75,10 @@ final class MapAnnotationViewBuilder {
         calloutView.configure(with: mountainDistance)
         calloutView.infoButton.tap
             .sink { [weak self] in
-                self?.onMountainInfoButtonTapped?(
+                self?.mountainInfoButtonTapped.send((
                     mountainDistance.mountainLocation.name,
                     mountainDistance.mountainLocation.height
-                )
+                ))
             }
             .store(in: &cancellables)
         annotationView.detailCalloutAccessoryView = calloutView

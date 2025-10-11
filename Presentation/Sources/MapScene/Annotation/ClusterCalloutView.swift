@@ -8,10 +8,11 @@
 import UIKit
 import Domain
 import SnapKit
+import Combine
 
 final class ClusterCalloutView: BaseView {
 
-    var onMountainSelected: ((MountainDistance) -> Void)?
+    let mountainSelected = PassthroughSubject<MountainDistance, Never>()
 
     private lazy var tableView = {
         let tableView = UITableView()
@@ -83,7 +84,7 @@ extension ClusterCalloutView: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let mountain = mountains[indexPath.row]
-        onMountainSelected?(mountain)
+        mountainSelected.send(mountain)
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

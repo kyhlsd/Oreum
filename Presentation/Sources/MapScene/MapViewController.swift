@@ -57,13 +57,17 @@ final class MapViewController: UIViewController, BaseViewController {
     }
 
     private func setupAnnotationViewBuilder() {
-        annotationViewBuilder.onMountainInfoButtonTapped = { [weak self] name, height in
-            self?.mountainInfoButtonTappedSubject.send((name, height))
-        }
+        annotationViewBuilder.mountainInfoButtonTapped
+            .sink { [weak self] name, height in
+                self?.mountainInfoButtonTappedSubject.send((name, height))
+            }
+            .store(in: &cancellables)
 
-        annotationViewBuilder.onClusterMountainSelected = { [weak self] mountain in
-            self?.zoomToMountain(mountain)
-        }
+        annotationViewBuilder.clusterMountainSelected
+            .sink { [weak self] mountain in
+                self?.zoomToMountain(mountain)
+            }
+            .store(in: &cancellables)
     }
 
     private func zoomToMountain(_ mountain: MountainDistance) {
