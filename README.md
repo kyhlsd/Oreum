@@ -10,7 +10,7 @@
 > 개인 프로젝트
 
 **오름**은 등산 기록 및 관리 앱입니다.
-- Restful API, MapKit을 통해 한국의 산 정보를 제공하고 
+- Restful API를 통해 한국의 산 정보를 제공하고
 - Healthkit을 활용하여 등산 활동을 추적하며
 - Realm DB를 통해 사진, 후기 등의 기록을 관리할 수 있습니다.
 
@@ -35,12 +35,13 @@
 - Realm DB, property wrapper로 커스텀한 UserDefaultHelper로 로컬 데이터 관리
 - MapKit + 줌 레벨에 따른 Grid 기반 Clustering
 - HealthKit을 활용한 앱 비활성화 상태에서의 걸음 수, 이동 거리 측정 및 분석
+- 디바이스 크기에 따른 이미지 Resizing으로 저장 공간 관리
 - Firebase Analytics + Crashlytics를 통한 앱 분석 및 크래시 추적
 - UIKit(code base, +SwiftUI), Combine, MapKit, CoreLocation, HealthKit, Charts, NWPathMonitor, Tuist, Realm, Alamofire, Kingfisher, SnapKit, Toast, Firebase Analytics, Firebase Crashlytics
 
 <br>
 
-## 📌 기능 
+## 📌 기능
 <table align="center">
   <tr>
     <th><code>등산 기록 관리</code></th>
@@ -55,6 +56,47 @@
     <td><img src="https://github.com/user-attachments/assets/983f0037-04ed-42fe-a890-b89de42ac4ea" alt="검색/산 정보 보기"></td>
   </tr>
 </table>
+
+<details>
+<summary><b>등산 기록 관리</b></summary>
+
+- Realm DB를 활용하여 등산 기록을 로컬에 저장하고 관리
+- 등산 중 촬영한 사진과 후기, 별점과 측정 정보 등을 함께 저장
+- 디바이스 크기에 따른 이미지 Resizing으로 저장 공간 관리
+- 수정/삭제, 검색/북마크 기능 지원
+
+</details>
+
+<details>
+<summary><b>기록 측정/통계</b></summary>
+
+- HealthKit을 활용하여 앱이 실행 중이 아니더라도 걸음 수와 이동 거리 측정
+- 실시간으로 등산 진행 상황을 확인
+- 운동 시간, 휴식 시간 분석 및 걸음 수, 이동 거리 통계 정보 제공
+- Charts를 활용한 시간 별 걸음 수/이동 거리 시각화
+
+</details>
+
+<details>
+<summary><b>명산 지도</b></summary>
+
+- MapKit을 사용하여 전국의 명산 위치를 지도에 표시
+- 줌 레벨에 따른 Grid 기반 Clustering
+- 현재 위치 기반으로 주변 산 탐색
+- 지도에서 산을 선택하여 상세 정보 확인 가능
+
+</details>
+
+<details>
+<summary><b>검색/산 정보 보기</b></summary>
+
+- 전국 산 정보 검색
+- 검색 결과에서 산을 선택하여 상세 페이지로 이동
+- Geocoding과 기상청 API를 연결해 날씨 정보 제공
+- 산 이름, 위치, 높이 등의 기본 정보 제공
+- Realm DB를 통한 최근 검색어 기능 지원
+
+</details>
 
 <br>
 
