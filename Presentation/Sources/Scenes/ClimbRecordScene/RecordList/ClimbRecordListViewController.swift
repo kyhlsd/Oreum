@@ -9,12 +9,12 @@ import UIKit
 import Combine
 import Domain
 
-final class ClimbRecordListViewController: UIViewController {
+final class ClimbRecordListViewController: UIViewController, BaseViewController {
 
     var pushDetailVC: ((ClimbRecord) -> Void)?
     var presentAddVC: (() -> Void)?
 
-    private let mainView = ClimbRecordListView()
+    let mainView = ClimbRecordListView()
     let viewModel: ClimbRecordListViewModel
     private var cancellables = Set<AnyCancellable>()
     private let cellBookmarkTapSubject = PassthroughSubject<String, Never>()
@@ -41,7 +41,7 @@ final class ClimbRecordListViewController: UIViewController {
         setupDelegates()
     }
     
-    private func bind() {
+    func bind() {
         let climbRecordDidSave = NotificationCenter.default
             .publisher(for: .climbRecordDidSave)
             .map { _ in () }

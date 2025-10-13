@@ -15,7 +15,7 @@ protocol ClimbRecordDetailViewModelDelegate: AnyObject {
     func updateImages(id: String, images: [String])
 }
 
-final class ClimbRecordDetailViewModel {
+final class ClimbRecordDetailViewModel: BaseViewModel {
 
     private let updateUseCase: UpdateClimbRecordUseCase
     private let deleteUseCase: DeleteClimbRecordUseCase

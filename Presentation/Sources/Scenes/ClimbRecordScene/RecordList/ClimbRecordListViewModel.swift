@@ -9,7 +9,7 @@ import Foundation
 import Combine
 import Domain
 
-final class ClimbRecordListViewModel {
+final class ClimbRecordListViewModel: BaseViewModel {
 
     private let fetchUseCase: FetchClimbRecordUseCase
     private let toggleBookmarkUseCase: ToggleBookmarkUseCase

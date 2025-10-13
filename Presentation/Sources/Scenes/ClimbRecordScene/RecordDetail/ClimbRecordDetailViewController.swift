@@ -10,13 +10,13 @@ import Combine
 import Domain
 import PhotosUI
 
-final class ClimbRecordDetailViewController: UIViewController {
+final class ClimbRecordDetailViewController: UIViewController, BaseViewController {
 
     var popVC: (() -> Void)?
     var pushVC: ((ClimbRecord) -> Void)?
     var isFromAddRecord: Bool = false
 
-    private let mainView = ClimbRecordDetailView()
+    let mainView = ClimbRecordDetailView()
     let viewModel: ClimbRecordDetailViewModel
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
@@ -57,7 +57,7 @@ final class ClimbRecordDetailViewController: UIViewController {
     }
 
     
-    private func bind() {
+    func bind() {
         let saveButtonTap: AnyPublisher<(Int, String), Never> = mainView.saveButton.tap
             .compactMap { [weak self] in
                 guard let self else { return nil }
