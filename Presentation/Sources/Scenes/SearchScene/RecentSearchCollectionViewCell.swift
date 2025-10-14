@@ -19,7 +19,12 @@ final class RecentSearchCollectionViewCell: BaseCollectionViewCell {
         return view
     }()
 
-    private let label = UILabel.create(color: AppColor.primaryText, font: AppFont.tag)
+    private let label = {
+        let label = UILabel.create(color: AppColor.primaryText, font: AppFont.tag)
+        label.lineBreakMode = .byTruncatingTail
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return label
+    }()
 
     let deleteButton = {
         let button = UIButton()
@@ -31,6 +36,8 @@ final class RecentSearchCollectionViewCell: BaseCollectionViewCell {
     
     func configure(with text: String) {
         label.text = text
+        setNeedsLayout()
+        layoutIfNeeded()
     }
     
     override func setupHierarchy() {
@@ -44,15 +51,16 @@ final class RecentSearchCollectionViewCell: BaseCollectionViewCell {
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
             make.height.equalTo(32)
+            make.width.lessThanOrEqualTo(200)
         }
 
         label.snp.makeConstraints { make in
             make.verticalEdges.equalToSuperview().inset(AppSpacing.small)
             make.leading.equalToSuperview().inset(AppSpacing.compact)
+            make.trailing.equalTo(deleteButton.snp.leading).offset(-AppSpacing.small)
         }
 
         deleteButton.snp.makeConstraints { make in
-            make.leading.equalTo(label.snp.trailing).offset(AppSpacing.small)
             make.trailing.equalToSuperview().inset(AppSpacing.small)
             make.centerY.equalToSuperview()
             make.size.equalTo(16)
