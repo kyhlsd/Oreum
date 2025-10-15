@@ -16,30 +16,37 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     var bookmarkTapped: ((String) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     
+    // 상단 길 이미지
     private let upRoadImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleToFill
         return imageView
     }()
     
+    // 하단 길 이미지
     private let downRoadImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleToFill
         return imageView
     }()
     
+    // 산 이미지
     private let mountainImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleToFill
         return imageView
     }()
     
+    // 산 이름
     private let nameLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleM)
     
+    // 산 주소
     private let dateLabel = UILabel.create(color: AppColor.subText, font: AppFont.body)
     
+    // 태그
     private let tagStackView = TagStackView()
     
+    // 북마크 버튼
     private let bookmarkButton = {
         let button = UIButton()
         button.tintColor = AppColor.primary
@@ -55,6 +62,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         cancellables = Set<AnyCancellable>()
     }
     
+    // 데이터 정보 표기
     final func setData(_ data: ClimbRecord, isFirstVisit: Bool) {
         let name = data.mountain.name
 
@@ -74,6 +82,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
             .store(in: &cancellables)
     }
     
+    // 길 이미지 세팅
     func setImages(row: Int, total: Int) {
         let isFirst = row == 0
         let isLast = row == total - 1
@@ -84,14 +93,17 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         setRoadImages(isEven: isEven)
     }
     
+    // 상단 길 이미지 Visibility
     private func setUpRoadImageHidden(isFirst: Bool) {
         upRoadImageView.isHidden = isFirst
     }
     
+    // 하단 길 이미지 Visibility
     private func setDownRoadImageHidden(isLast: Bool) {
         downRoadImageView.isHidden = isLast
     }
     
+    // 이미지 설정
     private func setRoadImages(isEven: Bool) {
         if isEven {
             upRoadImageView.image = UIImage(named: "road4", in: .module, with: nil)
@@ -108,6 +120,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         }
     }
     
+    // 계절에 따라 다른 산 이미지
     private func getMountainImage(date: Date?) -> UIImage? {
         guard let date else {
             return UIImage(named: "spring")

@@ -84,6 +84,7 @@ final class ClimbRecordDetailViewController: UIViewController, BaseViewControlle
         
         let output = viewModel.transform(input: input)
         
+        // 후기 수정 가능 여부
         output.recordEditable
             .sink { [weak self] isEditable in
                 guard let self else { return }
@@ -92,12 +93,14 @@ final class ClimbRecordDetailViewController: UIViewController, BaseViewControlle
             }
             .store(in: &cancellables)
         
+        // 후기 수정 취소 시 Reset
         output.resetReview
             .sink { [weak self] (rating, comment) in
                 self?.mainView.setReview(rating: rating, comment: comment)
             }
             .store(in: &cancellables)
         
+        // 기록 삭제 Alert
         output.presentCancellableAlert
             .sink { [weak self] (title, message) in
                 self?.presentCancellableAlert(title: title, message: message) {
@@ -106,87 +109,68 @@ final class ClimbRecordDetailViewController: UIViewController, BaseViewControlle
             }
             .store(in: &cancellables)
         
+        // pop
         output.popVC
             .sink { [weak self] in
                 self?.popVC?()
             }
             .store(in: &cancellables)
         
+        // ActivityLog로 push
         output.pushVC
             .sink { [weak self] climbRecord in
                 self?.pushVC?(climbRecord)
             }
             .store(in: &cancellables)
         
+        // ErrorAlert
         output.errorMessage
-            .sink { errorMessage in
-                print(errorMessage)
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
             }
             .store(in: &cancellables)
 
+        // 타임라인 버튼 활성화/비활성화
         output.timelineButtonEnabled
             .sink { [weak self] isEnabled in
                 self?.mainView.setTimelineButtonEnabled(isEnabled)
             }
             .store(in: &cancellables)
 
+        // 타임라인 버튼 여부에 따른 제목
         output.timelineButtonTitle
             .sink { [weak self] title in
                 self?.mainView.setTimelineButtonTitle(title)
             }
             .store(in: &cancellables)
 
+        // 사진 편집 ActionSheet
         output.presentPhotoActionSheet
             .sink { [weak self] hasImages in
                 self?.presentPhotoActionSheet(hasImages: hasImages)
             }
             .store(in: &cancellables)
 
+        // 저장 완료 시 Pop
         output.saveCompleted
             .sink { [weak self] in
-                self?.isFromAddRecord = false // 저장 완료 시 이미지 삭제 방지
                 self?.popVC?()
             }
             .store(in: &cancellables)
 
-        output.imageSaved
-            .flatMap { [weak self] _ -> AnyPublisher<[Data], Never> in
-                guard let self else { return Just([]).eraseToAnyPublisher() }
-                return viewModel.fetchImages()
-            }
-            .sink { [weak self] imageDatas in
-                guard let self else { return }
-                applySnapshot(images: imageDatas)
-                mainView.pageControl.numberOfPages = imageDatas.count
-                mainView.setEmptyImageViewHidden(!imageDatas.isEmpty)
-            }
-            .store(in: &cancellables)
-
+        // 이미지 목록 업데이트
         output.imagesFetched
             .sink { [weak self] imageDatas in
                 guard let self else { return }
                 applySnapshot(images: imageDatas)
                 mainView.pageControl.numberOfPages = imageDatas.count
-                mainView.setEmptyImageViewHidden(!imageDatas.isEmpty)
+                mainView.setEmptyViewHidden(!imageDatas.isEmpty)
             }
             .store(in: &cancellables)
 
         output.presentImageDeleteAlert
             .sink { [weak self] in
                 self?.presentImageDeleteAlert()
-            }
-            .store(in: &cancellables)
-
-        output.imageDeleted
-            .flatMap { [weak self] _ -> AnyPublisher<[Data], Never> in
-                guard let self else { return Just([]).eraseToAnyPublisher() }
-                return viewModel.fetchImages()
-            }
-            .sink { [weak self] imageDatas in
-                guard let self else { return }
-                applySnapshot(images: imageDatas)
-                mainView.pageControl.numberOfPages = imageDatas.count
-                mainView.setEmptyImageViewHidden(!imageDatas.isEmpty)
             }
             .store(in: &cancellables)
         
