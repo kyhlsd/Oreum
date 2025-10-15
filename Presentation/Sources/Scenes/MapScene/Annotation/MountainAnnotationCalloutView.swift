@@ -11,14 +11,15 @@ import SnapKit
 
 final class MountainAnnotationCalloutView: BaseView {
 
+    // 산 이름
     private let nameLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleS)
-
+    // 산 높이
     private let heightLabel = UILabel.create(color: AppColor.subText, font: AppFont.description)
-
+    // 주소
     private let addressLabel = UILabel.create(color: AppColor.subText, font: AppFont.description)
-
+    // 거리
     private let distanceTagLabel = TagLabel(text: "", textColor: AppColor.distanceForground, backgroundColor: AppColor.distanceBackground)
-
+    // 상세 정보 보기 버튼
     let infoButton = {
         let button = UIButton()
         button.setTitle("상세 정보 보기", for: .normal)
@@ -29,6 +30,7 @@ final class MountainAnnotationCalloutView: BaseView {
         return button
     }()
 
+    // 산 정보 표기
     func configure(with mountainDistance: MountainDistance) {
         nameLabel.text = mountainDistance.mountainLocation.name
         heightLabel.text = mountainDistance.mountainLocation.height.formatted() + "m"
@@ -36,6 +38,7 @@ final class MountainAnnotationCalloutView: BaseView {
         addressLabel.text = mountainDistance.mountainLocation.address
     }
 
+    // MARK: - Setups
     override func setupHierarchy() {
         [nameLabel, heightLabel, distanceTagLabel, addressLabel, infoButton].forEach {
             addSubview($0)

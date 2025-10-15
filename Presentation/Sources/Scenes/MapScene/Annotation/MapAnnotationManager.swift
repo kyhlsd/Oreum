@@ -31,17 +31,17 @@ final class MapAnnotationManager {
             mapView: mapView
         )
 
-        // 기존 annotation과 새 annotation 비교
+        // 현재 위치는 미포함
         let currentAnnotations = mapView.annotations.filter { !($0 is MKUserLocation) }
 
-        // 제거할 annotation 찾기
+        // 클러스터링된 어노테이션 중 현재 어노테이션이 없으면 해당 어노테이션 제거
         let annotationsToRemove = currentAnnotations.filter { currentAnnotation in
             !clusteredAnnotations.contains { newAnnotation in
                 isSameAnnotation(currentAnnotation, newAnnotation)
             }
         }
 
-        // 추가할 annotation 찾기
+        // 현재 어노테이션 중 클러스터링된 어노테이션인 없으면 해당 어노테이션 추가
         let annotationsToAdd = clusteredAnnotations.filter { newAnnotation in
             !currentAnnotations.contains { currentAnnotation in
                 isSameAnnotation(currentAnnotation, newAnnotation)

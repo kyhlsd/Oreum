@@ -17,9 +17,10 @@ final class MapViewModel: NSObject, BaseViewModel {
     private let locationManager = CLLocationManager()
     private var cancellables = Set<AnyCancellable>()
 
-    // 서울 시청 좌표
     private let seoulCityHall = CLLocationCoordinate2D(latitude: 37.5665, longitude: 126.9780)
+    
     private let userLocationSubject = PassthroughSubject<CLLocationCoordinate2D, Never>()
+    private let errorMessageSubject = PassthroughSubject<(String, String), Never>()
     
     init(fetchMountainLocationUseCase: FetchMountainLocationUseCase, fetchMountainInfoUseCase: FetchMountainInfoUseCase) {
         self.fetchMountainLocationUseCase = fetchMountainLocationUseCase
@@ -40,20 +41,18 @@ final class MapViewModel: NSObject, BaseViewModel {
         let userLocation: AnyPublisher<CLLocationCoordinate2D, Never>
         let displayMountains: AnyPublisher<[MountainDistance], Never>
         let allMountains: AnyPublisher<[MountainDistance], Never>
-        let errorMessage: AnyPublisher<String, Never>
         let showLocationPermissionAlert: AnyPublisher<Void, Never>
         let moveToMountainLocation: AnyPublisher<CLLocationCoordinate2D, Never>
         let pushMountainInfo: AnyPublisher<MountainInfo, Never>
+        let errorMessage: AnyPublisher<(String, String), Never>
     }
 
     func transform(input: Input) -> Output {
-
-        let nearbyMountainsSubject = PassthroughSubject<[MountainDistance], Never>()
         let allMountainsSubject = PassthroughSubject<[MountainDistance], Never>()
-        let errorMessageSubject = PassthroughSubject<String, Never>()
         let showLocationPermissionAlertSubject = PassthroughSubject<Void, Never>()
         let pushMountainInfoSubject = PassthroughSubject<MountainInfo, Never>()
 
+        // 위치 권환 확인
         input.viewDidLoad
             .sink { [weak self] in
                 guard let self else { return }
@@ -71,6 +70,7 @@ final class MapViewModel: NSObject, BaseViewModel {
             }
             .store(in: &cancellables)
         
+        // 현재 위치 버튼
         input.locationButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
@@ -85,6 +85,7 @@ final class MapViewModel: NSObject, BaseViewModel {
             }
             .store(in: &cancellables)
         
+        // 상세 정보 보기 버튼
         input.mountainInfoButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .flatMap { [weak self] (name, height) in
@@ -92,8 +93,8 @@ final class MapViewModel: NSObject, BaseViewModel {
                 guard let self else { return errorInfo.eraseToAnyPublisher() }
                 
                 return self.fetchMountainInfoUseCase.execute(name: name, height: height)
-                    .catch { error in
-                        errorMessageSubject.send(error.localizedDescription)
+                    .catch { [weak self] error in
+                        self?.errorMessageSubject.send(("산 정보 가져오기 실패", error.localizedDescription))
                         return errorInfo
                     }
                     .eraseToAnyPublisher()
@@ -103,10 +104,11 @@ final class MapViewModel: NSObject, BaseViewModel {
             }
             .store(in: &cancellables)
 
+        // 사용자 위치
         userLocationSubject
             .flatMap { [weak self] coordinate -> AnyPublisher<[MountainDistance], Never> in
                 guard let self else { return Just([]).eraseToAnyPublisher() }
-
+                // 산과 거리 계산
                 return self.fetchMountainLocationUseCase.execute()
                     .map { mountainLocations in
                         mountainLocations
@@ -116,27 +118,18 @@ final class MapViewModel: NSObject, BaseViewModel {
                             }
                             .sorted { $0.distance < $1.distance }
                     }
-                    .catch { error -> Just<[MountainDistance]> in
-                        errorMessageSubject.send(error.localizedDescription)
+                    .catch { [weak self] error -> Just<[MountainDistance]> in
+                        self?.errorMessageSubject.send(("산 위치 가져오기 실패", error.localizedDescription))
                         return Just([])
                     }
                     .eraseToAnyPublisher()
             }
             .sink { mountains in
                 allMountainsSubject.send(mountains)
-                nearbyMountainsSubject.send(Array(mountains.prefix(20)))
             }
             .store(in: &cancellables)
 
-        let moveToMountainLocation = input.mountainCellTapped
-            .map {
-                CLLocationCoordinate2D(
-                    latitude: $0.mountainLocation.latitude,
-                    longitude: $0.mountainLocation.longitude
-                )
-            }
-            .eraseToAnyPublisher()
-
+        // 위치 정보가 바뀌거나, 검색 시 리스트 업데이트
         let displayMountains = Publishers.CombineLatest(
             allMountainsSubject,
             input.searchText
@@ -156,17 +149,29 @@ final class MapViewModel: NSObject, BaseViewModel {
             }
         }
         .eraseToAnyPublisher()
+        
+        // 선택된 산 위경도
+        let moveToMountainLocation = input.mountainCellTapped
+            .map {
+                CLLocationCoordinate2D(
+                    latitude: $0.mountainLocation.latitude,
+                    longitude: $0.mountainLocation.longitude
+                )
+            }
+            .eraseToAnyPublisher()
 
         return Output(
             userLocation: userLocationSubject.eraseToAnyPublisher(),
             displayMountains: displayMountains,
             allMountains: allMountainsSubject.eraseToAnyPublisher(),
-            errorMessage: errorMessageSubject.eraseToAnyPublisher(),
             showLocationPermissionAlert: showLocationPermissionAlertSubject.eraseToAnyPublisher(),
             moveToMountainLocation: moveToMountainLocation,
-            pushMountainInfo: pushMountainInfoSubject.eraseToAnyPublisher()
+            pushMountainInfo: pushMountainInfoSubject.eraseToAnyPublisher(),
+            errorMessage: errorMessageSubject.eraseToAnyPublisher()
         )
     }
+    
+    // MARK: - Private Methods
 
     private func setupLocationManager() {
         locationManager.delegate = self
@@ -206,7 +211,7 @@ extension MapViewModel: CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location error: \(error.localizedDescription)")
+        errorMessageSubject.send(("위치 정보 가져오기 실패", error.localizedDescription))
         userLocationSubject.send(seoulCityHall)
     }
 }
