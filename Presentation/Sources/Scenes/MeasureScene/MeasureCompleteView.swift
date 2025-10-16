@@ -10,6 +10,7 @@ import SnapKit
 
 final class MeasureCompleteView: BaseView {
 
+    // 전체 컨테이너 뷰
     private let containerView = {
         let view = UIView()
         view.backgroundColor = AppColor.background
@@ -17,12 +18,13 @@ final class MeasureCompleteView: BaseView {
         return view
     }()
 
+    // 측정 완료 레이블
     private let titleLabel = {
         let label = UILabel.create("측정이 완료되었습니다.", color: AppColor.primaryText, font: AppFont.titleM)
         label.textAlignment = .center
         return label
     }()
-
+    // 메세지 레이블
     private let messageLabel = {
         let label = UILabel.create(
             "'기록'에서 사진과 후기를 추가해\n기록을 더 풍성하게 남겨보세요",
@@ -34,10 +36,12 @@ final class MeasureCompleteView: BaseView {
         return label
     }()
 
+    // 지금 추가 버튼
     let addDetailButton = CustomButton(title: "지금 추가하기", image: nil, foreground: .white, background: AppColor.primary)
-
+    // 나중에 추가 버튼
     let confirmButton = CustomButton(title: "나중에 추가하기", image: nil, foreground: AppColor.subText, background: AppColor.boxBackground, hasBorder: true)
 
+    // MARK: - Setups
     override func setupView() {
         backgroundColor = UIColor.black.withAlphaComponent(0.5)
     }
