@@ -48,6 +48,7 @@ final class MountainInfoViewModel: BaseViewModel {
         let fetchCoordinateTrigger = PassthroughSubject<String, Never>()
         let fetchWeeklyForecastTrigger = PassthroughSubject<Coordinate, Never>()
         
+        // Geocoding
         fetchCoordinateTrigger
             .flatMap { [weak self] address -> AnyPublisher<Result<Coordinate, Error>, Never> in
                 guard let self else {
@@ -66,6 +67,7 @@ final class MountainInfoViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
         
+        // 날씨 예보
         fetchWeeklyForecastTrigger
             .flatMap { [weak self] coordinate -> AnyPublisher<Result<[DailyForecast], Error>, Never> in
                 guard let self else {
@@ -108,6 +110,9 @@ final class MountainInfoViewModel: BaseViewModel {
         )
     }
     
+    // MARK: - Private Methods
+    
+    // 산 주소에서 첫번째 행정 구역만 가져오기
     private func firstSentence(from text: String) -> String {
         let pattern = "^[가-힣\\s]+"
         
