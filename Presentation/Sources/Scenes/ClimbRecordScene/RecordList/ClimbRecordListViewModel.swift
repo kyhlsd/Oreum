@@ -145,7 +145,7 @@ final class ClimbRecordListViewModel: BaseViewModel {
                         bookmarkToggledSubject.send(index)
                     }
                 case .failure(let error):
-                    errorMessageSubject.send(("북마크 변경", error.localizedDescription))
+                    errorMessageSubject.send(("북마크 변경 실패", error.localizedDescription))
                     bookmarkToggledSubject.send(-1)
                 }
             }

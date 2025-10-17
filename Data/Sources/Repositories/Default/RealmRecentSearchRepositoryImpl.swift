@@ -18,15 +18,15 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
         self.realm = try? Realm()
     }
 
-    public func fetchAll() -> AnyPublisher<[RecentSearch], Error> {
+    public func fetchAll() -> AnyPublisher<Result<[RecentSearch], Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(RealmError.repositoryDeallocated))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
                 return
             }
 
             guard let realm = self.realm else {
-                promise(.failure(RealmError.realmInitializationFailed))
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
@@ -34,20 +34,20 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
                 .sorted(byKeyPath: "searchedAt", ascending: false)
                 .map { $0.toDomain() }
 
-            promise(.success(Array(results)))
+            promise(.success(.success(Array(results))))
         }
         .eraseToAnyPublisher()
     }
 
-    public func save(keyword: String) -> AnyPublisher<Void, Error> {
+    public func save(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(RealmError.repositoryDeallocated))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
                 return
             }
 
             guard let realm = self.realm else {
-                promise(.failure(RealmError.realmInitializationFailed))
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
@@ -58,30 +58,30 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
                     let recentSearch = RecentSearchRealm(keyword: keyword, searchedAt: Date())
                     realm.add(recentSearch)
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(RealmError.writeTransactionFailed))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func delete(keyword: String) -> AnyPublisher<Void, Error> {
+    public func delete(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(RealmError.repositoryDeallocated))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
                 return
             }
 
             guard let realm = self.realm else {
-                promise(.failure(RealmError.realmInitializationFailed))
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
             let objects = realm.objects(RecentSearchRealm.self).filter("keyword == %@", keyword)
 
             guard !objects.isEmpty else {
-                promise(.failure(RealmError.recordNotFound))
+                promise(.success(.failure(RealmError.recordNotFound)))
                 return
             }
 
@@ -89,23 +89,23 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
                 try realm.write {
                     realm.delete(objects)
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(RealmError.writeTransactionFailed))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func deleteAll() -> AnyPublisher<Void, Error> {
+    public func deleteAll() -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(RealmError.repositoryDeallocated))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
                 return
             }
 
             guard let realm = self.realm else {
-                promise(.failure(RealmError.realmInitializationFailed))
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
@@ -114,9 +114,9 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
                     let allRecentSearches = realm.objects(RecentSearchRealm.self)
                     realm.delete(allRecentSearches)
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(RealmError.writeTransactionFailed))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()

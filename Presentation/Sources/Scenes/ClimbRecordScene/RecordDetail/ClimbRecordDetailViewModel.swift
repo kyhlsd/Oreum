@@ -432,7 +432,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        // 이미짐 삭제 DB 이미지 반영
+        // 이미지 삭제 DB 이미지 반영
         existingImageDelete
             .flatMap { [weak self] imageID -> AnyPublisher<Result<Void, Error>, Never> in
                 guard let self else { return Empty().eraseToAnyPublisher() }
