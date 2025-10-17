@@ -43,14 +43,15 @@ final class SearchViewModel: BaseViewModel {
     struct Output {
         let recentSearches: AnyPublisher<[String], Never>
         let searchResults: AnyPublisher<[MountainInfo], Never>
-        let errorMessage: AnyPublisher<String, Never>
+        let errorMessage: AnyPublisher<(String, String), Never>
     }
 
     func transform(input: Input) -> Output {
         let recentSearchesSubject = PassthroughSubject<[String], Never>()
         let searchResultsSubject = PassthroughSubject<[MountainInfo], Never>()
-        let errorMessageSubject = PassthroughSubject<String, Never>()
+        let errorMessageSubject = PassthroughSubject<(String, String), Never>()
 
+        // 최근 검색어 Fetch
         let loadRecentSearchTrigger = PassthroughSubject<Void, Never>()
 
         loadRecentSearchTrigger
@@ -59,7 +60,7 @@ final class SearchViewModel: BaseViewModel {
                 return self.fetchRecentSearchesUseCase.execute()
                     .map { $0.map { $0.keyword } }
                     .catch { error -> Just<[String]> in
-                        errorMessageSubject.send(error.localizedDescription)
+                        errorMessageSubject.send(("최근 검색어 불러오기 실패", error.localizedDescription))
                         return Just([])
                     }
                     .eraseToAnyPublisher()
@@ -69,18 +70,20 @@ final class SearchViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
+        // viewDidLoad에서 최근 검색어 불러오기
         input.viewDidLoad
             .sink { _ in
                 loadRecentSearchTrigger.send(())
             }
             .store(in: &cancellables)
 
+        // 검색어 삭제
         input.deleteRecentSearch
             .flatMap { [weak self] keyword -> AnyPublisher<Void, Never> in
                 guard let self else { return Just(()).eraseToAnyPublisher() }
                 return self.deleteRecentSearchUseCase.execute(keyword: keyword)
                     .catch { error -> Just<Void> in
-                        errorMessageSubject.send(error.localizedDescription)
+                        errorMessageSubject.send(("최근 검색어 삭제 실패", error.localizedDescription))
                         return Just(())
                     }
                     .eraseToAnyPublisher()
@@ -90,12 +93,13 @@ final class SearchViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
+        // 검색어 모두 삭제
         input.clearAllRecentSearches
             .flatMap { [weak self] _ -> AnyPublisher<Void, Never> in
                 guard let self else { return Just(()).eraseToAnyPublisher() }
                 return self.clearRecentSearchesUseCase.execute()
                     .catch { error -> Just<Void> in
-                        errorMessageSubject.send(error.localizedDescription)
+                        errorMessageSubject.send(("최근 검색어 삭제 실패", error.localizedDescription))
                         return Just(())
                     }
                     .eraseToAnyPublisher()
@@ -105,43 +109,42 @@ final class SearchViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        let searchPublisher = Publishers.Merge(
+        // 검색하거나, 최근 검색어 눌렀을 때
+        Publishers.Merge(
             input.searchText,
             input.recentSearchTapped
         )
-
-        searchPublisher
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .removeDuplicates()
-            .flatMap { [weak self] keyword -> AnyPublisher<(String, [MountainInfo]), Never> in
-                guard let self else { return Just((keyword, [])).eraseToAnyPublisher() }
-
-                return self.fetchMountainsUseCase.execute(keyword: keyword)
-                    .map { (keyword, $0) }
-                    .catch { error -> Just<(String, [MountainInfo])> in
-                        errorMessageSubject.send(error.localizedDescription)
-                        return Just((keyword, []))
-                    }
-                    .eraseToAnyPublisher()
-            }
-            .sink { [weak self] (keyword, results) in
-                guard let self else { return }
-
-                // 검색 결과 전송
-                searchResultsSubject.send(results)
-
-                // 최근 검색어 저장 및 새로고침
-                self.saveRecentSearchUseCase.execute(keyword: keyword)
-                    .catch { error -> Just<Void> in
-                        errorMessageSubject.send(error.localizedDescription)
-                        return Just(())
-                    }
-                    .sink { _ in
-                        loadRecentSearchTrigger.send(())
-                    }
-                    .store(in: &self.cancellables)
-            }
-            .store(in: &cancellables)
+        .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        .removeDuplicates()
+        .flatMap { [weak self] keyword -> AnyPublisher<(String, [MountainInfo]), Never> in
+            guard let self else { return Just((keyword, [])).eraseToAnyPublisher() }
+            
+            return self.fetchMountainsUseCase.execute(keyword: keyword)
+                .map { (keyword, $0) }
+                .catch { error -> Just<(String, [MountainInfo])> in
+                    errorMessageSubject.send(("검색 결과 불러오기 실패", error.localizedDescription))
+                    return Just((keyword, []))
+                }
+                .eraseToAnyPublisher()
+        }
+        .sink { [weak self] (keyword, results) in
+            guard let self else { return }
+            
+            // 검색 결과 전송
+            searchResultsSubject.send(results)
+            
+            // 최근 검색어 저장 및 새로고침
+            self.saveRecentSearchUseCase.execute(keyword: keyword)
+                .catch { error -> Just<Void> in
+                    errorMessageSubject.send(("최근 검색어 저장 실패", error.localizedDescription))
+                    return Just(())
+                }
+                .sink { _ in
+                    loadRecentSearchTrigger.send(())
+                }
+                .store(in: &self.cancellables)
+        }
+        .store(in: &cancellables)
 
         return Output(
             recentSearches: recentSearchesSubject.eraseToAnyPublisher(),

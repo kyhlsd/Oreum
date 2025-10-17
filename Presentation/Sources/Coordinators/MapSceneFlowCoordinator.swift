@@ -26,6 +26,7 @@ public final class MapSceneFlowCoordinator: Coordinator {
         self.dependencies = dependencies
     }
 
+    // 첫 화면 맵뷰
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "지도", image: AppIcon.map, tag: 2)
         navigationController.navigationBar.tintColor = AppColor.primary
@@ -38,6 +39,7 @@ public final class MapSceneFlowCoordinator: Coordinator {
         navigationController.pushViewController(mapVC, animated: false)
     }
     
+    // 산 정보 뷰 이동
     private func showMountainInfoFromMap(mountainInfo: MountainInfo) {
         let mountainInfoVC = dependencies.makeMountainInfoViewController(mountainInfo: mountainInfo)
         

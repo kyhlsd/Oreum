@@ -221,7 +221,7 @@ extension MountainInfoView {
     
     // 산 이름
     func setMountainName(_ name: String) {
-        weatherView.setTitle("\(name) 날씨")
+        weatherView.configure("\(name) 날씨")
     }
     
     // 산 주소
