@@ -9,8 +9,9 @@ import Foundation
 import Domain
 import Combine
 
-final class ActivityLogViewModel {
+final class ActivityLogViewModel: BaseViewModel {
     
+    // ActivityLogs -> 통계 ActivityStat 변환
     private let activityStatUseCase: ActivityStatUseCase
     private var cancellables = Set<AnyCancellable>()
     

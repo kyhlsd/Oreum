@@ -46,6 +46,7 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
 
         let output = viewModel.transform(input: input)
 
+        // 산 이름
         output.mountainName
             .sink { [weak self] name in
                 self?.navigationItem.title = name
@@ -53,18 +54,21 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        // 주소
         output.address
             .sink { [weak self] address in
                 self?.mainView.setAddress(address)
             }
             .store(in: &cancellables)
-
+        
+        // 높이
         output.height
             .sink { [weak self] height in
                 self?.mainView.setHeight(height)
             }
             .store(in: &cancellables)
 
+        // 산 소개 문구
         output.introduction
             .sink { [weak self] introduction in
                 let attributedText = self?.createIntroductionAttributedString(from: introduction) ?? NSAttributedString()
@@ -72,18 +76,21 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        // 이미지
         output.imageURL
             .sink { [weak self] imageURL in
                 self?.mainView.setImage(imageURL)
             }
             .store(in: &cancellables)
         
+        // 날씨
         output.weeklyForecast
             .sink { [weak self] weeklyForecast in
                 self?.mainView.setWeeklyForecast(weeklyForecast)
             }
             .store(in: &cancellables)
         
+        // 에러 Alert
         output.errorMessage
             .sink { [weak self] message in
                 self?.presentDefaultAlert(title: "날씨 정보 불러오기 실패", message: message)

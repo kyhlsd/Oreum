@@ -12,14 +12,15 @@ import SnapKit
 
 final class ClimbRecordDetailView: BaseView {
     
+    // 전체 스크롤 뷰
     private let scrollView = {
         let scrollView = UIScrollView()
         scrollView.keyboardDismissMode = .onDrag
         return scrollView
     }()
-    
     private let contentView = UIView()
     
+    // 이미지
     lazy var imageCollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .clear
@@ -28,7 +29,7 @@ final class ClimbRecordDetailView: BaseView {
         collectionView.alwaysBounceVertical = false
         return collectionView
     }()
-
+    // 이미지 PageControl
     let pageControl = {
         let pageControl = UIPageControl()
         pageControl.isUserInteractionEnabled = false
@@ -37,13 +38,14 @@ final class ClimbRecordDetailView: BaseView {
         return pageControl
     }()
 
-    private let emptyImageView = {
+    // 이미지 없음 표기
+    private let emptyView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
         view.isHidden = true
         return view
     }()
-
+    // Placeholder 이미지
     private let photoImageView = {
         let imageView = UIImageView()
         imageView.image = AppIcon.photo
@@ -51,13 +53,14 @@ final class ClimbRecordDetailView: BaseView {
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
-
+    // Placeholder Label
     private let photoLabel = {
         let label = UILabel.create("산에서 담은 순간을 추가해 보세요", color: AppColor.subText, font: AppFont.titleM)
         label.textAlignment = .center
         return label
     }()
 
+    // 사진 추가/제거 버튼
     let editPhotoButton = {
         let button = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 40)
@@ -69,14 +72,18 @@ final class ClimbRecordDetailView: BaseView {
         return button
     }()
 
+    // 정보 박스
     private let infoView = BoxView(title: "정보")
-    
+    // 주소 표기
     private let addressView = ImageItemView(icon: AppIcon.address, subtitle: "주소")
+    // 날짜 표기
     private let dateView = ImageItemView(icon: AppIcon.date, subtitle: "날짜")
+    // 높이 표기
     private let heightView = ImageItemView(icon: AppIcon.mountain, subtitle: "높이")
     
+    // 후기 박스
     private let reviewView = BoxView(title: "나의 후기")
-    
+    // 후기 텍스트뷰
     let commentTextView = {
         let textView = UITextView(usingTextLayoutManager: false)
         textView.textContainerInset = .zero
@@ -93,16 +100,17 @@ final class ClimbRecordDetailView: BaseView {
         textView.isEditable = false
         return textView
     }()
-    
+    // 별점
     let ratingView = StarRatingView()
     
+    // 후기 수정 버튼
     let editButton = {
         let button = UIButton()
         button.setImage(AppIcon.edit, for: .normal)
         button.tintColor = AppColor.primaryText
         return button
     }()
-    
+    // 후기 저장 버튼
     let saveButton = {
         let button = UIButton()
         button.setImage(AppIcon.save, for: .normal)
@@ -110,7 +118,7 @@ final class ClimbRecordDetailView: BaseView {
         button.isHidden = true
         return button
     }()
-    
+    // 후기 수정 취소 버튼
     let cancelButton = {
         let button = UIButton()
         button.setImage(AppIcon.x, for: .normal)
@@ -119,8 +127,9 @@ final class ClimbRecordDetailView: BaseView {
         return button
     }()
     
+    // 타임라인 보기 버튼
     let timelineButton = CustomButton(title: "타임라인 보기", image: AppIcon.timeline, foreground: .white, background: AppColor.primary)
-
+    // 기록 삭제 버튼
     let deleteButton = CustomButton(title: "기록 삭제", image: AppIcon.trash, foreground: AppColor.danger, background: AppColor.dangerText, hasBorder: true)
     
     private func createLayout() -> UICollectionViewCompositionalLayout {
@@ -151,12 +160,12 @@ final class ClimbRecordDetailView: BaseView {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        [imageCollectionView, emptyImageView, pageControl, editPhotoButton, infoView, reviewView, timelineButton, deleteButton].forEach {
+        [imageCollectionView, emptyView, pageControl, editPhotoButton, infoView, reviewView, timelineButton, deleteButton].forEach {
             contentView.addSubview($0)
         }
 
         [photoImageView, photoLabel].forEach {
-            emptyImageView.addSubview($0)
+            emptyView.addSubview($0)
         }
 
         [addressView, dateView, heightView].forEach {
@@ -182,7 +191,7 @@ final class ClimbRecordDetailView: BaseView {
             make.height.equalTo(imageCollectionView.snp.width).multipliedBy(0.75)
         }
 
-        emptyImageView.snp.makeConstraints { make in
+        emptyView.snp.makeConstraints { make in
             make.edges.equalTo(imageCollectionView)
         }
 
@@ -284,11 +293,13 @@ final class ClimbRecordDetailView: BaseView {
 // MARK: - Binding Methods
 extension ClimbRecordDetailView {
     
+    // 후기 작성 시 키보드에 따른 높이 조정
     func adjustForKeyboard(height: CGFloat) {
         scrollView.contentInset.bottom = height
         scrollView.verticalScrollIndicatorInsets.bottom = height
     }
     
+    // 날짜, 산 정보, 후기 표기
     func setData(climbRecord: ClimbRecord) {
         dateView.setTitle(title: AppFormatter.dateFormatter.string(from: climbRecord.climbDate))
         addressView.setTitle(title: climbRecord.mountain.address)
@@ -296,6 +307,7 @@ extension ClimbRecordDetailView {
         setReview(rating: climbRecord.score, comment: climbRecord.comment)
     }
     
+    // 후기 수정 가능 여부 설정
     func setEditable(_ isEditable: Bool) {
         commentTextView.isEditable = isEditable
         ratingView.setEditable(isEditable)
@@ -304,24 +316,29 @@ extension ClimbRecordDetailView {
         cancelButton.isHidden = !isEditable
     }
     
+    // 후기 코멘트, 별점
     func setReview(rating: Int, comment: String) {
         ratingView.setRating(rating: rating, animated: true)
         commentTextView.text = comment
     }
 
+    // 타임라인 보기 버튼 활성화 여부 설정
     func setTimelineButtonEnabled(_ isEnabled: Bool) {
         timelineButton.isEnabled = isEnabled
         timelineButton.alpha = isEnabled ? 1.0 : 0.5
     }
 
+    // 타임라인 여부에 따른 버튼 제목 설정
     func setTimelineButtonTitle(_ title: String) {
         timelineButton.updateButton(title: title, image: AppIcon.timeline, foreground: .white)
     }
 
-    func setEmptyImageViewHidden(_ isHidden: Bool) {
-        emptyImageView.isHidden = isHidden
+    // 이미지 여부에 따른 EmptyView Visibility 설정
+    func setEmptyViewHidden(_ isHidden: Bool) {
+        emptyView.isHidden = isHidden
     }
 
+    // 새로운 기록 생성일 경우 설정 값
     func configureForAddRecord() {
         commentTextView.isEditable = true
         ratingView.setEditable(true)
@@ -332,6 +349,7 @@ extension ClimbRecordDetailView {
         deleteButton.isHidden = true
     }
 
+    // 후기 코멘트 텍스트뷰 Placeholder
     func setPlaceholder(isPlaceholder: Bool, text: String) {
         commentTextView.textColor = isPlaceholder ? AppColor.tertiaryText : AppColor.subText
         commentTextView.text = text

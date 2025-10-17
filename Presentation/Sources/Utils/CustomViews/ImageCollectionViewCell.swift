@@ -8,6 +8,7 @@
 import UIKit
 import SnapKit
 import Kingfisher
+
 final class ImageCollectionViewCell: BaseCollectionViewCell {
 
     private let imageView = {
@@ -17,6 +18,16 @@ final class ImageCollectionViewCell: BaseCollectionViewCell {
         return imageView
     }()
 
+    func setImage(imageData: Data) {
+        if let image = UIImage(data: imageData) {
+            imageView.image = image
+        } else {
+            imageView.image = nil
+        }
+    }
+    
+    // MARK: - Setups
+    
     override func setupView() {
         backgroundColor = .clear
     }
@@ -30,12 +41,5 @@ final class ImageCollectionViewCell: BaseCollectionViewCell {
             make.edges.equalToSuperview()
         }
     }
-
-    func setImage(imageData: Data) {
-        if let image = UIImage(data: imageData) {
-            imageView.image = image
-        } else {
-            imageView.image = nil
-        }
-    }
+    
 }

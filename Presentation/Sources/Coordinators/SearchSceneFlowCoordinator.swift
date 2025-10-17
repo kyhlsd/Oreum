@@ -25,6 +25,7 @@ public final class SearchSceneFlowCoordinator: Coordinator {
         self.dependencies = dependencies
     }
 
+    // 시작 화면 검색 화면
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "검색", image: AppIcon.search, tag: 3)
         navigationController.navigationBar.tintColor = AppColor.primary
@@ -36,6 +37,7 @@ public final class SearchSceneFlowCoordinator: Coordinator {
         navigationController.pushViewController(searchVC, animated: false)
     }
 
+    // 산 정보 화면 이동
     private func pushMountainInfo(mountainInfo: MountainInfo) {
         let mountainInfoVC = dependencies.makeMountainInfoViewController(mountainInfo: mountainInfo)
         navigationController.pushViewController(mountainInfoVC, animated: true)

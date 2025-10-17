@@ -5,12 +5,16 @@
 //  Created by 김영훈 on 9/30/25.
 //
 
-import Foundation
+import UIKit
 
-protocol BaseViewController: AnyObject {
+protocol BaseViewController: AnyObject where Self: UIViewController {
+    
     associatedtype ViewModel: BaseViewModel
     associatedtype View: BaseView
+    
     var mainView: View { get }
     var viewModel: ViewModel { get }
+    
     func bind()
+    
 }

@@ -11,36 +11,53 @@ import SnapKit
 
 final class ActivityLogView: BaseView {
     
+    // 전체 스크롤 뷰
     private let scrollView = UIScrollView()
-    
     private let contentView = UIView()
     
+    // 산 이름
     private let titleLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleM)
-    
+    // 등산 날짜
     private let dateLabel = UILabel.create(color: AppColor.subText, font: AppFont.body)
     
+    // 요약 박스
     private let summaryBoxView = BoxView(title: "요약")
+    // 소요시간
     private let summaryTimeView = ItemView(subtitle: "소요시간")
+    // 이동 거리
     private let summaryDistanceView = ItemView(subtitle: "이동 거리")
+    // 걸음 수
     private let summaryStepView = ItemView(subtitle: "걸음 수")
+    // 구분선
     private lazy var summaryLeftLineView = createVerticalLineView()
     private lazy var summaryRightLineView = createVerticalLineView()
     
+    // 시간 박스
     private let timeBoxView = BoxView(title: "등산 시간")
+    // 시작 시간
     private let startTimeView = ItemView(subtitle: "시작 시간")
+    // 완료 시간
     private let endTimeView = ItemView(subtitle: "완료 시간")
-    private let totalTimeView = ItemView(subtitle: "총 소요시간")
+    // 총 소요 시간
+    private let totalTimeView = ItemView(subtitle: "총 소요 시간")
+    // 운동 시간
     private let exerciseTimeView = ItemView(subtitle: "운동 시간")
+    // 휴식 시간
     private let restTimeView = ItemView(subtitle: "휴식 시간")
+    // 구분선
     private lazy var timeLeftLineView = createVerticalLineView()
     private lazy var timeRightLineView = createVerticalLineView()
     private lazy var timeCenterLineView = createVerticalLineView()
     private lazy var timeHorizontalLineView = createHorizontalLineView()
     
+    // 시간별 거리 박스
     private let distanceBoxView = BoxView(title: "시간별 거리(m)")
+    // 시간별 거리 차트
     private let distanceChartView = ActivityChartContainerView(metric: .distance)
     
+    // 시간별 걸음 수 박스
     private let stepBoxView = BoxView(title: "시간별 걸음 수")
+    // 시간별 거리 차트
     private let stepChartView = ActivityChartContainerView(metric: .step)
     
     private func createVerticalLineView() -> UIView {
@@ -216,10 +233,12 @@ final class ActivityLogView: BaseView {
 // MARK: - Binding Methods
 extension ActivityLogView {
     
+    // 산 이름
     func setMountainName(name: String) {
         titleLabel.text = name
     }
     
+    // 등산 시간
     func setStat(activityStat: ActivityStat) {
         if let startTime = activityStat.startTime {
             dateLabel.text = AppFormatter.dateFormatter.string(from: startTime)
@@ -248,11 +267,13 @@ extension ActivityLogView {
         restTimeView.setTitle(title: formatMinutes(activityStat.restMinutes))
     }
     
+    // 걸음 수, 이동 거리 차트
     func setActivityLogs(activityLogs: [ActivityLog]) {
         distanceChartView.setLogs(logs: activityLogs)
         stepChartView.setLogs(logs: activityLogs)
     }
     
+    // 시간 표기
     private func formatMinutes(_ minutes: Int) -> String {
         let hours = minutes / 60
         let mins = minutes % 60

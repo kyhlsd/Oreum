@@ -10,10 +10,13 @@ import SnapKit
 
 final class AddClimbRecordView: BaseView {
 
+    // 산 선택 레이블
     private let selectLabel = UILabel.create("산 선택", color: AppColor.primaryText, font: AppFont.titleM)
 
+    // 검색 바
     let searchBar = CustomSearchBar()
 
+    // 검색 결과 오버레이
     let searchResultsOverlay = {
         let view = UIView()
         view.backgroundColor = AppColor.background
@@ -27,6 +30,7 @@ final class AddClimbRecordView: BaseView {
         return view
     }()
 
+    // 검색 결과 테이블 뷰
     let searchResultsTableView = {
         let tableView = UITableView()
         tableView.backgroundColor = AppColor.background
@@ -38,6 +42,7 @@ final class AddClimbRecordView: BaseView {
         return tableView
     }()
 
+    // 검색 결과 없음 표기 레이블
     private let emptyStateLabel = {
         let label = UILabel.create("검색 결과가 없습니다", color: AppColor.subText, font: AppFont.body)
         label.textAlignment = .center
@@ -46,6 +51,7 @@ final class AddClimbRecordView: BaseView {
         return label
     }()
 
+    // 선택된 산 박스
     private let mountainBoxView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
@@ -54,18 +60,21 @@ final class AddClimbRecordView: BaseView {
         return view
     }()
 
+    // 선택된 산 정보 (이름, 주소)
     private let mountainInfoView = {
         let view = ItemView()
         view.setAlignment(.left)
         return view
     }()
 
+    // 산 선택 Placeholder
     private let placeholderLabel = {
         let label = UILabel.create("검색으로 산을 선택해주세요", color: AppColor.subText, font: AppFont.body)
         label.textAlignment = .center
         return label
     }()
 
+    // 선택된 산 취소 버튼
     let cancelButton = {
         let button = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 12)
@@ -75,6 +84,7 @@ final class AddClimbRecordView: BaseView {
         return button
     }()
 
+    // 날짜 박스
     private let dateBoxView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
@@ -83,8 +93,10 @@ final class AddClimbRecordView: BaseView {
         return view
     }()
 
+    // 날짜 레이블
     private let dateLabel = UILabel.create("날짜", color: AppColor.primaryText, font: AppFont.titleM)
 
+    // 날짜 피커
     let datePicker = {
         let picker = UIDatePicker()
         picker.tintColor = AppColor.primary
@@ -95,6 +107,7 @@ final class AddClimbRecordView: BaseView {
         return picker
     }()
 
+    // 다음 버튼
     let nextButton = CustomButton(title: "다음", image: nil, foreground: .white, background: AppColor.primary)
 
     // MARK: - Setups
@@ -196,14 +209,17 @@ final class AddClimbRecordView: BaseView {
 // MARK: - Binding Methods
 extension AddClimbRecordView {
 
+    // 검색 바 입력 시 Border 설정
     func setSearchBarBorder(isFirstResponder: Bool) {
         searchBar.setBorder(isFirstResponder)
     }
 
+    // 검색 결과 창 Visiblity 설정
     func updateSearchResultsOverlayIsHidden(_ isHidden: Bool) {
         searchResultsOverlay.isHidden = isHidden
     }
 
+    // 검색 결과 창 너비 동적 조절
     func updateSearchResults(count: Int) {
         let isEmpty = count == 0
         emptyStateLabel.isHidden = !isEmpty
@@ -224,6 +240,7 @@ extension AddClimbRecordView {
         }
     }
 
+    // 산 선택 시 박스 내용 설정
     func updateMountainLabelTexts(name: String, address: String) {
         mountainInfoView.setTitle(title: name)
         mountainInfoView.setSubtitle(subtitle: address)
@@ -232,16 +249,19 @@ extension AddClimbRecordView {
         cancelButton.isHidden = false
     }
 
+    // 산 선택 박스 초기화
     func clearMountainSelection() {
         mountainInfoView.isHidden = true
         placeholderLabel.isHidden = false
         cancelButton.isHidden = true
     }
 
+    // 검색 바 초기화
     func clearSearchBar() {
         searchBar.text = ""
     }
 
+    // 다음 버튼 활성화
     func setNextButtonEnabled(_ isEnabled: Bool) {
         nextButton.isEnabled = isEnabled
         nextButton.alpha = isEnabled ? 1.0 : 0.5

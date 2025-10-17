@@ -12,6 +12,14 @@ final class SearchMountainTableViewCell: BaseTableViewCell {
 
     private let itemView = ItemView()
 
+    // 데이터 표기
+    func setData(mountain: Mountain) {
+        itemView.setTitle(title: mountain.name)
+        itemView.setSubtitle(subtitle: mountain.address)
+    }
+    
+    // MARK: Setups
+    
     override func setupView() {
         backgroundColor = .clear
         selectionStyle = .default
@@ -29,8 +37,4 @@ final class SearchMountainTableViewCell: BaseTableViewCell {
         }
     }
 
-    func setData(mountain: Mountain) {
-        itemView.setTitle(title: mountain.name)
-        itemView.setSubtitle(subtitle: mountain.address)
-    }
 }

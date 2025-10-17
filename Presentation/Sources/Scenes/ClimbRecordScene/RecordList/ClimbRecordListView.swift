@@ -11,20 +11,24 @@ import SnapKit
 
 final class ClimbRecordListView: BaseView {
 
+    // 검색 바
     let searchBar = CustomSearchBar()
     
+    // 북마크만 표기 버튼
     let bookmarkButton = {
         let button = UIButton()
         button.tintColor = AppColor.primary
         return button
     }()
     
+    // 북마크만, 산 개수 표기 레이블
     private let guideLabel = {
         let label = UILabel.create(color: AppColor.mossGreen, font: AppFont.body)
         label.textAlignment = .center
         return label
     }()
     
+    // 기록 컬렉션 뷰
     lazy var recordCollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .clear
@@ -34,6 +38,7 @@ final class ClimbRecordListView: BaseView {
         return collectionView
     }()
     
+    // 결과 없을 때 레이블
     private let emptyStateLabel = {
         let label = UILabel()
         label.numberOfLines = 0
@@ -112,34 +117,39 @@ final class ClimbRecordListView: BaseView {
 // MARK: - Binding Methods
 extension ClimbRecordListView {
     
+    // 산 개수, 북마크만 레이블
     func setGuideLabelText(_ text: String) {
         guideLabel.text = text
     }
     
+    // 기록 컬렉션 뷰 갱신, 스크롤 위로 올리기
     func reloadData() {
         recordCollectionView.reloadData()
-        if recordCollectionView.numberOfItems(inSection: 0) > 0 {
-            recordCollectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: false)
-        }
+        recordCollectionView.setContentOffset(.zero, animated: false)
     }
 
+    // 기록 결과에 따른 Visibility
     func setEmptyStateHidden(_ isHidden: Bool) {
         emptyStateLabel.isHidden = isHidden
         recordCollectionView.isHidden = !isHidden
     }
     
+    // 결과 없을 때 레이블 텍스트
     func setEmptyStateText(_ text: String) {
         emptyStateLabel.attributedText = NSAttributedString(string: text, attributes: emptyLabelAttributes)
     }
     
+    // 북마크만 표기 여부에 따른 이미지
     func setBookmarkImage(isOnlyBookmarked: Bool) {
         bookmarkButton.setImage(isOnlyBookmarked ? AppIcon.bookmarkFill : AppIcon.bookmark, for: .normal)
     }
     
+    // 북마크 토글에 따른 셀 Reload
     func toggleCellBookmarked(row: Int) {
         recordCollectionView.reloadItems(at: [IndexPath(item: row, section: 0)])
     }
     
+    // 검색 상태에 따른 검색 바 테두리
     func setSearchBarBorder(isFirstResponder: Bool) {
         searchBar.setBorder(isFirstResponder)
     }

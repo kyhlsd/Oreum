@@ -13,7 +13,10 @@ import Combine
 final class ClusterCalloutView: BaseView {
 
     let mountainSelected = PassthroughSubject<MountainDistance, Never>()
-
+    private var mountains = [MountainDistance]()
+    private var cellHeight = 36.0
+    
+    // 클러스터링된 산 표기 테이블뷰
     private lazy var tableView = {
         let tableView = UITableView()
         tableView.backgroundColor = .clear
@@ -25,22 +28,21 @@ final class ClusterCalloutView: BaseView {
         return tableView
     }()
 
-    private var mountains = [MountainDistance]()
-    private var cellHeight = 36.0
-
+    // 가나다순 정렬, 테이블뷰 갱신
     func configure(with mountains: [MountainDistance]) {
         self.mountains = mountains.sorted { $0.mountainLocation.name < $1.mountainLocation.name }
         tableView.reloadData()
     }
 
+    // 높이 계산: 최대 5개까지만 표시, 나머지는 스크롤
     override var intrinsicContentSize: CGSize {
-        // 높이 계산: 최대 5개까지만 표시, 나머지는 스크롤
         let maxVisibleRows = min(mountains.count, 5)
         let height = CGFloat(maxVisibleRows) * cellHeight
         let width = 160.0
         return CGSize(width: width, height: height)
     }
     
+    // MARK: - Setups
     override func setupView() {
         backgroundColor = .clear
         layer.cornerRadius = AppRadius.radius

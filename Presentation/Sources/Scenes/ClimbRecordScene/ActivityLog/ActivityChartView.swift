@@ -39,6 +39,7 @@ final class ActivityChartContainerView: BaseView {
         dataSource.logs = logs
     }
     
+    // MARK: - Setups
     override func setupView() {
         let chartView = ActivityChartView(dataSource: dataSource)
         let hosting = UIHostingController(rootView: chartView)
@@ -123,29 +124,31 @@ struct ActivityChartView: View {
         .frame(height: chartHeight)
     }
     
-    // MARK: - Helpers
+    // MARK: - Private Methods
     private func chartWidth() -> CGFloat {
         return max(CGFloat(dataSource.logs.count) * perItemWidth, minChartWidth)
     }
     
+    // 걸음 수, 이동 거리 최댓값에 따라 차트 Y 최댓값 설정
     private func calculateYMax() -> Double {
         let min = 100.0
-           guard !dataSource.logs.isEmpty else { return min }
-           
-           let maxValue = (dataSource.metric == .step
-                           ? dataSource.logs.map { Double($0.step) }.max()
-                           : dataSource.logs.map { Double($0.distance) }.max() ?? min) ?? min
-           
-           var yMax = maxValue * 1.1
-           
-           let remainder = yMax.truncatingRemainder(dividingBy: 100)
-           if remainder != 0 {
-               yMax += 100 - remainder
-           }
-           
-           return yMax
+        guard !dataSource.logs.isEmpty else { return min }
+        
+        let maxValue = (dataSource.metric == .step
+                        ? dataSource.logs.map { Double($0.step) }.max()
+                        : dataSource.logs.map { Double($0.distance) }.max() ?? min) ?? min
+        
+        var yMax = maxValue * 1.1
+        
+        let remainder = yMax.truncatingRemainder(dividingBy: 100)
+        if remainder != 0 {
+            yMax += 100 - remainder
+        }
+        
+        return yMax
     }
     
+    // 30분 간격으로 X Label 표기할 [Date] 생성
     private func generateXAxisValues() -> [Date] {
         guard let start = dataSource.logs.first?.time,
               let last = dataSource.logs.last?.time else { return [] }
@@ -166,6 +169,7 @@ struct ActivityChartView: View {
         return values
     }
     
+    // Date -> 30분, 60분 형식으로 변환
     private func elapsedTimeString(from date: Date) -> String {
         guard let start = dataSource.logs.first?.time else { return "" }
 

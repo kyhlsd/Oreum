@@ -10,8 +10,10 @@ import SnapKit
 
 final class BoxView: BaseView {
     
+    // 제목 레이블
     let titleLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleM)
     
+    // 구분선
     let lineView = {
         let view = UIView()
         view.backgroundColor = AppColor.border
@@ -20,16 +22,14 @@ final class BoxView: BaseView {
     
     convenience init(title: String) {
         self.init()
-        configure(title: title)
+        configure(title)
     }
     
-    func configure(title: String) {
+    func configure(_ title: String) {
         titleLabel.text = title
     }
-
-    func setTitle(_ title: String) {
-        titleLabel.text = title
-    }
+    
+    // MARK: - Setups
     
     override func setupView() {
         layer.borderColor = AppColor.border.cgColor

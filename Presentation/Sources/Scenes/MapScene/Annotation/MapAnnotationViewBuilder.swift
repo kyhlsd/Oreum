@@ -42,48 +42,7 @@ final class MapAnnotationViewBuilder {
 
     // MARK: - Private Methods
 
-    private func configureAnnotationView(_ annotationView: MKAnnotationView, with title: String) {
-        guard let combinedImage = createAnnotationImage(with: title) else { return }
-
-        let imageSize = CGSize(width: 40, height: 60)
-        let textAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 12, weight: .medium),
-            .foregroundColor: AppColor.primaryText
-        ]
-        let textSize = (title as NSString).size(withAttributes: textAttributes)
-        let padding: CGFloat = 8
-        let backgroundHeight = textSize.height + padding
-        let totalHeight = imageSize.height + backgroundHeight + 4
-
-        annotationView.image = combinedImage
-        annotationView.centerOffset = CGPoint(x: 0, y: -totalHeight / 2)
-    }
-
-    private func configureClusterCalloutView(for annotationView: MKAnnotationView, with mountains: [MountainDistance]) {
-        let calloutView = ClusterCalloutView()
-        calloutView.configure(with: mountains)
-        calloutView.mountainSelected
-            .sink { [weak self] mountain in
-                self?.clusterMountainSelected.send(mountain)
-            }
-            .store(in: &cancellables)
-        annotationView.detailCalloutAccessoryView = calloutView
-    }
-
-    private func configureCalloutView(for annotationView: MKAnnotationView, with mountainDistance: MountainDistance) {
-        let calloutView = MountainAnnotationCalloutView()
-        calloutView.configure(with: mountainDistance)
-        calloutView.infoButton.tap
-            .sink { [weak self] in
-                self?.mountainInfoButtonTapped.send((
-                    mountainDistance.mountainLocation.name,
-                    mountainDistance.mountainLocation.height
-                ))
-            }
-            .store(in: &cancellables)
-        annotationView.detailCalloutAccessoryView = calloutView
-    }
-
+    // 어노테이션 이미지
     private func createAnnotationImage(with title: String) -> UIImage? {
         guard let originalImage = UIImage(named: "MapPin", in: .module, with: nil) else { return nil }
 
@@ -116,4 +75,50 @@ final class MapAnnotationViewBuilder {
             (title as NSString).draw(at: CGPoint(x: textX, y: textY), withAttributes: textAttributes)
         }
     }
+    
+    // 어노테이션 뷰
+    private func configureAnnotationView(_ annotationView: MKAnnotationView, with title: String) {
+        guard let combinedImage = createAnnotationImage(with: title) else { return }
+
+        let imageSize = CGSize(width: 40, height: 60)
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 12, weight: .medium),
+            .foregroundColor: AppColor.primaryText
+        ]
+        let textSize = (title as NSString).size(withAttributes: textAttributes)
+        let padding: CGFloat = 8
+        let backgroundHeight = textSize.height + padding
+        let totalHeight = imageSize.height + backgroundHeight + 4
+
+        annotationView.image = combinedImage
+        annotationView.centerOffset = CGPoint(x: 0, y: -totalHeight / 2)
+    }
+
+    // 클러스터링 콜아웃 뷰
+    private func configureClusterCalloutView(for annotationView: MKAnnotationView, with mountains: [MountainDistance]) {
+        let calloutView = ClusterCalloutView()
+        calloutView.configure(with: mountains)
+        calloutView.mountainSelected
+            .sink { [weak self] mountain in
+                self?.clusterMountainSelected.send(mountain)
+            }
+            .store(in: &cancellables)
+        annotationView.detailCalloutAccessoryView = calloutView
+    }
+
+    // 일반 산 콜아웃 뷰
+    private func configureCalloutView(for annotationView: MKAnnotationView, with mountainDistance: MountainDistance) {
+        let calloutView = MountainAnnotationCalloutView()
+        calloutView.configure(with: mountainDistance)
+        calloutView.infoButton.tap
+            .sink { [weak self] in
+                self?.mountainInfoButtonTapped.send((
+                    mountainDistance.mountainLocation.name,
+                    mountainDistance.mountainLocation.height
+                ))
+            }
+            .store(in: &cancellables)
+        annotationView.detailCalloutAccessoryView = calloutView
+    }
+
 }

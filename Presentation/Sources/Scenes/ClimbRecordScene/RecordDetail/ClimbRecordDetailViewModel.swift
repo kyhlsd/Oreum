@@ -15,7 +15,7 @@ protocol ClimbRecordDetailViewModelDelegate: AnyObject {
     func updateImages(id: String, images: [String])
 }
 
-final class ClimbRecordDetailViewModel {
+final class ClimbRecordDetailViewModel: BaseViewModel {
 
     private let updateUseCase: UpdateClimbRecordUseCase
     private let deleteUseCase: DeleteClimbRecordUseCase
@@ -29,9 +29,10 @@ final class ClimbRecordDetailViewModel {
 
     private(set) var climbRecord: ClimbRecord
     private let isFromAddRecord: Bool
+    // ClimbRecordList에 변경 내용 반영
     weak var delegate: ClimbRecordDetailViewModelDelegate?
-    private let saveCompletedSubject = PassthroughSubject<Void, Never>()
-    private var pendingImages: [Data] = [] // Add 화면에서 선택한 이미지들을 임시 저장
+    // Add 화면에서 선택한 이미지들을 임시 저장
+    private var pendingImages: [Data] = []
     private let placeholderText = "등산\u{00A0}후기를\u{00A0}작성해주세요."
 
     init(updateUseCase: UpdateClimbRecordUseCase, deleteUseCase: DeleteClimbRecordUseCase, saveClimbRecordUseCase: SaveClimbRecordUseCase, saveRecordImageUseCase: SaveRecordImageUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase, deleteRecordImageUseCase: DeleteRecordImageUseCase, addImageToRecordUseCase: AddImageToRecordUseCase, removeImageFromRecordUseCase: RemoveImageFromRecordUseCase, climbRecord: ClimbRecord, isFromAddRecord: Bool = false) {
@@ -70,15 +71,13 @@ final class ClimbRecordDetailViewModel {
         let presentCancellableAlert: AnyPublisher<(String, String), Never>
         let popVC: AnyPublisher<Void, Never>
         let pushVC: AnyPublisher<ClimbRecord, Never>
-        let errorMessage: AnyPublisher<String, Never>
+        let errorMessage: AnyPublisher<(String, String), Never>
         let timelineButtonEnabled: AnyPublisher<Bool, Never>
         let timelineButtonTitle: AnyPublisher<String, Never>
         let presentPhotoActionSheet: AnyPublisher<Bool, Never>
         let saveCompleted: AnyPublisher<Void, Never>
-        let imageSaved: AnyPublisher<String, Never>
         let imagesFetched: AnyPublisher<[Data], Never>
         let presentImageDeleteAlert: AnyPublisher<Void, Never>
-        let imageDeleted: AnyPublisher<Void, Never>
         let placeholderState: AnyPublisher<(isPlaceholder: Bool, text: String), Never>
     }
     
@@ -88,24 +87,32 @@ final class ClimbRecordDetailViewModel {
         let presentCancellableAlertSubject = PassthroughSubject<(String, String), Never>()
         let popVCSubject = PassthroughSubject<Void, Never>()
         let pushVCSubject = PassthroughSubject<ClimbRecord, Never>()
-        let errorMesssageSubject = PassthroughSubject<String, Never>()
+        let errorMesssageSubject = PassthroughSubject<(String, String), Never>()
         let presentPhotoActionSheetSubject = PassthroughSubject<Bool, Never>()
-        let imageSavedSubject = PassthroughSubject<String, Never>()
+        let imagesFetchedSubject = PassthroughSubject<[Data], Never>()
         let presentImageDeleteAlertSubject = PassthroughSubject<Void, Never>()
-        let imageDeletedSubject = PassthroughSubject<Void, Never>()
         let isPlaceholderSubject = PassthroughSubject<Bool, Never>()
         let commentTextSubject = PassthroughSubject<String, Never>()
-
-        input.viewDidLoad
+        let saveCompletedSubject = PassthroughSubject<Void, Never>()
+        
+        let viewDidLoad = input.viewDidLoad.share()
+        
+        // MARK: - 후기 관련
+        
+        // Placeholder 세팅
+        viewDidLoad
+            .filter { [weak self] in
+                guard let self else { return false }
+                return climbRecord.comment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
             .sink { [weak self] in
                 guard let self else { return }
-                if climbRecord.comment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    isPlaceholderSubject.send(true)
-                    commentTextSubject.send(placeholderText)
-                }
+                isPlaceholderSubject.send(true)
+                commentTextSubject.send(placeholderText)
             }
             .store(in: &cancellables)
         
+        // 편집 버튼
         input.editButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink {
@@ -113,6 +120,7 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
         
+        // 후기 입력 시작
         input.commentTextViewDidBeginEditing
             .filter { [weak self] text in
                 guard let self else { return false }
@@ -124,6 +132,7 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
         
+        // 후기 입력 종료
         input.commentTextViewDidEndEditing
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { $0.isEmpty }
@@ -134,6 +143,7 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
         
+        // 저장 버튼 TODO: 에러 처리
         input.saveButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .flatMap { [weak self, updateUseCase] (rating, comment) in
@@ -142,7 +152,7 @@ final class ClimbRecordDetailViewModel {
                 // placeholder 텍스트면 빈 문자열로 변환
                 let finalComment = comment == placeholderText ? "" : comment
 
-                // 기존 record인 경우에만 Realm 업데이트
+                // 기존 record인 경우에만 로컬 데이터 업데이트
                 if !isFromAddRecord {
                     return updateUseCase.execute(recordID: climbRecord.id, rating: rating, comment: finalComment)
                         .handleEvents(receiveOutput: { [weak self] _ in
@@ -152,7 +162,7 @@ final class ClimbRecordDetailViewModel {
                             delegate?.updateReview(id: climbRecord.id, rating: rating, comment: finalComment)
                         })
                         .catch { error in
-                            errorMesssageSubject.send(error.localizedDescription)
+                            errorMesssageSubject.send(("저장에 실패했습니다", error.localizedDescription))
                             return Just(())
                         }
                         .eraseToAnyPublisher()
@@ -168,6 +178,7 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
         
+        // 취소 시 reset
         input.cancelButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
@@ -177,6 +188,217 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
         
+        // MARK: - 이미지 Fetch
+        viewDidLoad
+            .sink { [weak self] in
+                guard let self else { return }
+
+                // Add 화면이면 pendingImages 반환
+                if isFromAddRecord {
+                    imagesFetchedSubject.send(pendingImages)
+                    return
+                }
+
+                // 기존 record면 파일에서 가져오기
+                let publishers = climbRecord.images.map { imageID in
+                    self.fetchRecordImageUseCase.execute(imageID: imageID)
+                        .catch { _ -> Empty<Data, Never> in
+                            return Empty()
+                        }
+                        .eraseToAnyPublisher()
+                }
+
+                Publishers.MergeMany(publishers)
+                    .collect()
+                    .sink { imageDatas in
+                        imagesFetchedSubject.send(imageDatas)
+                    }
+                    .store(in: &self.cancellables)
+            }
+            .store(in: &cancellables)
+        // MARK: - 이미지 추가
+        
+        // 사진 편집 버튼
+        input.editPhotoButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink { [weak self] in
+                guard let self else { return }
+                let hasImages = isFromAddRecord ? !pendingImages.isEmpty : !climbRecord.images.isEmpty
+                presentPhotoActionSheetSubject.send(hasImages)
+            }
+            .store(in: &cancellables)
+
+        // picker에서 사진 선택
+        let imageSelectedPublisher = input.imageSelected
+            .catch { error -> Just<Data> in
+                errorMesssageSubject.send(("이미지를 데이터로 변환하는데 실패했습니다", error.localizedDescription))
+                return Just(Data())
+            }
+            .filter { !$0.isEmpty }
+            .share()
+        
+        // 새로운 기록 추가인 경우
+        imageSelectedPublisher
+            .filter { [weak self] _ in
+                guard let self else { return false }
+                return isFromAddRecord
+            }
+            .sink { [weak self] imageData in
+                guard let self else { return }
+                pendingImages.append(imageData)
+                imagesFetchedSubject.send(pendingImages)
+            }
+            .store(in: &cancellables)
+
+        // 기존 기록인 경우 이미지 저장
+        let savedImageID = imageSelectedPublisher
+            .filter { [weak self] _ in
+                guard let self else { return false }
+                return !isFromAddRecord
+            }
+            .flatMap { [weak self] imageData -> AnyPublisher<String, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
+                return self.saveRecordImageUseCase.execute(imageData: imageData)
+                    .catch { _ in Empty<String, Never>() }
+                    .eraseToAnyPublisher()
+            }
+            .share()
+
+        // 이미지 저장 후 UI 갱신
+        savedImageID
+            .flatMap { [weak self] imageID -> AnyPublisher<[Data], Never> in
+                guard let self else { return Just([]).eraseToAnyPublisher() }
+
+                // 이미지 ID를 배열에 추가
+                climbRecord.images.append(imageID)
+                delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
+
+                // 모든 이미지를 다시 가져오기
+                let publishers = self.climbRecord.images.map { imageID in
+                    self.fetchRecordImageUseCase.execute(imageID: imageID)
+                        .catch { _ -> Empty<Data, Never> in
+                            return Empty()
+                        }
+                        .eraseToAnyPublisher()
+                }
+
+                return Publishers.MergeMany(publishers)
+                    .collect()
+                    .eraseToAnyPublisher()
+            }
+            .sink { imageDatas in
+                imagesFetchedSubject.send(imageDatas)
+            }
+            .store(in: &cancellables)
+
+        // 이미지 저장 후 로컬 데이터에 반영
+        savedImageID
+            .flatMap { [weak self] imageID -> AnyPublisher<Void, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
+                return self.addImageToRecordUseCase.execute(recordID: self.climbRecord.id, imageID: imageID)
+                    .catch { _ in Empty<Void, Never>() }
+                    .eraseToAnyPublisher()
+            }
+            .sink { _ in }
+            .store(in: &cancellables)
+
+        // MARK: - 이미지 제거
+        
+        // 사진 삭제 버튼
+        input.imageDeleteButtonTapped
+            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
+            .sink {
+                presentImageDeleteAlertSubject.send(())
+            }
+            .store(in: &cancellables)
+
+        // 사진 삭제 선택
+        let imageDeleteSelectedPublisher = input.imageDeleteSelected
+            .share()
+
+        // 새로운 기록 추가인 경우 메모리에서 제거
+        imageDeleteSelectedPublisher
+            .filter { [weak self] imageID in
+                guard let self else { return false }
+                return isFromAddRecord
+            }
+            .sink { [weak self] imageID in
+                guard let self else { return }
+                if let indexString = imageID.split(separator: "_").last,
+                   let index = Int(indexString),
+                   index < pendingImages.count {
+                    pendingImages.remove(at: index)
+                }
+                imagesFetchedSubject.send(pendingImages)
+            }
+            .store(in: &cancellables)
+
+        // 기존 기록일 경우
+        let existingImageDelete = imageDeleteSelectedPublisher
+            .filter { [weak self] _ in
+                guard let self else { return false }
+                return !isFromAddRecord
+            }
+            .share()
+
+        // 이미지 삭제 후 UI 갱신
+        existingImageDelete
+            .flatMap { [weak self] imageID -> AnyPublisher<[Data], Never> in
+                guard let self else { return Just([]).eraseToAnyPublisher() }
+
+                // 배열에서 이미지 ID 제거
+                if let index = climbRecord.images.firstIndex(of: imageID) {
+                    climbRecord.images.remove(at: index)
+                    delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
+                }
+
+                // 남은 이미지들을 다시 가져오기
+                if climbRecord.images.isEmpty {
+                    return Just([]).eraseToAnyPublisher()
+                }
+
+                let publishers = self.climbRecord.images.map { imageID in
+                    self.fetchRecordImageUseCase.execute(imageID: imageID)
+                        .catch { _ -> Empty<Data, Never> in
+                            return Empty()
+                        }
+                        .eraseToAnyPublisher()
+                }
+
+                return Publishers.MergeMany(publishers)
+                    .collect()
+                    .eraseToAnyPublisher()
+            }
+            .sink { imageDatas in
+                imagesFetchedSubject.send(imageDatas)
+            }
+            .store(in: &cancellables)
+
+        // 이미지 삭제 DB 기록 반영
+        existingImageDelete
+            .flatMap { [weak self] imageID -> AnyPublisher<Void, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
+                return self.deleteRecordImageUseCase.execute(imageID: imageID)
+                    .catch { _ in Empty<Void, Never>() }
+                    .eraseToAnyPublisher()
+            }
+            .sink { _ in }
+            .store(in: &cancellables)
+
+        // 이미짐 삭제 DB 이미지 반영
+        existingImageDelete
+            .flatMap { [weak self] imageID -> AnyPublisher<Void, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
+                return self.removeImageFromRecordUseCase.execute(imageID: imageID)
+                    .catch { _ in Empty<Void, Never>() }
+                    .eraseToAnyPublisher()
+            }
+            .sink { _ in }
+            .store(in: &cancellables)
+        
+        // MARK: - Buttons
+        
+        // 타임라인 버튼
         input.timelineButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] in
@@ -185,6 +407,7 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
         
+        // 삭제 버튼
         input.deleteButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink {
@@ -192,6 +415,7 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
         
+        // 삭제 선택 // TODO: 에러 처리
         input.deleteSelected
             .flatMap { [weak self] in
                 guard let self else { return Just(()).eraseToAnyPublisher() }
@@ -213,7 +437,7 @@ final class ClimbRecordDetailViewModel {
                         // 이미지 파일 삭제 후 기록 삭제
                         self.deleteUseCase.execute(recordID: self.climbRecord.id)
                             .catch { error in
-                                errorMesssageSubject.send(error.localizedDescription)
+                                errorMesssageSubject.send(("이미지 삭제에 실패했습니다", error.localizedDescription))
                                 return Just(())
                             }
                     }
@@ -226,73 +450,11 @@ final class ClimbRecordDetailViewModel {
             }
             .store(in: &cancellables)
 
-        input.editPhotoButtonTapped
-            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink { [weak self] in
-                guard let self else { return }
-                let hasImages = isFromAddRecord ? !pendingImages.isEmpty : !climbRecord.images.isEmpty
-                presentPhotoActionSheetSubject.send(hasImages)
-            }
-            .store(in: &cancellables)
-
-        let imageSelectedPublisher = input.imageSelected
-            .catch { error -> Just<Data> in
-                errorMesssageSubject.send(error.localizedDescription)
-                return Just(Data())
-            }
-            .filter { !$0.isEmpty }
-            .share()
-
-        // Add 화면: 메모리에만 저장
-        imageSelectedPublisher
-            .filter { [weak self] _ in
-                guard let self else { return false }
-                return isFromAddRecord
-            }
-            .sink { [weak self] imageData in
-                guard let self else { return }
-                pendingImages.append(imageData)
-                imageSavedSubject.send("pending_\(pendingImages.count - 1)")
-            }
-            .store(in: &cancellables)
-
-        // 기존 record: 파일로 저장
-        let savedImageID = imageSelectedPublisher
-            .filter { [weak self] _ in
-                guard let self else { return false }
-                return !isFromAddRecord
-            }
-            .flatMap { [weak self] imageData -> AnyPublisher<String, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
-                return self.saveRecordImageUseCase.execute(imageData: imageData)
-                    .catch { _ in Empty<String, Never>() }
-                    .eraseToAnyPublisher()
-            }
-            .share()
-
-        savedImageID
-            .sink { [weak self] imageID in
-                guard let self else { return }
-                climbRecord.images.append(imageID)
-                delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
-                imageSavedSubject.send(imageID)
-            }
-            .store(in: &cancellables)
-
-        savedImageID
-            .flatMap { [weak self] imageID -> AnyPublisher<Void, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
-                return self.addImageToRecordUseCase.execute(recordID: self.climbRecord.id, imageID: imageID)
-                    .catch { _ in Empty<Void, Never>() }
-                    .eraseToAnyPublisher()
-            }
-            .sink { _ in }
-            .store(in: &cancellables)
-
+        // 저장 버튼
         input.navBarSaveButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink { [weak self] (rating, comment) in
-                guard let self else { return }
+            .flatMap { [weak self] (rating, comment) -> AnyPublisher<Void, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
 
                 // placeholder 텍스트면 빈 문자열로 변환
                 let finalComment = comment == placeholderText ? "" : comment
@@ -300,13 +462,13 @@ final class ClimbRecordDetailViewModel {
                 climbRecord.score = rating
                 climbRecord.comment = finalComment
 
-                // Add 화면에서 저장하는 경우, pending 이미지들을 먼저 저장
+                // 새로운 기록인 경우, pending 이미지들을 먼저 저장
                 if isFromAddRecord && !pendingImages.isEmpty {
                     let imagePublishers = pendingImages.map { imageData in
                         self.saveRecordImageUseCase.execute(imageData: imageData)
                     }
 
-                    Publishers.MergeMany(imagePublishers)
+                    return Publishers.MergeMany(imagePublishers)
                         .collect()
                         .flatMap { [weak self] imageIDs -> AnyPublisher<ClimbRecord, Error> in
                             guard let self else { return Fail(error: NSError(domain: "ClimbRecordDetailViewModel", code: -1)).eraseToAnyPublisher() }
@@ -316,119 +478,23 @@ final class ClimbRecordDetailViewModel {
 
                             return self.saveClimbRecordUseCase.execute(record: self.climbRecord)
                         }
-                        .sink(
-                            receiveCompletion: { _ in },
-                            receiveValue: { [weak self] _ in
-                                NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
-                                self?.saveCompletedSubject.send(())
-                            }
-                        )
-                        .store(in: &self.cancellables)
+                        .catch { _ in Empty<ClimbRecord, Never>() }
+                        .map { _ in () }
+                        .eraseToAnyPublisher()
                 } else {
                     // 이미지가 없거나 기존 record인 경우 바로 저장
-                    saveClimbRecordUseCase.execute(record: climbRecord)
-                        .sink(
-                            receiveCompletion: { _ in },
-                            receiveValue: { [weak self] _ in
-                                NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
-                                self?.saveCompletedSubject.send(())
-                            }
-                        )
-                        .store(in: &self.cancellables)
-                }
-            }
-            .store(in: &cancellables)
-
-        input.imageDeleteButtonTapped
-            .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .sink {
-                presentImageDeleteAlertSubject.send(())
-            }
-            .store(in: &cancellables)
-
-        let imageDeleteSelectedPublisher = input.imageDeleteSelected
-            .share()
-
-        // Add 화면: 메모리에서 제거
-        imageDeleteSelectedPublisher
-            .filter { [weak self] imageID in
-                guard let self else { return false }
-                return isFromAddRecord && imageID.hasPrefix("pending_")
-            }
-            .sink { [weak self] imageID in
-                guard let self else { return }
-                if let indexString = imageID.split(separator: "_").last,
-                   let index = Int(indexString),
-                   index < pendingImages.count {
-                    pendingImages.remove(at: index)
-                }
-                imageDeletedSubject.send(())
-            }
-            .store(in: &cancellables)
-
-        // 기존 record: 파일과 Realm에서 삭제
-        let existingImageDelete = imageDeleteSelectedPublisher
-            .filter { [weak self] _ in
-                guard let self else { return false }
-                return !isFromAddRecord
-            }
-            .share()
-
-        existingImageDelete
-            .sink { [weak self] imageID in
-                guard let self else { return }
-                if let index = climbRecord.images.firstIndex(of: imageID) {
-                    climbRecord.images.remove(at: index)
-                    delegate?.updateImages(id: climbRecord.id, images: climbRecord.images)
-                }
-                imageDeletedSubject.send(())
-            }
-            .store(in: &cancellables)
-
-        existingImageDelete
-            .flatMap { [weak self] imageID -> AnyPublisher<Void, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
-                return self.deleteRecordImageUseCase.execute(imageID: imageID)
-                    .catch { _ in Empty<Void, Never>() }
-                    .eraseToAnyPublisher()
-            }
-            .sink { _ in }
-            .store(in: &cancellables)
-
-        existingImageDelete
-            .flatMap { [weak self] imageID -> AnyPublisher<Void, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
-                return self.removeImageFromRecordUseCase.execute(imageID: imageID)
-                    .catch { _ in Empty<Void, Never>() }
-                    .eraseToAnyPublisher()
-            }
-            .sink { _ in }
-            .store(in: &cancellables)
-
-        let imagesFetched = input.viewDidLoad
-            .flatMap { [weak self] _ -> AnyPublisher<[Data], Never> in
-                guard let self else { return Just([]).eraseToAnyPublisher() }
-
-                // Add 화면이면 pendingImages 반환
-                if isFromAddRecord {
-                    return Just(pendingImages).eraseToAnyPublisher()
-                }
-
-                // 기존 record면 파일에서 가져오기
-                let publishers = climbRecord.images.map { imageID in
-                    self.fetchRecordImageUseCase.execute(imageID: imageID)
-                        .catch { _ -> Empty<Data, Never> in
-                            return Empty()
-                        }
+                    return saveClimbRecordUseCase.execute(record: climbRecord)
+                        .catch { _ in Empty<ClimbRecord, Never>() }
+                        .map { _ in () }
                         .eraseToAnyPublisher()
                 }
-
-                return Publishers.MergeMany(publishers)
-                    .collect()
-                    .eraseToAnyPublisher()
             }
-            .eraseToAnyPublisher()
-
+            .sink { _ in
+                NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
+                saveCompletedSubject.send(())
+            }
+            .store(in: &cancellables)
+        
         let hasTimeline = !climbRecord.timeLog.isEmpty
         let timelineButtonEnabled = Just(hasTimeline).eraseToAnyPublisher()
         let timelineButtonTitle = Just(hasTimeline ? "타임라인 보기" : "측정 기록이 없습니다").eraseToAnyPublisher()
@@ -451,41 +517,10 @@ final class ClimbRecordDetailViewModel {
             timelineButtonTitle: timelineButtonTitle,
             presentPhotoActionSheet: presentPhotoActionSheetSubject.eraseToAnyPublisher(),
             saveCompleted: saveCompletedSubject.eraseToAnyPublisher(),
-            imageSaved: imageSavedSubject.eraseToAnyPublisher(),
-            imagesFetched: imagesFetched,
+            imagesFetched: imagesFetchedSubject.eraseToAnyPublisher(),
             presentImageDeleteAlert: presentImageDeleteAlertSubject.eraseToAnyPublisher(),
-            imageDeleted: imageDeletedSubject.eraseToAnyPublisher(),
             placeholderState: placeholderState
         )
-    }
-
-    func fetchImages() -> AnyPublisher<[Data], Never> {
-        // Add 화면이면 pendingImages 반환
-        if isFromAddRecord {
-            return Just(pendingImages).eraseToAnyPublisher()
-        }
-
-        // 기존 record면 파일에서 가져오기
-        let publishers = climbRecord.images.map { imageID in
-            fetchRecordImageUseCase.execute(imageID: imageID)
-                .catch { _ -> Empty<Data, Never> in
-                    return Empty()
-                }
-                .eraseToAnyPublisher()
-        }
-
-        return Publishers.MergeMany(publishers)
-            .collect()
-            .eraseToAnyPublisher()
-    }
-
-    func deleteImageFile(imageID: String) {
-        deleteRecordImageUseCase.execute(imageID: imageID)
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { _ in }
-            )
-            .store(in: &cancellables)
     }
 
 }

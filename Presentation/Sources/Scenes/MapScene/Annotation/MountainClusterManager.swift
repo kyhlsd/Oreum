@@ -28,7 +28,7 @@ final class CustomClusterAnnotation: NSObject, MKAnnotation {
 // MARK: - Mountain Cluster Manager
 final class MountainClusterManager {
 
-    /// Grid-based clustering 알고리즘
+    // Grid-based clustering 알고리즘
     func cluster(mountains: [MountainDistance], mapView: MKMapView) -> [MKAnnotation] {
         guard !mountains.isEmpty else { return [] }
 
@@ -82,7 +82,7 @@ final class MountainClusterManager {
         return annotations
     }
 
-    /// 여러 산의 중심 좌표 계산
+    // 여러 산의 중심 좌표 계산
     private func calculateCenterCoordinate(for mountains: [MountainDistance]) -> CLLocationCoordinate2D {
         var totalLatitude: Double = 0
         var totalLongitude: Double = 0

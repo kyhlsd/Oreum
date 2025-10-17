@@ -9,6 +9,7 @@ import UIKit
 
 public enum AppAppearance {
     
+    // NavigationBar 설정
     public static func setupNavAppearance() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
@@ -18,6 +19,7 @@ public enum AppAppearance {
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
     
+    // TabBar 설정
     public static func setupTabAppearance() {
         let appearance = UITabBarAppearance()
         appearance.stackedLayoutAppearance.selected.iconColor = AppColor.tabSelectedForeground
