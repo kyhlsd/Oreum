@@ -111,25 +111,28 @@ final class SearchViewModel: BaseViewModel {
             .store(in: &cancellables)
 
         // 검색하거나, 최근 검색어 눌렀을 때
-        let searchPublisher = Publishers.Merge(
+        let searchKeywordPublisher = Publishers.Merge(
             input.searchText,
             input.recentSearchTapped
         )
         .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        .removeDuplicates()
-        .flatMap { [weak self] keyword -> AnyPublisher<(String, Result<[MountainInfo], Error>), Never> in
-            guard let self else { return Just((keyword, .success([]))).eraseToAnyPublisher() }
 
-            return self.fetchMountainsUseCase.execute(keyword: keyword)
-                .map { result -> (String, Result<[MountainInfo], Error>) in
-                    (keyword, result)
-                }
-                .eraseToAnyPublisher()
-        }
-        .share()
+        // 검색 결과 가져오기 (중복 검색 방지)
+        let searchResultPublisher = searchKeywordPublisher
+            .removeDuplicates()
+            .flatMap { [weak self] keyword -> AnyPublisher<(String, Result<[MountainInfo], Error>), Never> in
+                guard let self else { return Just((keyword, .success([]))).eraseToAnyPublisher() }
+
+                return self.fetchMountainsUseCase.execute(keyword: keyword)
+                    .map { result -> (String, Result<[MountainInfo], Error>) in
+                        (keyword, result)
+                    }
+                    .eraseToAnyPublisher()
+            }
+            .share()
 
         // 검색 결과 전송
-        searchPublisher
+        searchResultPublisher
             .sink { (keyword, result) in
                 switch result {
                 case .success(let results):
@@ -142,8 +145,7 @@ final class SearchViewModel: BaseViewModel {
             .store(in: &cancellables)
 
         // 최근 검색어 저장
-        searchPublisher
-            .map { $0.0 }
+        searchKeywordPublisher
             .flatMap { [weak self] keyword -> AnyPublisher<Result<Void, Error>, Never> in
                 guard let self else { return Just(.success(())).eraseToAnyPublisher() }
                 return self.saveRecentSearchUseCase.execute(keyword: keyword)
