@@ -89,22 +89,18 @@ final class MapViewModel: NSObject, BaseViewModel {
         input.mountainInfoButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .flatMap { [weak self] (name, height) -> AnyPublisher<Result<MountainInfo, Error>, Never> in
-                let errorInfo = MountainInfo(id: "error", name: "error", address: "error", height: 0, admin: "error", adminNumber: "error", detail: "error", image: nil, referenceDate: Date(), designationCriteria: nil)
                 guard let self else {
-                    return Just(.success(errorInfo)).eraseToAnyPublisher()
+                    return Empty().eraseToAnyPublisher()
                 }
 
                 return self.fetchMountainInfoUseCase.execute(name: name, height: height)
             }
             .sink { [weak self] result in
-                let errorInfo = MountainInfo(id: "error", name: "error", address: "error", height: 0, admin: "error", adminNumber: "error", detail: "error", image: nil, referenceDate: Date(), designationCriteria: nil)
-
                 switch result {
                 case .success(let mountainInfo):
                     pushMountainInfoSubject.send(mountainInfo)
                 case .failure(let error):
                     self?.errorMessageSubject.send(("산 정보 가져오기 실패", error.localizedDescription))
-                    pushMountainInfoSubject.send(errorInfo)
                 }
             }
             .store(in: &cancellables)

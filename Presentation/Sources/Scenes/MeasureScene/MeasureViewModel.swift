@@ -73,6 +73,7 @@ final class MeasureViewModel: BaseViewModel {
         let clearSearchBarTrigger: AnyPublisher<Void, Never>
         let updateActivityDataTrigger: AnyPublisher<(time: String, distance: String, steps: String), Never>
         let savedClimbRecord: AnyPublisher<ClimbRecord, Never>
+        let errorMessage: AnyPublisher<(String, String), Never>
     }
 
     func transform(input: Input) -> Output {
@@ -85,6 +86,7 @@ final class MeasureViewModel: BaseViewModel {
         let updateActivityDataSubject = PassthroughSubject<(time: String, distance: String, steps: String), Never>()
         let savedClimbRecordSubject = PassthroughSubject<ClimbRecord, Never>()
         let trackingStatusSubject = CurrentValueSubject<Bool, Never>(false)
+        let errorMessageSubject = PassthroughSubject<(String, String), Never>()
 
         let viewDidLoad = input.viewDidLoad
             .share()
@@ -94,6 +96,8 @@ final class MeasureViewModel: BaseViewModel {
             .eraseToAnyPublisher()
         
         let permissionAuthorizedSubject = CurrentValueSubject<Bool, Never>(false)
+        
+        let cleanUpSubject = PassthroughSubject<Void, Never>()
         
         // MARK: - 초기 실행
         
@@ -112,7 +116,8 @@ final class MeasureViewModel: BaseViewModel {
                 switch result {
                 case .success(let authorized):
                     permissionAuthorizedSubject.send(authorized)
-                case .failure:
+                case .failure(let error):
+                    errorMessageSubject.send(("권한 확인 실패", error.localizedDescription))
                     permissionAuthorizedSubject.send(false)
                 }
             }
@@ -175,7 +180,8 @@ final class MeasureViewModel: BaseViewModel {
                 switch result {
                 case .success(let results):
                     searchResultsSubject.send(results)
-                case .failure:
+                case .failure(let error):
+                    errorMessageSubject.send(("검색 결과 받아오기 실패", error.localizedDescription))
                     searchResultsSubject.send([])
                 }
             }
@@ -264,21 +270,15 @@ final class MeasureViewModel: BaseViewModel {
             .sink { [weak self] result in
                 guard let self else { return }
 
-                // 산 선택, 측정 상태 초기화
-                trackingStatusSubject.send(false)
-                clearMountainSelectionSubject.send()
-                updateStartButtonIsEnabledSubject.send(false)
-                clearSearchBarSubject.send()
-
-                // 타이머 종료
-                self.stopActivityDataTimer()
-                // 트래킹 중지 및 측정 중 정보 clear
-                self.stopTrackingActivityUseCase.execute(clearData: true)
-
-                // Result 처리
+                // 산 정보 가져오기
                 switch result {
                 case .success(let logs):
-                    guard let mountain = self.getClimbingMountainUseCase.execute() else { return }
+                    guard let mountain = self.getClimbingMountainUseCase.execute() else {
+                        // 산 정보가 없으면 초기화만 수행
+                        cleanUpSubject.send(())
+                        return
+                    }
+
                     let startDate = logs.first?.time ?? Date()
                     let climbRecord = ClimbRecord(
                         id: UUID().uuidString,
@@ -294,6 +294,9 @@ final class MeasureViewModel: BaseViewModel {
                     // 기록 저장
                     self.saveClimbRecordUseCase.execute(record: climbRecord)
                         .sink { saveResult in
+                            // 저장 완료 후 초기화
+                            cleanUpSubject.send(())
+
                             switch saveResult {
                             case .success(let savedRecord):
                                 NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
@@ -305,12 +308,30 @@ final class MeasureViewModel: BaseViewModel {
                         }
                         .store(in: &self.cancellables)
 
-                case .failure:
-                    break
+                case .failure(let error):
+                    errorMessageSubject.send(("산 정보 가져오기 실패", error.localizedDescription))
+                    // 에러 발생 시에도 초기화
+                    cleanUpSubject.send(())
                 }
             }
             .store(in: &cancellables)
-
+        
+        // 측정 상태 초기화
+        cleanUpSubject
+            .sink { [weak self] in
+                // 타이머 종료
+                self?.stopActivityDataTimer()
+                
+                // 트래킹 중지 및 측정 중 정보 clear
+                self?.stopTrackingActivityUseCase.execute(clearData: true)
+                
+                // 산 선택, 측정 상태 초기화
+                trackingStatusSubject.send(false)
+                clearMountainSelectionSubject.send()
+                updateStartButtonIsEnabledSubject.send(false)
+                clearSearchBarSubject.send()
+            }
+            .store(in: &cancellables)
 
         // 걸음 수, 이동 거리 데이터 변경 시 자동 업데이트
         observeActivityDataUpdatesUseCase.dataUpdates
@@ -333,7 +354,8 @@ final class MeasureViewModel: BaseViewModel {
             updateSearchResultsTrigger: updateSearchResultsSubject.eraseToAnyPublisher(),
             clearSearchBarTrigger: clearSearchBarSubject.eraseToAnyPublisher(),
             updateActivityDataTrigger: updateActivityDataSubject.eraseToAnyPublisher(),
-            savedClimbRecord: savedClimbRecordSubject.eraseToAnyPublisher()
+            savedClimbRecord: savedClimbRecordSubject.eraseToAnyPublisher(),
+            errorMessage: errorMessageSubject.eraseToAnyPublisher()
         )
     }
 
