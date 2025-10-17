@@ -8,7 +8,7 @@
 import Combine
 
 public protocol RecentSearchRepository {
-    func fetchAll() -> AnyPublisher<Result<[RecentSearch], Error>, Never>
+    func fetch() -> AnyPublisher<Result<[RecentSearch], Error>, Never>
     func save(keyword: String) -> AnyPublisher<Result<Void, Error>, Never>
     func delete(keyword: String) -> AnyPublisher<Result<Void, Error>, Never>
     func deleteAll() -> AnyPublisher<Result<Void, Error>, Never>

@@ -13,6 +13,7 @@ public final class DefaultForecastRepositoryImpl: ForecastRepository {
     
     public init() {}
     
+    // 단기예보
     public func fetchShortTermForecast(longitude: Double, latitude: Double) -> AnyPublisher<Result<[DailyForecast], Error>, Never> {
         let grid = getGrid(longitude: longitude, latitude: latitude)
         return NetworkManager.shared

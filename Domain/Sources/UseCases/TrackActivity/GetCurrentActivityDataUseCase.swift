@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 public protocol GetCurrentActivityDataUseCase {
-    func execute() -> AnyPublisher<(time: TimeInterval, steps: Int, distance: Int), Error>
+    func execute() -> AnyPublisher<Result<(time: TimeInterval, steps: Int, distance: Int), Error>, Never>
 }
 
 public final class GetCurrentActivityDataUseCaseImpl: GetCurrentActivityDataUseCase {
@@ -19,7 +19,7 @@ public final class GetCurrentActivityDataUseCaseImpl: GetCurrentActivityDataUseC
         self.repository = repository
     }
 
-    public func execute() -> AnyPublisher<(time: TimeInterval, steps: Int, distance: Int), Error> {
+    public func execute() -> AnyPublisher<Result<(time: TimeInterval, steps: Int, distance: Int), Error>, Never> {
         return repository.getCurrentActivityData()
     }
 }

@@ -18,7 +18,8 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
         self.realm = try? Realm()
     }
 
-    public func fetchAll() -> AnyPublisher<Result<[RecentSearch], Error>, Never> {
+    // 모든 검색어 가져오기
+    public func fetch() -> AnyPublisher<Result<[RecentSearch], Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
                 promise(.success(.failure(RealmError.repositoryDeallocated)))
@@ -39,6 +40,7 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
         .eraseToAnyPublisher()
     }
 
+    // 저장
     public func save(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -66,6 +68,7 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
         .eraseToAnyPublisher()
     }
 
+    // 삭제
     public func delete(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -97,6 +100,7 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
         .eraseToAnyPublisher()
     }
 
+    // 전체 삭제
     public func deleteAll() -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {

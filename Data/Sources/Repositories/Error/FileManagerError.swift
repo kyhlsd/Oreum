@@ -44,20 +44,28 @@ extension FileManagerError: LocalizedError {
         switch self {
         case .documentDirectoryNotFound:
             return "문서 디렉토리를 찾을 수 없습니다."
+            
         case .failedToCreateImageDirectory:
             return "이미지 디렉토리를 생성할 수 없습니다."
+            
         case .imageDirectoryNotAccessible:
             return "이미지 디렉토리에 접근할 수 없습니다."
+            
         case .failedToSaveImage:
             return "이미지를 저장할 수 없습니다."
+            
         case .failedToDeleteImage:
             return "이미지를 삭제할 수 없습니다."
+            
         case .failedToLoadImage:
             return "이미지를 불러올 수 없습니다."
+            
         case .imageFileNotFound:
             return "이미지 파일을 찾을 수 없습니다."
+            
         case .repositoryDeallocated:
             return "Repository가 이미 해제되었습니다."
+            
         case .unknown:
             return "알 수 없는 오류가 발생했습니다."
         }

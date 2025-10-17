@@ -19,6 +19,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
         print(realm?.configuration.fileURL ?? "realm initialization failed")
     }
 
+    // 기록 가져오기
     public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<Result<[ClimbRecord], Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -50,6 +51,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
         .eraseToAnyPublisher()
     }
 
+    // 저장
     public func save(record: ClimbRecord) -> AnyPublisher<Result<ClimbRecord, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -76,6 +78,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
         .eraseToAnyPublisher()
     }
 
+    // 북마크 토글
     public func toggleBookmark(recordID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -111,6 +114,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
         .eraseToAnyPublisher()
     }
 
+    // 기록 수정
     public func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -146,6 +150,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
         .eraseToAnyPublisher()
     }
 
+    // 삭제
     public func delete(recordID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -185,6 +190,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
         .eraseToAnyPublisher()
     }
 
+    // 이미지 추가
     public func addImage(recordID: String, imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -220,6 +226,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
         .eraseToAnyPublisher()
     }
 
+    // 이미지 제거
     public func removeImage(imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {

@@ -17,7 +17,7 @@ public final class DummyRecentSearchRepositoryImpl: RecentSearchRepository {
 
     private init() {}
 
-    public func fetchAll() -> AnyPublisher<Result<[RecentSearch], Error>, Never> {
+    public func fetch() -> AnyPublisher<Result<[RecentSearch], Error>, Never> {
         let sorted = recentSearches.sorted { $0.searchedAt > $1.searchedAt }
         return Just(.success(sorted))
             .eraseToAnyPublisher()

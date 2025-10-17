@@ -35,6 +35,7 @@ public final class FileManagerRecordImageRepositoryImpl: RecordImageRepository {
         return imageDirectory
     }
 
+    // 이미지 저장
     public func saveImage(imageData: Data) -> AnyPublisher<Result<String, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -58,6 +59,7 @@ public final class FileManagerRecordImageRepositoryImpl: RecordImageRepository {
         .eraseToAnyPublisher()
     }
 
+    // 이미지 삭제
     public func deleteImage(imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
@@ -82,6 +84,7 @@ public final class FileManagerRecordImageRepositoryImpl: RecordImageRepository {
         .eraseToAnyPublisher()
     }
 
+    // 이미지 가져오기
     public func fetchImage(imageID: String) -> AnyPublisher<Result<Data, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {

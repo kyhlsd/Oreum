@@ -19,6 +19,6 @@ public final class FetchRecentSearchesUseCaseImpl: FetchRecentSearchesUseCase {
     }
 
     public func execute() -> AnyPublisher<Result<[RecentSearch], Error>, Never> {
-        repository.fetchAll()
+        repository.fetch()
     }
 }

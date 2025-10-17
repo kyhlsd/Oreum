@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 public protocol GetActivityLogsUseCase {
-    func execute() -> AnyPublisher<[ActivityLog], Error>
+    func execute() -> AnyPublisher<Result<[ActivityLog], Error>, Never>
 }
 
 public final class GetActivityLogsUseCaseImpl: GetActivityLogsUseCase {
@@ -19,7 +19,7 @@ public final class GetActivityLogsUseCaseImpl: GetActivityLogsUseCase {
         self.repository = repository
     }
 
-    public func execute() -> AnyPublisher<[ActivityLog], Error> {
+    public func execute() -> AnyPublisher<Result<[ActivityLog], Error>, Never> {
         return repository.getActivityLogs()
     }
 }
