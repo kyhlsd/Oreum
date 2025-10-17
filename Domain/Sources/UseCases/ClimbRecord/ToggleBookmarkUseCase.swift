@@ -8,17 +8,17 @@
 import Combine
 
 public protocol ToggleBookmarkUseCase {
-    func execute(recordID: String) -> AnyPublisher<Void, Error>
+    func execute(recordID: String) -> AnyPublisher<Result<Void, Error>, Never>
 }
 
 public final class ToggleBookmarkUseCaseImpl: ToggleBookmarkUseCase {
     private let repository: ClimbRecordRepository
-    
+
     public init(repository: ClimbRecordRepository) {
         self.repository = repository
     }
-    
-    public func execute(recordID: String) -> AnyPublisher<Void, Error> {
+
+    public func execute(recordID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         repository.toggleBookmark(recordID: recordID)
     }
 }

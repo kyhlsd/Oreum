@@ -8,17 +8,17 @@
 import Combine
 
 public protocol DeleteClimbRecordUseCase {
-    func execute(recordID: String) -> AnyPublisher<Void, Error>
+    func execute(recordID: String) -> AnyPublisher<Result<Void, Error>, Never>
 }
 
 public final class DeleteClimbRecordUseCaseImpl: DeleteClimbRecordUseCase {
     private let repository: ClimbRecordRepository
-    
+
     public init(repository: ClimbRecordRepository) {
         self.repository = repository
     }
-    
-    public func execute(recordID: String) -> AnyPublisher<Void, any Error> {
+
+    public func execute(recordID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         repository.delete(recordID: recordID)
     }
 }

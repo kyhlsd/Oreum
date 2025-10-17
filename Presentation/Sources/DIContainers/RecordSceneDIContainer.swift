@@ -117,12 +117,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
         switch configuration.environment {
         case .release, .dev:
-            do {
-                return try RealmClimbRecordRepositoryImpl()
-            } catch {
-                print("Failed to initialize Realm: \(error.localizedDescription)")
-                return ErrorClimbRecordRepositoryImpl()
-            }
+            return RealmClimbRecordRepositoryImpl()
         case .dummy:
             return DummyClimbRecordRepositoryImpl.shared
         }

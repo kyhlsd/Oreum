@@ -273,7 +273,14 @@ final class MeasureViewModel: BaseViewModel {
                 guard let self else { return Empty().eraseToAnyPublisher() }
                 // 기록 저장
                 return self.saveClimbRecordUseCase.execute(record: climbRecord)
-                    .catch { _ in Just(climbRecord) }
+                    .map { result -> ClimbRecord in
+                        switch result {
+                        case .success(let savedRecord):
+                            return savedRecord
+                        case .failure:
+                            return climbRecord
+                        }
+                    }
                     .eraseToAnyPublisher()
             }
             .sink { savedRecord in
