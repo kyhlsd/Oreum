@@ -88,44 +88,55 @@ final class MapViewModel: NSObject, BaseViewModel {
         // 상세 정보 보기 버튼
         input.mountainInfoButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .flatMap { [weak self] (name, height) in
-                let errorInfo = Just(MountainInfo(id: "error", name: "error", address: "error", height: 0, admin: "error", adminNumber: "error", detail: "error", image: nil, referenceDate: Date(), designationCriteria: nil))
-                guard let self else { return errorInfo.eraseToAnyPublisher() }
-                
+            .flatMap { [weak self] (name, height) -> AnyPublisher<Result<MountainInfo, Error>, Never> in
+                let errorInfo = MountainInfo(id: "error", name: "error", address: "error", height: 0, admin: "error", adminNumber: "error", detail: "error", image: nil, referenceDate: Date(), designationCriteria: nil)
+                guard let self else {
+                    return Just(.success(errorInfo)).eraseToAnyPublisher()
+                }
+
                 return self.fetchMountainInfoUseCase.execute(name: name, height: height)
-                    .catch { [weak self] error in
-                        self?.errorMessageSubject.send(("산 정보 가져오기 실패", error.localizedDescription))
-                        return errorInfo
-                    }
-                    .eraseToAnyPublisher()
             }
-            .sink { mountainInfo in
-                pushMountainInfoSubject.send(mountainInfo)
+            .sink { [weak self] result in
+                let errorInfo = MountainInfo(id: "error", name: "error", address: "error", height: 0, admin: "error", adminNumber: "error", detail: "error", image: nil, referenceDate: Date(), designationCriteria: nil)
+
+                switch result {
+                case .success(let mountainInfo):
+                    pushMountainInfoSubject.send(mountainInfo)
+                case .failure(let error):
+                    self?.errorMessageSubject.send(("산 정보 가져오기 실패", error.localizedDescription))
+                    pushMountainInfoSubject.send(errorInfo)
+                }
             }
             .store(in: &cancellables)
 
         // 사용자 위치
         userLocationSubject
-            .flatMap { [weak self] coordinate -> AnyPublisher<[MountainDistance], Never> in
-                guard let self else { return Just([]).eraseToAnyPublisher() }
-                // 산과 거리 계산
+            .flatMap { [weak self] coordinate -> AnyPublisher<(CLLocationCoordinate2D, Result<[MountainLocation], Error>), Never> in
+                guard let self else {
+                    return Just((coordinate, .success([]))).eraseToAnyPublisher()
+                }
                 return self.fetchMountainLocationUseCase.execute()
-                    .map { mountainLocations in
-                        mountainLocations
-                            .map { mountainLocation in
-                                let distance = self.calculateDistance(from: coordinate, to: mountainLocation)
-                                return MountainDistance(mountainLocation: mountainLocation, distance: distance)
-                            }
-                            .sorted { $0.distance < $1.distance }
-                    }
-                    .catch { [weak self] error -> Just<[MountainDistance]> in
-                        self?.errorMessageSubject.send(("산 위치 가져오기 실패", error.localizedDescription))
-                        return Just([])
+                    .map { result -> (CLLocationCoordinate2D, Result<[MountainLocation], Error>) in
+                        (coordinate, result)
                     }
                     .eraseToAnyPublisher()
             }
-            .sink { mountains in
-                allMountainsSubject.send(mountains)
+            .sink { [weak self] (coordinate, result) in
+                guard let self else { return }
+
+                switch result {
+                case .success(let mountainLocations):
+                    let mountains = mountainLocations
+                        .map { mountainLocation in
+                            let distance = self.calculateDistance(from: coordinate, to: mountainLocation)
+                            return MountainDistance(mountainLocation: mountainLocation, distance: distance)
+                        }
+                        .sorted { $0.distance < $1.distance }
+                    allMountainsSubject.send(mountains)
+                case .failure(let error):
+                    self.errorMessageSubject.send(("산 위치 가져오기 실패", error.localizedDescription))
+                    allMountainsSubject.send([])
+                }
             }
             .store(in: &cancellables)
 

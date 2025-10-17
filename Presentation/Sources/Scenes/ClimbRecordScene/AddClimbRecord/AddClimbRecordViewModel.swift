@@ -52,19 +52,28 @@ final class AddClimbRecordViewModel: BaseViewModel {
         let updateSearchResultsCountSubject = PassthroughSubject<Int, Never>()
 
         // 검색 결과
-        let searchResults = input.searchTrigger
+        let searchResultsSubject = PassthroughSubject<[Mountain], Never>()
+
+        input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
-            .flatMap { [weak self] keyword -> AnyPublisher<[Mountain], Never> in
+            .flatMap { [weak self] keyword -> AnyPublisher<Result<[MountainInfo], Error>, Never> in
                 guard let self else {
-                    return Just([]).eraseToAnyPublisher()
+                    return Just(.success([])).eraseToAnyPublisher()
                 }
                 return self.fetchMountainsUseCase.execute(keyword: keyword)
-                    .map { mountainInfos in
-                        mountainInfos.map { $0.toMountain() }
-                    }
-                    .catch { _ in Just([]) }
-                    .eraseToAnyPublisher()
             }
+            .sink { result in
+                switch result {
+                case .success(let mountainInfos):
+                    let mountains = mountainInfos.map { $0.toMountain() }
+                    searchResultsSubject.send(mountains)
+                case .failure:
+                    searchResultsSubject.send([])
+                }
+            }
+            .store(in: &cancellables)
+
+        let searchResults = searchResultsSubject
             .share()
             .eraseToAnyPublisher()
 

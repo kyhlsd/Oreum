@@ -159,18 +159,29 @@ final class MeasureViewModel: BaseViewModel {
             .store(in: &cancellables)
         
         // MARK: - 산 선택
-        
+
         // 산 검색 결과
-        let searchResults = input.searchTrigger
+        let searchResultsSubject = PassthroughSubject<[MountainInfo], Never>()
+
+        input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
-            .flatMap { [weak self] keyword -> AnyPublisher<[MountainInfo], Never> in
+            .flatMap { [weak self] keyword -> AnyPublisher<Result<[MountainInfo], Error>, Never> in
                 guard let self else {
-                    return Just([]).eraseToAnyPublisher()
+                    return Just(.success([])).eraseToAnyPublisher()
                 }
                 return self.fetchMountainsUseCase.execute(keyword: keyword)
-                    .catch { _ in Just([]) }
-                    .eraseToAnyPublisher()
             }
+            .sink { result in
+                switch result {
+                case .success(let results):
+                    searchResultsSubject.send(results)
+                case .failure:
+                    searchResultsSubject.send([])
+                }
+            }
+            .store(in: &cancellables)
+
+        let searchResults = searchResultsSubject
             .share()
             .eraseToAnyPublisher()
 

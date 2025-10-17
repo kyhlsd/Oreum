@@ -117,14 +117,12 @@ final class SearchViewModel: BaseViewModel {
         )
         .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         .removeDuplicates()
-        .flatMap { [weak self] keyword -> AnyPublisher<(String, [MountainInfo]), Never> in
-            guard let self else { return Just((keyword, [])).eraseToAnyPublisher() }
+        .flatMap { [weak self] keyword -> AnyPublisher<(String, Result<[MountainInfo], Error>), Never> in
+            guard let self else { return Just((keyword, .success([]))).eraseToAnyPublisher() }
 
             return self.fetchMountainsUseCase.execute(keyword: keyword)
-                .map { (keyword, $0) }
-                .catch { error -> Just<(String, [MountainInfo])> in
-                    errorMessageSubject.send(("검색 결과 불러오기 실패", error.localizedDescription))
-                    return Just((keyword, []))
+                .map { result -> (String, Result<[MountainInfo], Error>) in
+                    (keyword, result)
                 }
                 .eraseToAnyPublisher()
         }
@@ -132,8 +130,14 @@ final class SearchViewModel: BaseViewModel {
 
         // 검색 결과 전송
         searchPublisher
-            .sink { (keyword, results) in
-                searchResultsSubject.send(results)
+            .sink { (keyword, result) in
+                switch result {
+                case .success(let results):
+                    searchResultsSubject.send(results)
+                case .failure(let error):
+                    errorMessageSubject.send(("검색 결과 불러오기 실패", error.localizedDescription))
+                    searchResultsSubject.send([])
+                }
             }
             .store(in: &cancellables)
 

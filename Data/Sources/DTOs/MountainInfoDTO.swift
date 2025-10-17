@@ -10,8 +10,8 @@ import Domain
 
 // 임시 데이터, API 복구 후 변경 예정
 struct MountainInfoDTO: Decodable {
-    private let MNTN_CD_INFO: String?                      // 산 코드 정보
-    private let MNTN_NM: String                           // 산명
+    private let MNTN_CD_INFO: String?                    // 산 코드 정보
+    private let MNTN_NM: String                          // 산명
     private let MNTN_LOCPLC_REGION_NM: String            // 산 소재지 지역명
     private let HUN_LRGE_FAMMNT_SELECT_DTCONT: String?   // 100대 명산 선정 상세 내용
     private let MNTN_HG_VL: String                       // 산 높이 값(m)
