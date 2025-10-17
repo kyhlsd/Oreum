@@ -22,7 +22,7 @@ final class ClimbRecordDetailViewController: UIViewController, BaseViewControlle
     private lazy var dataSource = createDataSource()
     private let keyboardObserver = KeyboardHeightObserver()
     
-    private var imageSelectedSubject = PassthroughSubject<Data, Error>()
+    private var imageSelectedSubject = PassthroughSubject<Result<Data, Error>, Never>()
     private var navBarSaveButtonSubject = PassthroughSubject<(Int, String), Never>()
     private let deleteSelectedSubject = PassthroughSubject<Void, Never>()
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
@@ -322,7 +322,7 @@ extension ClimbRecordDetailViewController: PHPickerViewControllerDelegate {
             result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
                 if let error = error {
                     DispatchQueue.main.async {
-                        self?.imageSelectedSubject.send(completion: .failure(error))
+                        self?.imageSelectedSubject.send(.failure(error))
                     }
                     return
                 }
@@ -333,11 +333,11 @@ extension ClimbRecordDetailViewController: PHPickerViewControllerDelegate {
 
                     guard let imageData = converter.process(image, format: .jpeg(quality: 1.0)) else {
                         let conversionError = NSError(domain: "ClimbRecordDetailViewController", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])
-                        self?.imageSelectedSubject.send(completion: .failure(conversionError))
+                        self?.imageSelectedSubject.send(.failure(conversionError))
                         return
                     }
 
-                    self?.imageSelectedSubject.send(imageData)
+                    self?.imageSelectedSubject.send(.success(imageData))
                 }
             }
         }
