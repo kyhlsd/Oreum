@@ -6,9 +6,14 @@
 //
 
 import UIKit
+import Combine
 
 final class RecentSearchCollectionViewCell: BaseCollectionViewCell {
 
+    // 삭제 버튼 누를 때
+    var onDeleteTapped: (() -> Void)?
+    private var cancellables = Set<AnyCancellable>()
+    
     // 전체 컨테이너 뷰
     private let containerView = {
         let view = UIView()
@@ -28,11 +33,16 @@ final class RecentSearchCollectionViewCell: BaseCollectionViewCell {
         return label
     }()
     // 삭제 버튼
-    let deleteButton = {
+    private lazy var deleteButton = {
         let button = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 10, weight: .regular)
         button.setImage(UIImage(systemName: "xmark", withConfiguration: config), for: .normal)
         button.tintColor = AppColor.subText
+        button.tap
+            .sink { [weak self] in
+                self?.onDeleteTapped?()
+            }
+            .store(in: &cancellables)
         return button
     }()
     
@@ -41,6 +51,12 @@ final class RecentSearchCollectionViewCell: BaseCollectionViewCell {
         wordLabel.text = text
         setNeedsLayout()
         layoutIfNeeded()
+    }
+    
+    // 초기화
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        onDeleteTapped = nil
     }
     
     // MARK: - Setups

@@ -114,11 +114,9 @@ extension SearchViewController {
         return UICollectionView.CellRegistration<RecentSearchCollectionViewCell, String> { [weak self] cell, indexPath, item in
             guard let self else { return }
             cell.configure(with: item)
-            cell.deleteButton.tap
-                .sink {
-                    self.deleteRecentSearchSubject.send(item)
-                }
-                .store(in: &cancellables)
+            cell.onDeleteTapped = { [weak self] in
+                self?.deleteRecentSearchSubject.send(item)
+            }
         }
     }
     

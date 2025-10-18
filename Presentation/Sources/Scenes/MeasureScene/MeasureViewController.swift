@@ -180,6 +180,13 @@ final class MeasureViewController: UIViewController, BaseViewController {
                 self?.showMeasureCompleteView(climbRecord: climbRecord)
             }
             .store(in: &cancellables)
+        
+        // 에러 Alert
+        output.errorMessage
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Setups

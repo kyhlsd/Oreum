@@ -57,7 +57,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
         let deleteButtonTapped: AnyPublisher<Void, Never>
         let deleteSelected: AnyPublisher<Void, Never>
         let editPhotoButtonTapped: AnyPublisher<Void, Never>
-        let imageSelected: AnyPublisher<Data, Error>
+        let imageSelected: AnyPublisher<Result<Data, Error>, Never>
         let navBarSaveButtonTapped: AnyPublisher<(Int, String), Never>
         let imageDeleteButtonTapped: AnyPublisher<Void, Never>
         let imageDeleteSelected: AnyPublisher<String, Never>
@@ -143,11 +143,11 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
         
-        // 저장 버튼 TODO: 에러 처리
+        // 저장 버튼
         input.saveButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .flatMap { [weak self, updateUseCase] (rating, comment) in
-                guard let self else { return Just(()).eraseToAnyPublisher() }
+            .flatMap { [weak self, updateUseCase] (rating, comment) -> AnyPublisher<(Result<Void, Error>?, Int, String), Never> in
+                guard let self else { return Just((nil, 0, "")).eraseToAnyPublisher() }
 
                 // placeholder 텍스트면 빈 문자열로 변환
                 let finalComment = comment == placeholderText ? "" : comment
@@ -155,25 +155,31 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                 // 기존 record인 경우에만 로컬 데이터 업데이트
                 if !isFromAddRecord {
                     return updateUseCase.execute(recordID: climbRecord.id, rating: rating, comment: finalComment)
-                        .handleEvents(receiveOutput: { [weak self] _ in
-                            guard let self else { return }
-                            climbRecord.score = rating
-                            climbRecord.comment = finalComment
-                            delegate?.updateReview(id: climbRecord.id, rating: rating, comment: finalComment)
-                        })
-                        .catch { error in
-                            errorMesssageSubject.send(("저장에 실패했습니다", error.localizedDescription))
-                            return Just(())
+                        .map { result -> (Result<Void, Error>?, Int, String) in
+                            (result, rating, finalComment)
                         }
                         .eraseToAnyPublisher()
                 } else {
                     // Add 화면에서는 메모리에만 저장
                     climbRecord.score = rating
                     climbRecord.comment = finalComment
-                    return Just(()).eraseToAnyPublisher()
+                    return Just((nil, rating, finalComment)).eraseToAnyPublisher()
                 }
             }
-            .sink {
+            .sink { [weak self] (result, rating, finalComment) in
+                guard let self else { return }
+
+                if let result = result {
+                    switch result {
+                    case .success:
+                        climbRecord.score = rating
+                        climbRecord.comment = finalComment
+                        delegate?.updateReview(id: climbRecord.id, rating: rating, comment: finalComment)
+                    case .failure(let error):
+                        errorMesssageSubject.send(("저장에 실패했습니다", error.localizedDescription))
+                    }
+                }
+
                 recordEditableSubject.send(false)
             }
             .store(in: &cancellables)
@@ -202,15 +208,20 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                 // 기존 record면 파일에서 가져오기
                 let publishers = climbRecord.images.map { imageID in
                     self.fetchRecordImageUseCase.execute(imageID: imageID)
-                        .catch { _ -> Empty<Data, Never> in
-                            return Empty()
-                        }
-                        .eraseToAnyPublisher()
                 }
 
                 Publishers.MergeMany(publishers)
                     .collect()
-                    .sink { imageDatas in
+                    .sink { results in
+                        let imageDatas = results.compactMap { result -> Data? in
+                            switch result {
+                            case .success(let data):
+                                return data
+                            case .failure(let error):
+                                errorMesssageSubject.send(("이미지 불러오기 실패", error.localizedDescription))
+                                return nil
+                            }
+                        }
                         imagesFetchedSubject.send(imageDatas)
                     }
                     .store(in: &self.cancellables)
@@ -230,9 +241,14 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
 
         // picker에서 사진 선택
         let imageSelectedPublisher = input.imageSelected
-            .catch { error -> Just<Data> in
-                errorMesssageSubject.send(("이미지를 데이터로 변환하는데 실패했습니다", error.localizedDescription))
-                return Just(Data())
+            .compactMap { result -> Data? in
+                switch result {
+                case .success(let data):
+                    return data
+                case .failure(let error):
+                    errorMesssageSubject.send(("이미지 데이터 변환 실패", error.localizedDescription))
+                    return nil
+                }
             }
             .filter { !$0.isEmpty }
             .share()
@@ -256,11 +272,18 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                 guard let self else { return false }
                 return !isFromAddRecord
             }
-            .flatMap { [weak self] imageData -> AnyPublisher<String, Never> in
+            .flatMap { [weak self] imageData -> AnyPublisher<Result<String, Error>, Never> in
                 guard let self else { return Empty().eraseToAnyPublisher() }
                 return self.saveRecordImageUseCase.execute(imageData: imageData)
-                    .catch { _ in Empty<String, Never>() }
-                    .eraseToAnyPublisher()
+            }
+            .compactMap { result -> String? in
+                switch result {
+                case .success(let imageID):
+                    return imageID
+                case .failure(let error):
+                    errorMesssageSubject.send(("이미지 저장 실패", error.localizedDescription))
+                    return nil
+                }
             }
             .share()
 
@@ -276,14 +299,21 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                 // 모든 이미지를 다시 가져오기
                 let publishers = self.climbRecord.images.map { imageID in
                     self.fetchRecordImageUseCase.execute(imageID: imageID)
-                        .catch { _ -> Empty<Data, Never> in
-                            return Empty()
-                        }
-                        .eraseToAnyPublisher()
                 }
 
                 return Publishers.MergeMany(publishers)
                     .collect()
+                    .map { results in
+                        results.compactMap { result -> Data? in
+                            switch result {
+                            case .success(let data):
+                                return data
+                            case .failure(let error):
+                                errorMesssageSubject.send(("이미지 불러오기 실패", error.localizedDescription))
+                                return nil
+                            }
+                        }
+                    }
                     .eraseToAnyPublisher()
             }
             .sink { imageDatas in
@@ -293,13 +323,18 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
 
         // 이미지 저장 후 로컬 데이터에 반영
         savedImageID
-            .flatMap { [weak self] imageID -> AnyPublisher<Void, Never> in
+            .flatMap { [weak self] imageID -> AnyPublisher<Result<Void, Error>, Never> in
                 guard let self else { return Empty().eraseToAnyPublisher() }
                 return self.addImageToRecordUseCase.execute(recordID: self.climbRecord.id, imageID: imageID)
-                    .catch { _ in Empty<Void, Never>() }
-                    .eraseToAnyPublisher()
             }
-            .sink { _ in }
+            .sink { result in
+                switch result {
+                case .success:
+                    break
+                case .failure(let error):
+                    errorMesssageSubject.send(("이미지 추가 실패", error.localizedDescription))
+                }
+            }
             .store(in: &cancellables)
 
         // MARK: - 이미지 제거
@@ -359,14 +394,21 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
 
                 let publishers = self.climbRecord.images.map { imageID in
                     self.fetchRecordImageUseCase.execute(imageID: imageID)
-                        .catch { _ -> Empty<Data, Never> in
-                            return Empty()
-                        }
-                        .eraseToAnyPublisher()
                 }
 
                 return Publishers.MergeMany(publishers)
                     .collect()
+                    .map { results in
+                        results.compactMap { result -> Data? in
+                            switch result {
+                            case .success(let data):
+                                return data
+                            case .failure(let error):
+                                errorMesssageSubject.send(("이미지 불러오기 실패", error.localizedDescription))
+                                return nil
+                            }
+                        }
+                    }
                     .eraseToAnyPublisher()
             }
             .sink { imageDatas in
@@ -376,24 +418,34 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
 
         // 이미지 삭제 DB 기록 반영
         existingImageDelete
-            .flatMap { [weak self] imageID -> AnyPublisher<Void, Never> in
+            .flatMap { [weak self] imageID -> AnyPublisher<Result<Void, Error>, Never> in
                 guard let self else { return Empty().eraseToAnyPublisher() }
                 return self.deleteRecordImageUseCase.execute(imageID: imageID)
-                    .catch { _ in Empty<Void, Never>() }
-                    .eraseToAnyPublisher()
             }
-            .sink { _ in }
+            .sink { result in
+                switch result {
+                case .success:
+                    break
+                case .failure(let error):
+                    errorMesssageSubject.send(("이미지 삭제 실패", error.localizedDescription))
+                }
+            }
             .store(in: &cancellables)
 
-        // 이미짐 삭제 DB 이미지 반영
+        // 이미지 삭제 DB 이미지 반영
         existingImageDelete
-            .flatMap { [weak self] imageID -> AnyPublisher<Void, Never> in
+            .flatMap { [weak self] imageID -> AnyPublisher<Result<Void, Error>, Never> in
                 guard let self else { return Empty().eraseToAnyPublisher() }
                 return self.removeImageFromRecordUseCase.execute(imageID: imageID)
-                    .catch { _ in Empty<Void, Never>() }
-                    .eraseToAnyPublisher()
             }
-            .sink { _ in }
+            .sink { result in
+                switch result {
+                case .success:
+                    break
+                case .failure(let error):
+                    errorMesssageSubject.send(("이미지 제거 실패", error.localizedDescription))
+                }
+            }
             .store(in: &cancellables)
         
         // MARK: - Buttons
@@ -415,10 +467,10 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
         
-        // 삭제 선택 // TODO: 에러 처리
+        // 삭제 선택
         input.deleteSelected
-            .flatMap { [weak self] in
-                guard let self else { return Just(()).eraseToAnyPublisher() }
+            .flatMap { [weak self] _ -> AnyPublisher<Result<Void, Error>, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
 
                 // 이미지 ID 목록 저장
                 let imageIDs = climbRecord.images
@@ -426,9 +478,6 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                 // 먼저 이미지 파일들 삭제
                 let deleteImagePublishers = imageIDs.map { imageID in
                     self.deleteRecordImageUseCase.execute(imageID: imageID)
-                        .catch { error -> Just<Void> in
-                            return Just(())
-                        }
                 }
 
                 return Publishers.MergeMany(deleteImagePublishers)
@@ -436,25 +485,27 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                     .flatMap { _ in
                         // 이미지 파일 삭제 후 기록 삭제
                         self.deleteUseCase.execute(recordID: self.climbRecord.id)
-                            .catch { error in
-                                errorMesssageSubject.send(("이미지 삭제에 실패했습니다", error.localizedDescription))
-                                return Just(())
-                            }
                     }
                     .eraseToAnyPublisher()
             }
-            .sink { [weak self] in
+            .sink { [weak self] result in
                 guard let self else { return }
-                delegate?.deleteRecord(id: climbRecord.id)
-                popVCSubject.send(())
+
+                switch result {
+                case .success:
+                    delegate?.deleteRecord(id: climbRecord.id)
+                    popVCSubject.send(())
+                case .failure(let error):
+                    errorMesssageSubject.send(("기록 삭제에 실패했습니다", error.localizedDescription))
+                }
             }
             .store(in: &cancellables)
 
         // 저장 버튼
         input.navBarSaveButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .flatMap { [weak self] (rating, comment) -> AnyPublisher<Void, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
+            .flatMap { [weak self] (rating, comment) -> AnyPublisher<Result<Void, Error>?, Never> in
+                guard let self else { return Just(nil).eraseToAnyPublisher() }
 
                 // placeholder 텍스트면 빈 문자열로 변환
                 let finalComment = comment == placeholderText ? "" : comment
@@ -470,28 +521,49 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
 
                     return Publishers.MergeMany(imagePublishers)
                         .collect()
-                        .flatMap { [weak self] imageIDs -> AnyPublisher<ClimbRecord, Error> in
-                            guard let self else { return Fail(error: NSError(domain: "ClimbRecordDetailViewModel", code: -1)).eraseToAnyPublisher() }
+                        .flatMap { [weak self] results -> AnyPublisher<Result<Void, Error>?, Never> in
+                            guard let self else { return Just(nil).eraseToAnyPublisher() }
+
+                            // 성공한 이미지 ID만 추출
+                            let imageIDs = results.compactMap { result -> String? in
+                                switch result {
+                                case .success(let imageID):
+                                    return imageID
+                                case .failure(let error):
+                                    errorMesssageSubject.send(("이미지 저장 실패", error.localizedDescription))
+                                    return nil
+                                }
+                            }
 
                             // 저장된 이미지 ID들을 ClimbRecord에 추가
                             self.climbRecord.images = imageIDs
 
                             return self.saveClimbRecordUseCase.execute(record: self.climbRecord)
+                                .map { result -> Result<Void, Error>? in
+                                    result.map { _ in () }
+                                }
+                                .eraseToAnyPublisher()
                         }
-                        .catch { _ in Empty<ClimbRecord, Never>() }
-                        .map { _ in () }
                         .eraseToAnyPublisher()
                 } else {
                     // 이미지가 없거나 기존 record인 경우 바로 저장
                     return saveClimbRecordUseCase.execute(record: climbRecord)
-                        .catch { _ in Empty<ClimbRecord, Never>() }
-                        .map { _ in () }
+                        .map { result -> Result<Void, Error>? in
+                            result.map { _ in () }
+                        }
                         .eraseToAnyPublisher()
                 }
             }
-            .sink { _ in
-                NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
-                saveCompletedSubject.send(())
+            .sink { result in
+                if let result = result {
+                    switch result {
+                    case .success:
+                        NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
+                        saveCompletedSubject.send(())
+                    case .failure(let error):
+                        errorMesssageSubject.send(("저장 실패", error.localizedDescription))
+                    }
+                }
             }
             .store(in: &cancellables)
         

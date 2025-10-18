@@ -18,46 +18,46 @@ public final class DummyRecordImageRepositoryImpl: RecordImageRepository {
 
     private init() {}
 
-    public func saveImage(imageData: Data) -> AnyPublisher<String, Error> {
+    public func saveImage(imageData: Data) -> AnyPublisher<Result<String, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DummyRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
+                promise(.success(.failure(FileManagerError.repositoryDeallocated)))
                 return
             }
 
             let imageID = ObjectId.generate().stringValue
             self.imageStorage[imageID] = imageData
-            promise(.success(imageID))
+            promise(.success(.success(imageID)))
         }
         .delay(for: .seconds(0.1), scheduler: RunLoop.main)
         .eraseToAnyPublisher()
     }
 
-    public func deleteImage(imageID: String) -> AnyPublisher<Void, Error> {
+    public func deleteImage(imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DummyRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
+                promise(.success(.failure(FileManagerError.repositoryDeallocated)))
                 return
             }
 
             self.imageStorage.removeValue(forKey: imageID)
-            promise(.success(()))
+            promise(.success(.success(())))
         }
         .delay(for: .seconds(0.1), scheduler: RunLoop.main)
         .eraseToAnyPublisher()
     }
 
-    public func fetchImage(imageID: String) -> AnyPublisher<Data, Error> {
+    public func fetchImage(imageID: String) -> AnyPublisher<Result<Data, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "DummyRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
+                promise(.success(.failure(FileManagerError.repositoryDeallocated)))
                 return
             }
 
             if let imageData = self.imageStorage[imageID] {
-                promise(.success(imageData))
+                promise(.success(.success(imageData)))
             } else {
-                promise(.failure(NSError(domain: "DummyRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Image not found"])))
+                promise(.success(.failure(FileManagerError.imageFileNotFound)))
             }
         }
         .delay(for: .seconds(0.1), scheduler: RunLoop.main)

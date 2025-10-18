@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 public protocol RemoveImageFromRecordUseCase {
-    func execute(imageID: String) -> AnyPublisher<Void, Error>
+    func execute(imageID: String) -> AnyPublisher<Result<Void, Error>, Never>
 }
 
 public final class RemoveImageFromRecordUseCaseImpl: RemoveImageFromRecordUseCase {
@@ -20,7 +20,7 @@ public final class RemoveImageFromRecordUseCaseImpl: RemoveImageFromRecordUseCas
         self.repository = repository
     }
 
-    public func execute(imageID: String) -> AnyPublisher<Void, Error> {
+    public func execute(imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return repository.removeImage(imageID: imageID)
     }
 }

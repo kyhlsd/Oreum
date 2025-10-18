@@ -135,21 +135,23 @@ final class ActivityLogView: BaseView {
         summaryDistanceView.snp.makeConstraints { make in
             make.verticalEdges.width.equalTo(summaryTimeView)
             make.leading.equalTo(summaryTimeView.snp.trailing).offset(AppSpacing.compact)
+            make.width.equalTo(summaryTimeView)
         }
         
         summaryStepView.snp.makeConstraints { make in
             make.verticalEdges.width.equalTo(summaryTimeView)
             make.leading.equalTo(summaryDistanceView.snp.trailing).offset(AppSpacing.compact)
             make.trailing.equalToSuperview().inset(AppSpacing.compact)
+            make.width.equalTo(summaryTimeView)
         }
         
         summaryLeftLineView.snp.makeConstraints { make in
-            make.centerX.equalTo(summaryTimeView.snp.trailing)
+            make.centerX.equalTo(summaryTimeView.snp.trailing).offset(AppSpacing.compact / 2)
             make.verticalEdges.equalTo(summaryTimeView)
         }
         
         summaryRightLineView.snp.makeConstraints { make in
-            make.centerX.equalTo(summaryDistanceView.snp.trailing)
+            make.centerX.equalTo(summaryDistanceView.snp.trailing).offset(AppSpacing.compact / 2)
             make.verticalEdges.equalTo(summaryDistanceView)
         }
         
@@ -167,12 +169,14 @@ final class ActivityLogView: BaseView {
         endTimeView.snp.makeConstraints { make in
             make.verticalEdges.width.equalTo(startTimeView)
             make.leading.equalTo(startTimeView.snp.trailing)
+            make.width.equalTo(startTimeView)
         }
         
         totalTimeView.snp.makeConstraints { make in
             make.verticalEdges.width.equalTo(startTimeView)
             make.leading.equalTo(endTimeView.snp.trailing)
             make.trailing.equalToSuperview().inset(AppSpacing.compact)
+            make.width.equalTo(startTimeView)
         }
         
         exerciseTimeView.snp.makeConstraints { make in

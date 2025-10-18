@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 public protocol SaveRecordImageUseCase {
-    func execute(imageData: Data) -> AnyPublisher<String, Error>
+    func execute(imageData: Data) -> AnyPublisher<Result<String, Error>, Never>
 }
 
 public final class SaveRecordImageUseCaseImpl: SaveRecordImageUseCase {
@@ -20,7 +20,7 @@ public final class SaveRecordImageUseCaseImpl: SaveRecordImageUseCase {
         self.repository = repository
     }
 
-    public func execute(imageData: Data) -> AnyPublisher<String, Error> {
+    public func execute(imageData: Data) -> AnyPublisher<Result<String, Error>, Never> {
         return repository.saveImage(imageData: imageData)
     }
 }

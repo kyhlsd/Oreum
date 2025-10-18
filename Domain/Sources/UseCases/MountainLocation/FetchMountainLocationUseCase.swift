@@ -8,17 +8,17 @@
 import Combine
 
 public protocol FetchMountainLocationUseCase {
-    func execute() -> AnyPublisher<[MountainLocation], Error>
+    func execute() -> AnyPublisher<Result<[MountainLocation], Error>, Never>
 }
 
 public final class FetchMountainLocationUseCaseImpl: FetchMountainLocationUseCase {
     private let repository: MountainLocationRepository
-    
+
     public init(repository: MountainLocationRepository) {
         self.repository = repository
     }
-    
-    public func execute() -> AnyPublisher<[MountainLocation], any Error> {
+
+    public func execute() -> AnyPublisher<Result<[MountainLocation], Error>, Never> {
         return repository.fetchMountainLocations()
     }
 }

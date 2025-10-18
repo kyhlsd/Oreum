@@ -14,51 +14,61 @@ public final class JSONMountainInfoRepositoryImpl: MountainInfoRepository {
    
     private let jsonFileName = "MountainInfos"
     private var mountainInfos = [MountainInfo]()
+    private var loadError: JSONError?
     
     public init() {
         loadJSON()
     }
     
     // 추후 API 연결 시 ID로 검색으로 수정
-    public func fetchMountainInfo(name: String, height: Int) -> AnyPublisher<MountainInfo, Error> {
+    // 산 상세 정보 불러오기
+    public func fetchMountainInfo(name: String, height: Int) -> AnyPublisher<Result<MountainInfo, Error>, Never> {
+        if let loadError {
+            return Just(.failure(loadError))
+                .eraseToAnyPublisher()
+        }
+        
         let mountains = mountainInfos
             .filter { $0.name.first == name.first }
             .sorted {
                 abs($0.height - height) < abs($1.height - height)
             }
-        
+
         if let mountainInfo = mountains.first {
-            return Just(mountainInfo)
-                .setFailureType(to: Error.self)
+            return Just(.success(mountainInfo))
                 .eraseToAnyPublisher()
         } else {
-            return Fail(error: NSError(domain: "JSONMountainInfoRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Mountain information not found"]))
+            return Just(.failure(JSONError.mountainNotFound))
                 .eraseToAnyPublisher()
         }
     }
     
-    public func fetchMountains(keyword: String) -> AnyPublisher<[MountainInfo], Error> {
-        guard !keyword.isEmpty else {
-            return Just([])
-                .setFailureType(to: Error.self)
+    // 산 검색
+    public func fetchMountains(keyword: String) -> AnyPublisher<Result<[MountainInfo], Error>, Never> {
+        if let loadError {
+            return Just(.failure(loadError))
                 .eraseToAnyPublisher()
         }
         
+        guard !keyword.isEmpty else {
+            return Just(.success([]))
+                .eraseToAnyPublisher()
+        }
+
         let filtered = mountainInfos.filter { mountain in
             mountain.name.localizedCaseInsensitiveContains(keyword)
         }
-        
-        return Just(filtered)
-            .setFailureType(to: Error.self)
+
+        return Just(.success(filtered))
             .eraseToAnyPublisher()
     }
     
     private func loadJSON() {
         guard let url = Bundle.module.url(forResource: jsonFileName, withExtension: "json") else {
-            print("JSON File Not Found")
+            loadError = JSONError.fileNotFound
             return
         }
-        
+
         do {
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
@@ -66,7 +76,7 @@ public final class JSONMountainInfoRepositoryImpl: MountainInfoRepository {
             mountainInfos = try decoder.decode([MountainInfoDTO].self, from: data)
                 .map { $0.toDomain() }
         } catch {
-            print("Failed to load JSON: \(error)")
+            loadError = JSONError.decodingFailed
         }
     }
     

@@ -85,14 +85,21 @@ final class ClimbRecordListViewModel: BaseViewModel {
         )
             .flatMap { [fetchUseCase] keyword, isOnlyBookmarked in
                 fetchUseCase.execute(keyword: keyword, isOnlyBookmarked: isOnlyBookmarked)
-                    .catch { error -> Just<[ClimbRecord]> in
-                        errorMessageSubject.send(("기록 불러오기 실패",  error.localizedDescription))
-                        return Just([])
+                    .map { result -> (Result<[ClimbRecord], Error>, String, Bool) in
+                        (result, keyword, isOnlyBookmarked)
                     }
-                    .map { ($0, keyword, isOnlyBookmarked)}
             }
-            .sink { [weak self] (list, keyword, isOnlyBookmarked) in
+            .sink { [weak self] (result, keyword, isOnlyBookmarked) in
                 guard let self else { return }
+
+                let list: [ClimbRecord]
+                switch result {
+                case .success(let records):
+                    list = records
+                case .failure(let error):
+                    errorMessageSubject.send(("기록 불러오기 실패", error.localizedDescription))
+                    list = []
+                }
 
                 climbRecordList = list
 
@@ -118,23 +125,33 @@ final class ClimbRecordListViewModel: BaseViewModel {
             .store(in: &cancellables)
         
         // 셀 북마크 토글
-        let bookmarkToggled = input.cellBookmarkButtonTapped
+        let bookmarkToggledSubject = PassthroughSubject<Int, Never>()
+
+        input.cellBookmarkButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .flatMap { [toggleBookmarkUseCase] id in
                 toggleBookmarkUseCase.execute(recordID: id)
-                    .compactMap { [weak self] in
-                        if let index = self?.climbRecordList.firstIndex(where: { $0.id == id }) {
-                            self?.climbRecordList[index].isBookmarked.toggle()
-                            return index
-                        }
-                        return nil
-                    }
-                    .catch { error -> Just<Int> in
-                        errorMessageSubject.send(("북마크 변경",  error.localizedDescription))
-                        return Just(-1)
+                    .map { result -> (Result<Void, Error>, String) in
+                        (result, id)
                     }
             }
-            .eraseToAnyPublisher()
+            .sink { [weak self] (result, id) in
+                guard let self else { return }
+
+                switch result {
+                case .success:
+                    if let index = climbRecordList.firstIndex(where: { $0.id == id }) {
+                        climbRecordList[index].isBookmarked.toggle()
+                        bookmarkToggledSubject.send(index)
+                    }
+                case .failure(let error):
+                    errorMessageSubject.send(("북마크 변경 실패", error.localizedDescription))
+                    bookmarkToggledSubject.send(-1)
+                }
+            }
+            .store(in: &cancellables)
+
+        let bookmarkToggled = bookmarkToggledSubject.eraseToAnyPublisher()
         
         return Output(
             reloadData: reloadDataSubject.eraseToAnyPublisher(),

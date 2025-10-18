@@ -17,33 +17,29 @@ public final class DummyRecentSearchRepositoryImpl: RecentSearchRepository {
 
     private init() {}
 
-    public func fetchAll() -> AnyPublisher<[RecentSearch], Error> {
+    public func fetch() -> AnyPublisher<Result<[RecentSearch], Error>, Never> {
         let sorted = recentSearches.sorted { $0.searchedAt > $1.searchedAt }
-        return Just(sorted)
-            .setFailureType(to: Error.self)
+        return Just(.success(sorted))
             .eraseToAnyPublisher()
     }
 
-    public func save(keyword: String) -> AnyPublisher<Void, Error> {
+    public func save(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         recentSearches.removeAll { $0.keyword == keyword }
         let newSearch = RecentSearch(id: UUID().uuidString, keyword: keyword, searchedAt: Date())
         recentSearches.append(newSearch)
-        return Just(())
-            .setFailureType(to: Error.self)
+        return Just(.success(()))
             .eraseToAnyPublisher()
     }
 
-    public func delete(keyword: String) -> AnyPublisher<Void, Error> {
+    public func delete(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         recentSearches.removeAll { $0.keyword == keyword }
-        return Just(())
-            .setFailureType(to: Error.self)
+        return Just(.success(()))
             .eraseToAnyPublisher()
     }
 
-    public func deleteAll() -> AnyPublisher<Void, Error> {
+    public func deleteAll() -> AnyPublisher<Result<Void, Error>, Never> {
         recentSearches.removeAll()
-        return Just(())
-            .setFailureType(to: Error.self)
+        return Just(.success(()))
             .eraseToAnyPublisher()
     }
 }

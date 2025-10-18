@@ -8,11 +8,11 @@
 import Combine
 
 public protocol ClimbRecordRepository {
-    func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], Error>
-    func save(record: ClimbRecord) -> AnyPublisher<ClimbRecord, Error>
-    func toggleBookmark(recordID: String) -> AnyPublisher<Void, Error>
-    func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Void, any Error>
-    func delete(recordID: String) -> AnyPublisher<Void, any Error>
-    func addImage(recordID: String, imageID: String) -> AnyPublisher<Void, Error>
-    func removeImage(imageID: String) -> AnyPublisher<Void, Error>
+    func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<Result<[ClimbRecord], Error>, Never>
+    func save(record: ClimbRecord) -> AnyPublisher<Result<ClimbRecord, Error>, Never>
+    func toggleBookmark(recordID: String) -> AnyPublisher<Result<Void, Error>, Never>
+    func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Result<Void, Error>, Never>
+    func delete(recordID: String) -> AnyPublisher<Result<Void, Error>, Never>
+    func addImage(recordID: String, imageID: String) -> AnyPublisher<Result<Void, Error>, Never>
+    func removeImage(imageID: String) -> AnyPublisher<Result<Void, Error>, Never>
 }

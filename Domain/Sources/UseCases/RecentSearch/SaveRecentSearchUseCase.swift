@@ -8,7 +8,7 @@
 import Combine
 
 public protocol SaveRecentSearchUseCase {
-    func execute(keyword: String) -> AnyPublisher<Void, Error>
+    func execute(keyword: String) -> AnyPublisher<Result<Void, Error>, Never>
 }
 
 public final class SaveRecentSearchUseCaseImpl: SaveRecentSearchUseCase {
@@ -18,7 +18,7 @@ public final class SaveRecentSearchUseCaseImpl: SaveRecentSearchUseCase {
         self.repository = repository
     }
 
-    public func execute(keyword: String) -> AnyPublisher<Void, Error> {
+    public func execute(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         repository.save(keyword: keyword)
     }
 }

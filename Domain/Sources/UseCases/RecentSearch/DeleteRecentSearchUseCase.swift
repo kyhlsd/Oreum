@@ -8,7 +8,7 @@
 import Combine
 
 public protocol DeleteRecentSearchUseCase {
-    func execute(keyword: String) -> AnyPublisher<Void, Error>
+    func execute(keyword: String) -> AnyPublisher<Result<Void, Error>, Never>
 }
 
 public final class DeleteRecentSearchUseCaseImpl: DeleteRecentSearchUseCase {
@@ -18,7 +18,7 @@ public final class DeleteRecentSearchUseCaseImpl: DeleteRecentSearchUseCase {
         self.repository = repository
     }
 
-    public func execute(keyword: String) -> AnyPublisher<Void, Error> {
+    public func execute(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         repository.delete(keyword: keyword)
     }
 }
