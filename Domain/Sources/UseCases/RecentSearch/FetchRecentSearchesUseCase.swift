@@ -8,7 +8,7 @@
 import Combine
 
 public protocol FetchRecentSearchesUseCase {
-    func execute() -> AnyPublisher<[RecentSearch], Error>
+    func execute() -> AnyPublisher<Result<[RecentSearch], Error>, Never>
 }
 
 public final class FetchRecentSearchesUseCaseImpl: FetchRecentSearchesUseCase {
@@ -18,7 +18,7 @@ public final class FetchRecentSearchesUseCaseImpl: FetchRecentSearchesUseCase {
         self.repository = repository
     }
 
-    public func execute() -> AnyPublisher<[RecentSearch], Error> {
-        repository.fetchAll()
+    public func execute() -> AnyPublisher<Result<[RecentSearch], Error>, Never> {
+        repository.fetch()
     }
 }

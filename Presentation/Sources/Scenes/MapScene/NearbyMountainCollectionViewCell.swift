@@ -11,6 +11,7 @@ import SnapKit
 
 final class NearbyMountainCollectionViewCell: BaseCollectionViewCell {
 
+    // 전체 컨테이너
     private let containerView = {
         let view = UIView()
         view.backgroundColor = AppColor.boxBackground
@@ -21,10 +22,12 @@ final class NearbyMountainCollectionViewCell: BaseCollectionViewCell {
         return view
     }()
 
+    // 산 정보
     private let imageItemView = ImageItemView(icon: AppIcon.mountain)
-
+    // 거리
     private let distanceLabel = TagLabel(text: "", textColor: AppColor.distanceForground, backgroundColor: AppColor.distanceBackground)
     
+    // 데이터 표기
     func configure(mountainLocation: MountainLocation, distance: Double) {
         imageItemView.setTitle(title: mountainLocation.name)
         imageItemView.setSubtitle(subtitle: mountainLocation.address)
@@ -36,6 +39,7 @@ final class NearbyMountainCollectionViewCell: BaseCollectionViewCell {
         }
     }
 
+    // MARK: - Setups
     override func setupHierarchy() {
         contentView.addSubview(containerView)
 

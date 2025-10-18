@@ -12,70 +12,92 @@ import Domain
 
 public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
 
-    private let realm: Realm
+    private let realm: Realm?
 
-    public init() throws {
-        self.realm = try Realm()
-        print(realm.configuration.fileURL ?? "realm error")
+    public init() {
+        self.realm = try? Realm()
+        print(realm?.configuration.fileURL ?? "realm initialization failed")
     }
 
-    public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], any Error> {
+    // 기록 가져오기
+    public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<Result<[ClimbRecord], Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
+                return
+            }
+
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
             var query = realm.objects(ClimbRecordRealm.self)
-            
+
             if !keyword.isEmpty {
                 query = query.where { $0.mountain.name.contains(keyword, options: .caseInsensitive)}
             }
-            
+
             if isOnlyBookmarked {
                 query = query.where { $0.isBookmarked }
             }
 
             query = query.sorted(byKeyPath: "climbDate", ascending: false)
-            
+
             let records = query.map { $0.toDomain() }
 
-            promise(.success(Array(records)))
+            promise(.success(.success(Array(records))))
         }
         .eraseToAnyPublisher()
     }
 
-    public func save(record: ClimbRecord) -> AnyPublisher<ClimbRecord, Error> {
+    // 저장
+    public func save(record: ClimbRecord) -> AnyPublisher<Result<ClimbRecord, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
+                return
+            }
+
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
             do {
                 let realmRecord = ClimbRecordRealm(from: record)
                 try realm.write {
-                    self.realm.add(realmRecord)
+                    realm.add(realmRecord)
                 }
                 let savedRecord = realmRecord.toDomain()
-                promise(.success(savedRecord))
+                promise(.success(.success(savedRecord)))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func toggleBookmark(recordID: String) -> AnyPublisher<Void, any Error> {
+    // 북마크 토글
+    public func toggleBookmark(recordID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
                 return
             }
 
-            guard let objectId = try? ObjectId(string: recordID),
-                  let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
+                return
+            }
+
+            guard let objectId = try? ObjectId(string: recordID) else {
+                promise(.success(.failure(RealmError.invalidObjectID)))
+                return
+            }
+
+            guard let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
+                promise(.success(.failure(RealmError.recordNotFound)))
                 return
             }
 
@@ -84,24 +106,34 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
                     let currentValue = record.value(forKey: "isBookmarked") as! Bool
                     record.setValue(!currentValue, forKey: "isBookmarked")
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Void, any Error> {
+    // 기록 수정
+    public func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
                 return
             }
 
-            guard let objectId = try? ObjectId(string: recordID),
-                  let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
+                return
+            }
+
+            guard let objectId = try? ObjectId(string: recordID) else {
+                promise(.success(.failure(RealmError.invalidObjectID)))
+                return
+            }
+
+            guard let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
+                promise(.success(.failure(RealmError.recordNotFound)))
                 return
             }
 
@@ -110,54 +142,74 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
                     record.setValue(rating, forKey: "score")
                     record.setValue(comment, forKey: "comment")
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func delete(recordID: String) -> AnyPublisher<Void, any Error> {
+    // 삭제
+    public func delete(recordID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
                 return
             }
 
-            guard let objectId = try? ObjectId(string: recordID),
-                  let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
+                return
+            }
+
+            guard let objectId = try? ObjectId(string: recordID) else {
+                promise(.success(.failure(RealmError.invalidObjectID)))
+                return
+            }
+
+            guard let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
+                promise(.success(.failure(RealmError.recordNotFound)))
                 return
             }
 
             do {
                 try realm.write {
-                    self.realm.delete(record.images)
+                    realm.delete(record.images)
                     if let mountain = record.mountain {
-                        self.realm.delete(mountain)
+                        realm.delete(mountain)
                     }
-                    self.realm.delete(record.timeLog)
-                    self.realm.delete(record)
+                    realm.delete(record.timeLog)
+                    realm.delete(record)
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func addImage(recordID: String, imageID: String) -> AnyPublisher<Void, Error> {
+    // 이미지 추가
+    public func addImage(recordID: String, imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
                 return
             }
 
-            guard let objectId = try? ObjectId(string: recordID),
-                  let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Record not found"])))
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
+                return
+            }
+
+            guard let objectId = try? ObjectId(string: recordID) else {
+                promise(.success(.failure(RealmError.invalidObjectID)))
+                return
+            }
+
+            guard let record = realm.object(ofType: ClimbRecordRealm.self, forPrimaryKey: objectId) else {
+                promise(.success(.failure(RealmError.recordNotFound)))
                 return
             }
 
@@ -166,34 +218,44 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
                     let imageRealm = RecordImageRealm(from: imageID)
                     record.images.append(imageRealm)
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func removeImage(imageID: String) -> AnyPublisher<Void, Error> {
+    // 이미지 제거
+    public func removeImage(imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
                 return
             }
 
-            guard let imageObjectId = try? ObjectId(string: imageID),
-                  let imageRealm = realm.object(ofType: RecordImageRealm.self, forPrimaryKey: imageObjectId) else {
-                promise(.failure(NSError(domain: "RealmClimbRecordRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Image not found"])))
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
+                return
+            }
+
+            guard let imageObjectId = try? ObjectId(string: imageID) else {
+                promise(.success(.failure(RealmError.invalidObjectID)))
+                return
+            }
+
+            guard let imageRealm = realm.object(ofType: RecordImageRealm.self, forPrimaryKey: imageObjectId) else {
+                promise(.success(.failure(RealmError.imageNotFound)))
                 return
             }
 
             do {
                 try realm.write {
-                    self.realm.delete(imageRealm)
+                    realm.delete(imageRealm)
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()

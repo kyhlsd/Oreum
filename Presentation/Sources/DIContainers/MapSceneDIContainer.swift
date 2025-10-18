@@ -14,6 +14,11 @@ public final class MapSceneDIContainer {
 
     private let configuration: EnvironmentConfigurable
 
+    private lazy var mountainLocationRepository = makeMountainLocationRepository()
+    private lazy var mountainInfoRepository = makeMountainInfoRepository()
+    private lazy var forecastRepository = makeForecastRepository()
+    private lazy var geocodeRepository = makeGeocodeRepository()
+    
     public init(configuration: EnvironmentConfigurable) {
         self.configuration = configuration
     }
@@ -45,19 +50,19 @@ extension MapSceneDIContainer: MapSceneFlowCoordinatorDependencies {
 
     // MARK: - UseCases
     private func makeFetchMountainLocationUseCase() -> FetchMountainLocationUseCase {
-        return FetchMountainLocationUseCaseImpl(repository: makeMountainLocationRepository())
+        return FetchMountainLocationUseCaseImpl(repository: mountainLocationRepository)
     }
     
     private func makeFetchMountainInfoUseCase() -> FetchMountainInfoUseCase {
-        return FetchMountainInfoUseCaseImpl(repository: makeMountainInfoRepository())
+        return FetchMountainInfoUseCaseImpl(repository: mountainInfoRepository)
     }
     
     private func makeFetchCoordinateUseCase() -> FetchCoordinateUseCase {
-        return FetchCoordinateUseCaseImpl(repository: makeGeocodeRepository())
+        return FetchCoordinateUseCaseImpl(repository: geocodeRepository)
     }
     
     private func makeFetchWeeklyForecastUseCase() -> FetchWeeklyForecastUseCase {
-        return FetchWeeklyForecastUseCaseImpl(repository: makeForecastRepository())
+        return FetchWeeklyForecastUseCaseImpl(repository: forecastRepository)
     }
 
     // MARK: - Repositories

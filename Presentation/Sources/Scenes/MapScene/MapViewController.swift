@@ -56,33 +56,6 @@ final class MapViewController: UIViewController, BaseViewController {
         viewDidLoadSubject.send(())
     }
 
-    private func setupAnnotationViewBuilder() {
-        annotationViewBuilder.mountainInfoButtonTapped
-            .sink { [weak self] name, height in
-                self?.mountainInfoButtonTappedSubject.send((name, height))
-            }
-            .store(in: &cancellables)
-
-        annotationViewBuilder.clusterMountainSelected
-            .sink { [weak self] mountain in
-                self?.zoomToMountain(mountain)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func zoomToMountain(_ mountain: MountainDistance) {
-        let coordinate = CLLocationCoordinate2D(
-            latitude: mountain.mountainLocation.latitude,
-            longitude: mountain.mountainLocation.longitude
-        )
-
-        // 선택된 callout 닫기
-        mainView.mapView.deselectAnnotation(mainView.mapView.selectedAnnotations.first, animated: false)
-
-        // 해당 산으로 줌
-        mainView.updateMapRegion(coordinate: coordinate)
-    }
-
     func bind() {
         let input = MapViewModel.Input(
             viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
@@ -94,12 +67,14 @@ final class MapViewController: UIViewController, BaseViewController {
 
         let output = viewModel.transform(input: input)
 
+        // 사용자 위치
         output.userLocation
             .sink { [weak self] coordinate in
                 self?.mainView.updateMapRegion(coordinate: coordinate)
             }
             .store(in: &cancellables)
 
+        // 명산 리스트
         output.displayMountains
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
@@ -108,6 +83,7 @@ final class MapViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        // 지도에 표기할 명산
         output.allMountains
             .sink { [weak self] mountains in
                 self?.annotationManager.updateMountains(mountains)
@@ -115,12 +91,7 @@ final class MapViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
-        output.errorMessage
-            .sink { errorMessage in
-                print(errorMessage)
-            }
-            .store(in: &cancellables)
-
+        // 위치 권한 Alert
         output.showLocationPermissionAlert
             .sink { [weak self] in
                 self?.presentCancellableAlert(title: "위치 권한 필요", message: "위치 권한이 거부되어 있습니다.\n설정으로 이동하시겠습니까?") {
@@ -131,23 +102,60 @@ final class MapViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        // 산 선택 시
         output.moveToMountainLocation
             .sink { [weak self] coordinate in
                 self?.mainView.updateMapRegion(coordinate: coordinate)
             }
             .store(in: &cancellables)
         
+        // 상세 정보 보기
         output.pushMountainInfo
             .sink { [weak self] mountainInfo in
                 self?.pushInfoVC?(mountainInfo)
             }
             .store(in: &cancellables)
+        
+        // 에러 Alert
+        output.errorMessage
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
+            }
+            .store(in: &cancellables)
 
-        // 지도 영역 변경 debounce
+        // 지도 영역 변경
         regionDidChangeSubject
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .sink { [weak self] in
                 self?.updateClusteredAnnotations()
+            }
+            .store(in: &cancellables)
+    }
+    
+    // MARK: - Setups
+    private func setupAnnotationViewBuilder() {
+        // 상세 정보 보기 선택 시
+        annotationViewBuilder.mountainInfoButtonTapped
+            .sink { [weak self] name, height in
+                self?.mountainInfoButtonTappedSubject.send((name, height))
+            }
+            .store(in: &cancellables)
+
+        // 클러스터링 테이블 뷰에서 산 선택 시
+        annotationViewBuilder.clusterMountainSelected
+            .sink { [weak self] mountain in
+                guard let self else { return }
+                
+                let coordinate = CLLocationCoordinate2D(
+                    latitude: mountain.mountainLocation.latitude,
+                    longitude: mountain.mountainLocation.longitude
+                )
+
+                // 클러스터 callout 닫기
+                mainView.mapView.deselectAnnotation(mainView.mapView.selectedAnnotations.first, animated: false)
+
+                // 선택된 산으로 줌
+                mainView.updateMapRegion(coordinate: coordinate)
             }
             .store(in: &cancellables)
     }
@@ -163,10 +171,19 @@ final class MapViewController: UIViewController, BaseViewController {
         mainView.searchBar.delegate = self
     }
     
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        view.endEditing(true)
+    }
+
 }
 
-// MARK: - CollectionView SubMethods
-extension MapViewController {
+// MARK: - UICollectionViewDelegate + SubMethods
+extension MapViewController: UICollectionViewDelegate {
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let mountain = dataSource.itemIdentifier(for: indexPath) else { return }
+        mountainCellTappedSubject.send(mountain)
+    }
     
     private enum Section: CaseIterable {
         case main
@@ -192,40 +209,10 @@ extension MapViewController {
         dataSource.apply(snapshot, animatingDifferences: true)
     }
 
-    private func updateClusteredAnnotations() {
-        let (toAdd, toRemove) = annotationManager.updateAnnotations(on: mainView.mapView)
-
-        // 변경사항이 있을 때만 업데이트
-        if !toRemove.isEmpty || !toAdd.isEmpty {
-            mainView.mapView.removeAnnotations(toRemove)
-            mainView.mapView.addAnnotations(toAdd)
-        }
-    }
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        view.endEditing(true)
-    }
-
-}
-
-// MARK: - UICollectionViewDelegate
-extension MapViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let mountain = dataSource.itemIdentifier(for: indexPath) else { return }
-        mountainCellTappedSubject.send(mountain)
-    }
 }
 
 // MARK: - MKMapViewDelegate + SubMethods
 extension MapViewController: MKMapViewDelegate {
-
-    private enum MapConfig {
-        static let southKoreaCenter = CLLocationCoordinate2D(latitude: 36.5, longitude: 127.5)
-        static let regionLatitudinalMeters: CLLocationDistance = 800000
-        static let regionLongitudinalMeters: CLLocationDistance = 500000
-        static let minZoomDistance: CLLocationDistance = 5000
-        static let maxZoomDistance: CLLocationDistance = 1000000
-    }
 
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         let currentAltitude = mapView.camera.altitude
@@ -244,7 +231,7 @@ extension MapViewController: MKMapViewDelegate {
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         guard !(annotation is MKUserLocation) else { return nil }
 
-        // Handle custom cluster annotation
+        // 클러스터 어노테이션일 때
         if let cluster = annotation as? CustomClusterAnnotation {
             let identifier = "CustomClusterAnnotation"
             var clusterView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
@@ -260,7 +247,7 @@ extension MapViewController: MKMapViewDelegate {
             return clusterView
         }
 
-        // Handle individual mountain annotation
+        // 개별 산 어노테이션일 때
         let identifier = "MountainAnnotation"
         var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
 
@@ -279,18 +266,36 @@ extension MapViewController: MKMapViewDelegate {
         return annotationView
     }
 
+    // 클러스터 어노테이션 업데이트
+    private func updateClusteredAnnotations() {
+        let (toAdd, toRemove) = annotationManager.updateAnnotations(on: mainView.mapView)
+
+        // 변경사항이 있을 때만 업데이트
+        if !toRemove.isEmpty || !toAdd.isEmpty {
+            mainView.mapView.removeAnnotations(toRemove)
+            mainView.mapView.addAnnotations(toAdd)
+        }
+    }
+    
+    // 지도 범위 한국 한정
     private func setupMapBoundary() {
+        let southKoreaCenter = CLLocationCoordinate2D(latitude: 36.5, longitude: 127.5)
+        let regionLatitudinalMeters: CLLocationDistance = 800000
+        let regionLongitudinalMeters: CLLocationDistance = 500000
+        let minZoomDistance: CLLocationDistance = 5000
+        let maxZoomDistance: CLLocationDistance = 1000000
+        
         let southKoreaRegion = MKCoordinateRegion(
-            center: MapConfig.southKoreaCenter,
-            latitudinalMeters: MapConfig.regionLatitudinalMeters,
-            longitudinalMeters: MapConfig.regionLongitudinalMeters
+            center: southKoreaCenter,
+            latitudinalMeters: regionLatitudinalMeters,
+            longitudinalMeters: regionLongitudinalMeters
         )
-
+        
         let zoomRange = MKMapView.CameraZoomRange(
-            minCenterCoordinateDistance: MapConfig.minZoomDistance,
-            maxCenterCoordinateDistance: MapConfig.maxZoomDistance
+            minCenterCoordinateDistance: minZoomDistance,
+            maxCenterCoordinateDistance: maxZoomDistance
         )
-
+        
         if let zoomRange {
             mainView.setupMapBoundary(region: southKoreaRegion, zoomRange: zoomRange)
         }

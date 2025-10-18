@@ -8,6 +8,7 @@
 import UIKit
 import Data
 import FirebaseCore
+import Core
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -15,7 +16,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        FirebaseApp.configure()
+        // release 환경에서만 Firebase 설정
+        if AppConfiguration.current.environment == .release {
+            FirebaseApp.configure()
+        }
         NetworkManager.shared.startMonitoring()
         return true
     }

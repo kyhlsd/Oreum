@@ -8,7 +8,7 @@
 import Combine
 
 public protocol ClearRecentSearchesUseCase {
-    func execute() -> AnyPublisher<Void, Error>
+    func execute() -> AnyPublisher<Result<Void, Error>, Never>
 }
 
 public final class ClearRecentSearchesUseCaseImpl: ClearRecentSearchesUseCase {
@@ -18,7 +18,7 @@ public final class ClearRecentSearchesUseCaseImpl: ClearRecentSearchesUseCase {
         self.repository = repository
     }
 
-    public func execute() -> AnyPublisher<Void, Error> {
+    public func execute() -> AnyPublisher<Result<Void, Error>, Never> {
         repository.deleteAll()
     }
 }

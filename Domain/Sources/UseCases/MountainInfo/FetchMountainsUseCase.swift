@@ -8,7 +8,7 @@
 import Combine
 
 public protocol FetchMountainsUseCase {
-    func execute(keyword: String) -> AnyPublisher<[MountainInfo], Error>
+    func execute(keyword: String) -> AnyPublisher<Result<[MountainInfo], Error>, Never>
 }
 
 public final class FetchMountainsUseCaseImpl: FetchMountainsUseCase {
@@ -18,7 +18,7 @@ public final class FetchMountainsUseCaseImpl: FetchMountainsUseCase {
         self.repository = repository
     }
 
-    public func execute(keyword: String) -> AnyPublisher<[MountainInfo], Error> {
+    public func execute(keyword: String) -> AnyPublisher<Result<[MountainInfo], Error>, Never> {
         return repository.fetchMountains(keyword: keyword)
     }
 }

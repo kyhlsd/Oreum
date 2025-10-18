@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 public protocol RequestTrackActivityAuthorizationUseCase {
-    func execute() -> AnyPublisher<Bool, Error>
+    func execute() -> AnyPublisher<Result<Bool, Error>, Never>
 }
 
 public final class RequestTrackActivityAuthorizationUseCaseImpl: RequestTrackActivityAuthorizationUseCase {
@@ -19,7 +19,7 @@ public final class RequestTrackActivityAuthorizationUseCaseImpl: RequestTrackAct
         self.repository = repository
     }
 
-    public func execute() -> AnyPublisher<Bool, Error> {
+    public func execute() -> AnyPublisher<Result<Bool, Error>, Never> {
         return repository.requestAuthorization()
     }
 }

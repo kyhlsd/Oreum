@@ -9,12 +9,12 @@ import UIKit
 import Combine
 import Domain
 
-final class AddClimbRecordViewController: UIViewController {
+final class AddClimbRecordViewController: UIViewController, BaseViewController {
 
     var dismissVC: (() -> Void)?
     var pushVC: ((ClimbRecord) -> Void)?
 
-    private let mainView = AddClimbRecordView()
+    let mainView = AddClimbRecordView()
     let viewModel: AddClimbRecordViewModel
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
@@ -45,7 +45,7 @@ final class AddClimbRecordViewController: UIViewController {
         setupDelegates()
     }
 
-    private func bind() {
+    func bind() {
         let input = AddClimbRecordViewModel.Input(
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             mountainSelected: mountainSelectedSubject.eraseToAnyPublisher(),
@@ -56,66 +56,67 @@ final class AddClimbRecordViewController: UIViewController {
 
         let output = viewModel.transform(input: input)
 
+        // 검색 결과 반영, 스크롤 위로 올리기
         output.searchResults
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
-                if !mountains.isEmpty {
-                    self?.mainView.searchResultsTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: false)
-                }
+                self?.mainView.searchResultsTableView.setContentOffset(.zero, animated: false)
             }
             .store(in: &cancellables)
 
+        // 산 정보 반영
         output.updateMountainLabelsTrigger
             .sink { [weak self] (name, address) in
                 self?.mainView.updateMountainLabelTexts(name: name, address: address)
             }
             .store(in: &cancellables)
 
+        // 산 선택 취소 반영
         output.clearMountainSelectionTrigger
             .sink { [weak self] in
                 self?.mainView.clearMountainSelection()
             }
             .store(in: &cancellables)
 
+        // 검색 뷰 오버레이 Visibility
         output.updateSearchResultsOverlayIsHiddenTrigger
             .sink { [weak self] isHidden in
                 self?.mainView.updateSearchResultsOverlayIsHidden(isHidden)
             }
             .store(in: &cancellables)
 
+        // 검색 결과 업데이트
         output.updateSearchResultsTrigger
             .sink { [weak self] count in
                 self?.mainView.updateSearchResults(count: count)
             }
             .store(in: &cancellables)
 
+        // 검색 바 초기화
         output.clearSearchBarTrigger
             .sink { [weak self] in
                 self?.mainView.clearSearchBar()
             }
             .store(in: &cancellables)
 
-        output.updateStartButtonIsEnabledTrigger
+        // 다음 버튼 활성화
+        output.updateNextButtonIsEnabledTrigger
             .sink { [weak self] isEnabled in
                 self?.mainView.setNextButtonEnabled(isEnabled)
             }
             .store(in: &cancellables)
 
-        output.nextEnabled
-            .sink { [weak self] isEnabled in
-                self?.mainView.setNextButtonEnabled(isEnabled)
-            }
-            .store(in: &cancellables)
-
+        // DetailVC push
         output.pushDetailVC
             .sink { [weak self] climbRecord in
                 self?.pushVC?(climbRecord)
             }
             .store(in: &cancellables)
 
+        // ErrorAlert
         output.errorMessage
-            .sink { errorMessage in
-                print(errorMessage)
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
             }
             .store(in: &cancellables)
         

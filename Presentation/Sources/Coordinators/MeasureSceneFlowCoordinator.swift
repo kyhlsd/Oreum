@@ -26,6 +26,7 @@ public final class MeasureSceneFlowCoordinator: Coordinator {
         self.dependencies = dependencies
     }
 
+    // 첫 화면 측정 화면
     public func start() {
         navigationController.tabBarItem = UITabBarItem(title: "측정", image: AppIcon.activity, tag: 1)
         navigationController.navigationBar.tintColor = AppColor.primary

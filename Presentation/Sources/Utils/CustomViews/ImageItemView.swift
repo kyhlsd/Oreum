@@ -48,6 +48,8 @@ final class ImageItemView: BaseView {
         subtitleLabel.text = subtitle
     }
     
+    // MARK: - Setups
+    
     override func setupHierarchy() {
         [circleImageView, iconImageView, titleLabel, subtitleLabel].forEach {
             addSubview($0)

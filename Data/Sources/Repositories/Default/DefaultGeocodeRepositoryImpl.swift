@@ -13,6 +13,7 @@ public final class DefaultGeocodeRepositoryImpl: GeocodeRepository {
     
     public init() {}
     
+    // Geocoding
     public func fetchCoordinate(address: String) -> AnyPublisher<Result<Coordinate, Error>, Never> {
         if address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return Just(.failure(APIError.some(message: "주소 값이 없습니다."))).eraseToAnyPublisher()

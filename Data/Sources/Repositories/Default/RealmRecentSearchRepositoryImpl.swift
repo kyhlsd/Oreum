@@ -12,16 +12,22 @@ import Domain
 
 public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
 
-    private let realm: Realm
+    private let realm: Realm?
 
-    public init() throws {
-        self.realm = try Realm()
+    public init() {
+        self.realm = try? Realm()
     }
 
-    public func fetchAll() -> AnyPublisher<[RecentSearch], Error> {
+    // 모든 검색어 가져오기
+    public func fetch() -> AnyPublisher<Result<[RecentSearch], Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmRecentSearchRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
+                return
+            }
+
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
@@ -29,74 +35,92 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
                 .sorted(byKeyPath: "searchedAt", ascending: false)
                 .map { $0.toDomain() }
 
-            promise(.success(Array(results)))
+            promise(.success(.success(Array(results))))
         }
         .eraseToAnyPublisher()
     }
 
-    public func save(keyword: String) -> AnyPublisher<Void, Error> {
+    // 저장
+    public func save(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmRecentSearchRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
+                return
+            }
+
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
             do {
                 try realm.write {
-                    let objects = self.realm.objects(RecentSearchRealm.self).filter( "keyword == %@", keyword )
-                    self.realm.delete(objects)
+                    let objects = realm.objects(RecentSearchRealm.self).filter( "keyword == %@", keyword )
+                    realm.delete(objects)
                     let recentSearch = RecentSearchRealm(keyword: keyword, searchedAt: Date())
-                    self.realm.add(recentSearch)
+                    realm.add(recentSearch)
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func delete(keyword: String) -> AnyPublisher<Void, Error> {
+    // 삭제
+    public func delete(keyword: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmRecentSearchRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
+                return
+            }
+
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
             let objects = realm.objects(RecentSearchRealm.self).filter("keyword == %@", keyword)
 
             guard !objects.isEmpty else {
-                promise(.failure(NSError(domain: "RealmRecentSearchRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Recent search not found"])))
+                promise(.success(.failure(RealmError.recordNotFound)))
                 return
             }
 
             do {
                 try realm.write {
-                    self.realm.delete(objects)
+                    realm.delete(objects)
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func deleteAll() -> AnyPublisher<Void, Error> {
+    // 전체 삭제
+    public func deleteAll() -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "RealmRecentSearchRepositoryImpl", code: -1)))
+                promise(.success(.failure(RealmError.repositoryDeallocated)))
+                return
+            }
+
+            guard let realm = self.realm else {
+                promise(.success(.failure(RealmError.realmInitializationFailed)))
                 return
             }
 
             do {
                 try realm.write {
-                    let allRecentSearches = self.realm.objects(RecentSearchRealm.self)
-                    self.realm.delete(allRecentSearches)
+                    let allRecentSearches = realm.objects(RecentSearchRealm.self)
+                    realm.delete(allRecentSearches)
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(RealmError.writeTransactionFailed)))
             }
         }
         .eraseToAnyPublisher()

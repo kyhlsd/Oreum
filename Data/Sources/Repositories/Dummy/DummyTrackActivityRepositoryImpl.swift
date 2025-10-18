@@ -20,9 +20,8 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
 
     private init() {}
 
-    public func requestAuthorization() -> AnyPublisher<Bool, Error> {
-        return Just(true)
-            .setFailureType(to: Error.self)
+    public func requestAuthorization() -> AnyPublisher<Result<Bool, Error>, Never> {
+        return Just(.success(true))
             .delay(for: .seconds(0.5), scheduler: RunLoop.main)
             .eraseToAnyPublisher()
     }
@@ -38,9 +37,9 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
         }
     }
 
-    public func getActivityLogs() -> AnyPublisher<[ActivityLog], Error> {
+    public func getActivityLogs() -> AnyPublisher<Result<[ActivityLog], Error>, Never> {
         guard let startDate = self.startDate else {
-            return Fail(error: NSError(domain: "No tracking session found", code: -1))
+            return Just(.failure(NSError(domain: "No tracking session found", code: -1)))
                 .eraseToAnyPublisher()
         }
 
@@ -58,8 +57,7 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
             )
         }
 
-        return Just(logs)
-            .setFailureType(to: Error.self)
+        return Just(.success(logs))
             .delay(for: .seconds(0.3), scheduler: RunLoop.main)
             .eraseToAnyPublisher()
     }
@@ -74,9 +72,9 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
             .eraseToAnyPublisher()
     }
 
-    public func getCurrentActivityData() -> AnyPublisher<(time: TimeInterval, steps: Int, distance: Int), Error> {
+    public func getCurrentActivityData() -> AnyPublisher<Result<(time: TimeInterval, steps: Int, distance: Int), Error>, Never> {
         guard let startDate = self.startDate else {
-            return Fail(error: NSError(domain: "No tracking session found", code: -1))
+            return Just(.failure(NSError(domain: "No tracking session found", code: -1)))
                 .eraseToAnyPublisher()
         }
 
@@ -84,8 +82,7 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
         let steps = Int(elapsedTime / 10) * Int.random(in: 8...12) // 대략 10초당 10걸음
         let distance = Int(elapsedTime / 10) * Int.random(in: 7...13) // 대략 10초당 10m
 
-        return Just((time: elapsedTime, steps: steps, distance: distance))
-            .setFailureType(to: Error.self)
+        return Just(.success((time: elapsedTime, steps: steps, distance: distance)))
             .eraseToAnyPublisher()
     }
 

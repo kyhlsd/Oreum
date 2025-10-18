@@ -7,6 +7,7 @@
 
 import Foundation
 
+// SceneDelegate에서 값 설정
 public enum DeviceSize {
     
     public static var width: CGFloat = 0

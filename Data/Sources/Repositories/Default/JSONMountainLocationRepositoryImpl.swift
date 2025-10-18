@@ -13,29 +13,35 @@ public final class JSONMountainLocationRepositoryImpl: MountainLocationRepositor
     
     private let jsonFileName = "FamousMountainLocations"
     private var mountainLocations = [MountainLocationDTO]()
-    
+    private var loadError: JSONError?
+
     public init() {
         loadJSON()
     }
     
-    public func fetchMountainLocations() -> AnyPublisher<[MountainLocation], Error> {
-        return Just(mountainLocations.map { $0.toDomain() })
-            .setFailureType(to: Error.self)
+    // 산 위경도 불러오기
+    public func fetchMountainLocations() -> AnyPublisher<Result<[MountainLocation], Error>, Never> {
+        if let loadError {
+            return Just(.failure(loadError))
+                .eraseToAnyPublisher()
+        }
+
+        return Just(.success(mountainLocations.map { $0.toDomain() }))
             .eraseToAnyPublisher()
     }
     
     private func loadJSON() {
         guard let url = Bundle.module.url(forResource: jsonFileName, withExtension: "json") else {
-            print("JSON File Not Found")
+            loadError = JSONError.fileNotFound
             return
         }
-        
+
         do {
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
             mountainLocations = try decoder.decode([MountainLocationDTO].self, from: data)
         } catch {
-            print("Failed to load JSON: \(error)")
+            loadError = JSONError.decodingFailed
         }
     }
 }

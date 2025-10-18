@@ -11,19 +11,13 @@ import SnapKit
 
 final class MapView: BaseView {
 
+    // 지도
     let mapView = {
         let mapView = MKMapView()
         mapView.showsUserLocation = true
         return mapView
     }()
-
-    lazy var collectionView = {
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
-        collectionView.backgroundColor = .clear
-        collectionView.keyboardDismissMode = .onDrag
-        return collectionView
-    }()
-
+    // 현재 위치로 버튼
     let currentLocationButton = {
         let button = UIButton()
         button.setImage(UIImage(systemName: "location.fill"), for: .normal)
@@ -37,23 +31,32 @@ final class MapView: BaseView {
         return button
     }()
 
+    // 내 주위 명산 레이블
     private let titleLabel = UILabel.create("내 주위 명산", color: AppColor.primaryText, font: AppFont.titleM)
-
+    // 산림청 100대 명산 레이블
     private let descriptionLabel = UILabel.create("산림청에서 지정한 100대 명산", color: AppColor.subText, font: AppFont.description)
 
+    // 검색 바
     let searchBar = {
         let searchBar = CustomSearchBar()
         searchBar.placeholder = "산 이름 혹은 지역 명을 입력하세요"
         return searchBar
     }()
-
+    // 검색 결과 없을 때 표기 레이블
     let emptyLabel = {
         let label = UILabel.create("검색 결과가 없습니다", color: AppColor.subText, font: AppFont.body)
         label.textAlignment = .center
         label.isHidden = true
         return label
     }()
-
+    // 산 목록 컬렉션 뷰
+    lazy var collectionView = {
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
+        collectionView.backgroundColor = .clear
+        collectionView.keyboardDismissMode = .onDrag
+        return collectionView
+    }()
+    
     private func createLayout() -> UICollectionViewCompositionalLayout {
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
@@ -122,22 +125,26 @@ final class MapView: BaseView {
 
 // MARK: - Binding Methods
 extension MapView {
+    // 지도 이동
     func updateMapRegion(coordinate: CLLocationCoordinate2D) {
         let region = MKCoordinateRegion(center: coordinate, latitudinalMeters: 40000, longitudinalMeters: 40000)
         mapView.setRegion(region, animated: true)
     }
 
+    // 지도 바운더리 설정
     func setupMapBoundary(region: MKCoordinateRegion, zoomRange: MKMapView.CameraZoomRange) {
         let cameraBoundary = MKMapView.CameraBoundary(coordinateRegion: region)
         mapView.setCameraBoundary(cameraBoundary, animated: false)
         mapView.setCameraZoomRange(zoomRange, animated: false)
     }
-
+    
+    // 검색 결과 유무에 따른 처리
     func showEmptyState(_ show: Bool) {
         emptyLabel.isHidden = !show
         collectionView.isHidden = show
     }
 
+    // 검색 여부에 따라 테두리 설정
     func setSearchBarBorder(isFirstResponder: Bool) {
         searchBar.setBorder(isFirstResponder)
     }

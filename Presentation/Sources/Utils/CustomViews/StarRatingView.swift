@@ -42,6 +42,24 @@ final class StarRatingView: BaseView {
         self.isEditable = isEditable
     }
     
+    private func updateStarSelectionStates(rating: Int, animated: Bool) {
+        for (index, star) in stars.enumerated() {
+            let shouldBeSelected = index < rating
+            star.tintColor = shouldBeSelected ? .systemYellow : .systemGray
+            let image = shouldBeSelected ? filled : empty
+            
+            if animated {
+                UIView.transition(with: star, duration: 0.12, options: .transitionCrossDissolve, animations: {
+                    star.setImage(image, for: .normal)
+                }, completion: nil)
+            } else {
+                star.setImage(image, for: .normal)
+            }
+        }
+    }
+    
+    // MARK: - Setups
+    
     private func setupBindings() {
         $rating
             .sink { [weak self] rating in
@@ -62,22 +80,6 @@ final class StarRatingView: BaseView {
                     rating = i + 1
                 }
                 .store(in: &cancellables)
-        }
-    }
-    
-    private func updateStarSelectionStates(rating: Int, animated: Bool) {
-        for (index, star) in stars.enumerated() {
-            let shouldBeSelected = index < rating
-            star.tintColor = shouldBeSelected ? .systemYellow : .systemGray
-            let image = shouldBeSelected ? filled : empty
-            
-            if animated {
-                UIView.transition(with: star, duration: 0.12, options: .transitionCrossDissolve, animations: {
-                    star.setImage(image, for: .normal)
-                }, completion: nil)
-            } else {
-                star.setImage(image, for: .normal)
-            }
         }
     }
     

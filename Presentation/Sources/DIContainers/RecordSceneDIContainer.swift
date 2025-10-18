@@ -13,8 +13,10 @@ import Core
 public final class RecordSceneDIContainer {
 
     private let configuration: EnvironmentConfigurable
+    
     private lazy var climbRecordRepository = makeClimbRecordRepository()
     private lazy var recordImageRepository = makeRecordImageRepository()
+    private lazy var mountainInfoRepository = makeMountainInfoRepository()
 
     public init(configuration: EnvironmentConfigurable) {
         self.configuration = configuration
@@ -90,7 +92,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
 
     private func makeFetchMountainsUseCase() -> FetchMountainsUseCase {
-        return FetchMountainsUseCaseImpl(repository: makeMountainInfoRepository())
+        return FetchMountainsUseCaseImpl(repository: mountainInfoRepository)
     }
     
     private func makeSaveRecordImageUseCase() -> SaveRecordImageUseCase {
@@ -117,12 +119,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     private func makeClimbRecordRepository() -> ClimbRecordRepository {
         switch configuration.environment {
         case .release, .dev:
-            do {
-                return try RealmClimbRecordRepositoryImpl()
-            } catch {
-                print("Failed to initialize Realm: \(error.localizedDescription)")
-                return ErrorClimbRecordRepositoryImpl()
-            }
+            return RealmClimbRecordRepositoryImpl()
         case .dummy:
             return DummyClimbRecordRepositoryImpl.shared
         }

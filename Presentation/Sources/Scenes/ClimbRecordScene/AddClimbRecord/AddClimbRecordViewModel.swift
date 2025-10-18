@@ -9,7 +9,7 @@ import Foundation
 import Combine
 import Domain
 
-final class AddClimbRecordViewModel {
+final class AddClimbRecordViewModel: BaseViewModel {
 
     struct Input {
         let searchTrigger: AnyPublisher<String, Never>
@@ -26,10 +26,9 @@ final class AddClimbRecordViewModel {
         let updateSearchResultsOverlayIsHiddenTrigger: AnyPublisher<Bool, Never>
         let updateSearchResultsTrigger: AnyPublisher<Int, Never>
         let clearSearchBarTrigger: AnyPublisher<Void, Never>
-        let updateStartButtonIsEnabledTrigger: AnyPublisher<Bool, Never>
-        let nextEnabled: AnyPublisher<Bool, Never>
+        let updateNextButtonIsEnabledTrigger: AnyPublisher<Bool, Never>
         let pushDetailVC: AnyPublisher<ClimbRecord, Never>
-        let errorMessage: AnyPublisher<String, Never>
+        let errorMessage: AnyPublisher<(String, String), Never>
     }
 
     private let fetchMountainsUseCase: FetchMountainsUseCase
@@ -47,25 +46,34 @@ final class AddClimbRecordViewModel {
     func transform(input: Input) -> Output {
         let selectedMountainSubject = CurrentValueSubject<Mountain?, Never>(nil)
         let selectedDateSubject = CurrentValueSubject<Date, Never>(Date())
-        let errorSubject = PassthroughSubject<String, Never>()
+        let errorSubject = PassthroughSubject<(String, String), Never>()
         let pushDetailVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
         let updateSearchResultsCountSubject = PassthroughSubject<Int, Never>()
 
         // 검색 결과
-        let searchResults = input.searchTrigger
+        let searchResultsSubject = PassthroughSubject<[Mountain], Never>()
+
+        input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
-            .flatMap { [weak self] keyword -> AnyPublisher<[Mountain], Never> in
+            .flatMap { [weak self] keyword -> AnyPublisher<Result<[MountainInfo], Error>, Never> in
                 guard let self else {
-                    return Just([]).eraseToAnyPublisher()
+                    return Just(.success([])).eraseToAnyPublisher()
                 }
                 return self.fetchMountainsUseCase.execute(keyword: keyword)
-                    .map { mountainInfos in
-                        mountainInfos.map { $0.toMountain() }
-                    }
-                    .catch { _ in Just([]) }
-                    .eraseToAnyPublisher()
             }
+            .sink { result in
+                switch result {
+                case .success(let mountainInfos):
+                    let mountains = mountainInfos.map { $0.toMountain() }
+                    searchResultsSubject.send(mountains)
+                case .failure:
+                    searchResultsSubject.send([])
+                }
+            }
+            .store(in: &cancellables)
+
+        let searchResults = searchResultsSubject
             .share()
             .eraseToAnyPublisher()
 
@@ -101,15 +109,13 @@ final class AddClimbRecordViewModel {
             }
             .store(in: &cancellables)
 
-        let updateSearchResultsCount = updateSearchResultsCountSubject.eraseToAnyPublisher()
-
         // 검색바 클리어
         let clearSearchBar = input.mountainSelected
             .map { _ in () }
             .eraseToAnyPublisher()
 
-        // 시작 버튼 활성화
-        let startButtonEnabled = selectedMountainSubject
+        // 다음 버튼 활성화
+        let nextButtonEnabled = selectedMountainSubject
             .map { $0 != nil }
             .eraseToAnyPublisher()
 
@@ -120,18 +126,12 @@ final class AddClimbRecordViewModel {
             }
             .store(in: &cancellables)
 
-        // 다음 버튼 활성화
-        let nextEnabled = selectedMountainSubject
-            .map { $0 != nil }
-            .prepend(false)
-            .eraseToAnyPublisher()
-
         // 다음 버튼 탭
         input.nextButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .sink {
                 guard let mountain = selectedMountainSubject.value else {
-                    errorSubject.send("산을 선택해주세요.")
+                    errorSubject.send(("산 선택 오류", "산을 선택해주세요."))
                     return
                 }
 
@@ -157,10 +157,9 @@ final class AddClimbRecordViewModel {
             updateMountainLabelsTrigger: updateMountainLabels,
             clearMountainSelectionTrigger: clearMountainSelection,
             updateSearchResultsOverlayIsHiddenTrigger: hideOverlay,
-            updateSearchResultsTrigger: updateSearchResultsCount,
+            updateSearchResultsTrigger: updateSearchResultsCountSubject.eraseToAnyPublisher(),
             clearSearchBarTrigger: clearSearchBar,
-            updateStartButtonIsEnabledTrigger: startButtonEnabled,
-            nextEnabled: nextEnabled,
+            updateNextButtonIsEnabledTrigger: nextButtonEnabled,
             pushDetailVC: pushDetailVCSubject.eraseToAnyPublisher(),
             errorMessage: errorSubject.eraseToAnyPublisher()
         )

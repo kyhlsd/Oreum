@@ -8,10 +8,10 @@
 import UIKit
 import Domain
 
-final class ActivityLogViewController: UIViewController {
+final class ActivityLogViewController: UIViewController, BaseViewController {
     
-    private let mainView = ActivityLogView()
-    private let viewModel: ActivityLogViewModel
+    let mainView = ActivityLogView()
+    let viewModel: ActivityLogViewModel
     
     init(viewModel: ActivityLogViewModel) {
         self.viewModel = viewModel
@@ -34,7 +34,7 @@ final class ActivityLogViewController: UIViewController {
         setupNavItem()
     }
     
-    private func bind() {
+    func bind() {
         let input = ActivityLogViewModel.Input()
         let output = viewModel.transform(input: input)
         

@@ -9,12 +9,12 @@ import UIKit
 import Combine
 import Domain
 
-final class ClimbRecordListViewController: UIViewController {
+final class ClimbRecordListViewController: UIViewController, BaseViewController {
 
     var pushDetailVC: ((ClimbRecord) -> Void)?
     var presentAddVC: (() -> Void)?
 
-    private let mainView = ClimbRecordListView()
+    let mainView = ClimbRecordListView()
     let viewModel: ClimbRecordListViewModel
     private var cancellables = Set<AnyCancellable>()
     private let cellBookmarkTapSubject = PassthroughSubject<String, Never>()
@@ -41,22 +41,18 @@ final class ClimbRecordListViewController: UIViewController {
         setupDelegates()
     }
     
-    private func bind() {
-        let climbRecordDidSave = NotificationCenter.default
-            .publisher(for: .climbRecordDidSave)
-            .map { _ in () }
-            .eraseToAnyPublisher()
+    func bind() {
 
         let input = ClimbRecordListViewModel.Input(
             viewDidLoad: Just(()).eraseToAnyPublisher(),
             searchText: mainView.searchBar.textDidChange,
             bookmarkButtonTapped: mainView.bookmarkButton.tap,
-            cellBookmarkButtonTapped: cellBookmarkTapSubject.eraseToAnyPublisher(),
-            climbRecordDidSave: climbRecordDidSave
+            cellBookmarkButtonTapped: cellBookmarkTapSubject.eraseToAnyPublisher()
         )
         
         let output = viewModel.transform(input: input)
         
+        // 기록 리스트 뷰 Reload
         output.reloadData
             .sink { [weak self] in
                 guard let self else { return }
@@ -65,33 +61,38 @@ final class ClimbRecordListViewController: UIViewController {
             }
             .store(in: &cancellables)
         
+        // 산 개수, 북마크만 레이블 텍스트
         output.guideText
             .sink { [weak self] text in
                 self?.mainView.setGuideLabelText(text)
             }
             .store(in: &cancellables)
         
+        // 북마크만 표기에 따른 이미지
         output.isOnlyBookmarked
             .sink { [weak self] isOnlyBookmarked in
                 self?.mainView.setBookmarkImage(isOnlyBookmarked: isOnlyBookmarked)
             }
             .store(in: &cancellables)
         
+        // 북마크 토글
         output.bookmarkToggled
             .sink { [weak self] row in
                 self?.mainView.toggleCellBookmarked(row: row)
             }
             .store(in: &cancellables)
-        
-        output.errorMessage
-            .sink { errorMessage in
-               print(errorMessage)
-            }
-            .store(in: &cancellables)
 
+        // 기록 결과 유무에 따른 레이블 표기
         output.emptyStateText
             .sink { [weak self] text in
                 self?.mainView.setEmptyStateText(text)
+            }
+            .store(in: &cancellables)
+        
+        // 에러 Alert
+        output.errorMessage
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
             }
             .store(in: &cancellables)
     }

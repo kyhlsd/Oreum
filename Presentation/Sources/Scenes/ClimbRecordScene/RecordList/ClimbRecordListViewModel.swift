@@ -9,7 +9,7 @@ import Foundation
 import Combine
 import Domain
 
-final class ClimbRecordListViewModel {
+final class ClimbRecordListViewModel: BaseViewModel {
 
     private let fetchUseCase: FetchClimbRecordUseCase
     private let toggleBookmarkUseCase: ToggleBookmarkUseCase
@@ -34,7 +34,6 @@ final class ClimbRecordListViewModel {
         let searchText: AnyPublisher<String, Never>
         let bookmarkButtonTapped: AnyPublisher<Void, Never>
         let cellBookmarkButtonTapped: AnyPublisher<String, Never>
-        let climbRecordDidSave: AnyPublisher<Void, Never>
     }
     
     struct Output {
@@ -42,15 +41,16 @@ final class ClimbRecordListViewModel {
         let guideText: AnyPublisher<String, Never>
         let isOnlyBookmarked: AnyPublisher<Bool, Never>
         let bookmarkToggled: AnyPublisher<Int, Never>
-        let errorMessage: AnyPublisher<String, Never>
         let emptyStateText: AnyPublisher<String, Never>
+        let errorMessage: AnyPublisher<(String, String), Never>
     }
     
     func transform(input: Input) -> Output {
-        let errorMessageSubject = PassthroughSubject<String, Never>()
-
+        let isOnlyBookmarkedSubject = CurrentValueSubject<Bool, Never>(isOnlyBookmarked)
         let searchTextSubject = CurrentValueSubject<String, Never>("")
+        let errorMessageSubject = PassthroughSubject<(String, String), Never>()
 
+        // 최초 모든 기록 불러오기
         input.viewDidLoad
             .map { "" }
             .merge(with: input.searchText)
@@ -59,10 +59,7 @@ final class ClimbRecordListViewModel {
             .sink { searchTextSubject.send($0) }
             .store(in: &cancellables)
 
-        let searchText = searchTextSubject.eraseToAnyPublisher()
-
-        let isOnlyBookmarkedSubject = CurrentValueSubject<Bool, Never>(false)
-
+        // 북마크만 표기 버튼
         input.bookmarkButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .scan(false) { last, _ in !last }
@@ -72,36 +69,48 @@ final class ClimbRecordListViewModel {
             }
             .store(in: &cancellables)
 
+        // 검색 시
+        let searchText = searchTextSubject.eraseToAnyPublisher()
+        // 북마크만 표기 상태 변경
         let isOnlyBookmarked = isOnlyBookmarkedSubject.eraseToAnyPublisher()
-
-        let immediateRefresh = input.climbRecordDidSave
+        // 새로운 기록이 저장되었을 때
+        let climbRecordDidSave = NotificationCenter.default
+            .publisher(for: .climbRecordDidSave)
             .map { _ in (searchTextSubject.value, isOnlyBookmarkedSubject.value) }
-
-        let fetchTrigger = Publishers.Merge(
+            .eraseToAnyPublisher()
+        // 위 세 가지 경우에 기록 불러오기
+        Publishers.Merge(
             Publishers.CombineLatest(searchText, isOnlyBookmarked),
-            immediateRefresh
+            climbRecordDidSave
         )
-
-        fetchTrigger
             .flatMap { [fetchUseCase] keyword, isOnlyBookmarked in
                 fetchUseCase.execute(keyword: keyword, isOnlyBookmarked: isOnlyBookmarked)
-                    .catch { error -> Just<[ClimbRecord]> in
-                        errorMessageSubject.send(error.localizedDescription)
-                        return Just([])
+                    .map { result -> (Result<[ClimbRecord], Error>, String, Bool) in
+                        (result, keyword, isOnlyBookmarked)
                     }
-                    .map { ($0, keyword, isOnlyBookmarked)}
             }
-            .sink { [weak self] (list, keyword, isOnlyBookmarked) in
+            .sink { [weak self] (result, keyword, isOnlyBookmarked) in
                 guard let self else { return }
+
+                let list: [ClimbRecord]
+                switch result {
+                case .success(let records):
+                    list = records
+                case .failure(let error):
+                    errorMessageSubject.send(("기록 불러오기 실패", error.localizedDescription))
+                    list = []
+                }
 
                 climbRecordList = list
 
+                // 북마크만, 개수 레이블 텍스트 업데이트
                 if isOnlyBookmarked {
                     guideTextSubject.send("북마크한 산들 (\(list.count)개)")
                 } else {
                     guideTextSubject.send("\(baseGuideText) (\(list.count)개)")
                 }
 
+                // 검색 결고 유무에 따른 업데이트
                 if list.isEmpty {
                     if keyword.isEmpty {
                         emptyStateTextSubject.send(emptyText)
@@ -110,35 +119,47 @@ final class ClimbRecordListViewModel {
                     }
                 }
 
+                // 기록 컬렉션 뷰 갱신
                 reloadDataSubject.send(())
             }
             .store(in: &cancellables)
         
-        let bookmarkToggled = input.cellBookmarkButtonTapped
+        // 셀 북마크 토글
+        let bookmarkToggledSubject = PassthroughSubject<Int, Never>()
+
+        input.cellBookmarkButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
             .flatMap { [toggleBookmarkUseCase] id in
                 toggleBookmarkUseCase.execute(recordID: id)
-                    .compactMap { [weak self] in
-                        if let index = self?.climbRecordList.firstIndex(where: { $0.id == id }) {
-                            self?.climbRecordList[index].isBookmarked.toggle()
-                            return index
-                        }
-                        return nil
-                    }
-                    .catch { error -> Just<Int> in
-                        errorMessageSubject.send(error.localizedDescription)
-                        return Just(-1)
+                    .map { result -> (Result<Void, Error>, String) in
+                        (result, id)
                     }
             }
-            .eraseToAnyPublisher()
+            .sink { [weak self] (result, id) in
+                guard let self else { return }
+
+                switch result {
+                case .success:
+                    if let index = climbRecordList.firstIndex(where: { $0.id == id }) {
+                        climbRecordList[index].isBookmarked.toggle()
+                        bookmarkToggledSubject.send(index)
+                    }
+                case .failure(let error):
+                    errorMessageSubject.send(("북마크 변경 실패", error.localizedDescription))
+                    bookmarkToggledSubject.send(-1)
+                }
+            }
+            .store(in: &cancellables)
+
+        let bookmarkToggled = bookmarkToggledSubject.eraseToAnyPublisher()
         
         return Output(
             reloadData: reloadDataSubject.eraseToAnyPublisher(),
             guideText: guideTextSubject.eraseToAnyPublisher(),
             isOnlyBookmarked: isOnlyBookmarked,
             bookmarkToggled: bookmarkToggled,
+            emptyStateText: emptyStateTextSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher(),
-            emptyStateText: emptyStateTextSubject.eraseToAnyPublisher()
         )
     }
 }
@@ -146,6 +167,7 @@ final class ClimbRecordListViewModel {
 // MARK: - ClimbRecordDetailViewModelDelegate
 extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
 
+    // 후기 업데이트
     func updateReview(id: String, rating: Int, comment: String) {
         if let index = climbRecordList.firstIndex(where: {
             $0.id == id
@@ -155,6 +177,7 @@ extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
         }
     }
 
+    // 기록 삭제
     func deleteRecord(id: String) {
         if let index = climbRecordList.firstIndex(where: {
             $0.id == id
@@ -175,6 +198,7 @@ extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
         }
     }
 
+    // 이미지 업데이트
     func updateImages(id: String, images: [String]) {
         if let index = climbRecordList.firstIndex(where: {
             $0.id == id

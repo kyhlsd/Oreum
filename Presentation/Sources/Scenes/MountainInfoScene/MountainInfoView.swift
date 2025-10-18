@@ -12,10 +12,11 @@ import Kingfisher
 
 final class MountainInfoView: BaseView {
 
+    // 전체 스크롤 뷰
     private let scrollView = UIScrollView()
-
     private let contentView = UIView()
 
+    // 사진 이미지 뷰
     private let imageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -25,13 +26,14 @@ final class MountainInfoView: BaseView {
         return imageView
     }()
 
-    private let emptyImageView = {
+    // 사진 없을 때 표기 뷰
+    private let emptyView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
         view.isHidden = true
         return view
     }()
-
+    // Placeholder 사진 이미지 뷰
     private let photoImageView = {
         let imageView = UIImageView()
         imageView.image = AppIcon.photo
@@ -39,20 +41,54 @@ final class MountainInfoView: BaseView {
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
-
+    // 이미지 없음 표기 레이블
     private let photoLabel = {
         let label = UILabel.create("이미지가 없습니다", color: AppColor.subText, font: AppFont.titleM)
         label.textAlignment = .center
         return label
     }()
 
+    // 정보 레이블
     private let infoView = BoxView(title: "정보")
-
+    // 주소
     private let addressView = ImageItemView(icon: AppIcon.address, subtitle: "주소")
+    // 높이
     private let heightView = ImageItemView(icon: AppIcon.mountain, subtitle: "높이")
-
+    
+    // 날씨 박스 뷰
+    private let weatherView = BoxView()
+    // 날씨 스크롤 뷰
+    private let weatherScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = false
+        return scrollView
+    }()
+    private let weatherContentView = UIView()
+    // 날씨 스택 뷰
+    private let weatherStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.distribution = .fill
+        stackView.spacing = AppSpacing.small
+        return stackView
+    }()
+    // 날씨 정보 오류 레이블
+    private let emptyWeatherLabel = {
+        let label = UILabel.create("날씨 정보를 불러올 수 없습니다", color: AppColor.subText, font: AppFont.body)
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
+    // 날씨 로딩 뷰
+    private let weatherLoadingIndicator = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+    
+    // 산 소개 박스
     private let introductionView = BoxView(title: "산 소개")
-
+    // 산 소개 텍스트뷰
     private let introductionTextView = {
         let textView = UITextView(usingTextLayoutManager: false)
         textView.textContainerInset = UIEdgeInsets(top: AppSpacing.compact, left: AppSpacing.compact, bottom: AppSpacing.compact, right: AppSpacing.compact)
@@ -62,48 +98,17 @@ final class MountainInfoView: BaseView {
         return textView
     }()
 
-    private let weatherView = BoxView()
-
-    private let weatherScrollView = {
-        let scrollView = UIScrollView()
-        scrollView.showsHorizontalScrollIndicator = false
-        return scrollView
-    }()
-
-    private let weatherContentView = UIView()
-
-    private let weatherStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.distribution = .fill
-        stackView.spacing = AppSpacing.small
-        return stackView
-    }()
-
-    private let emptyWeatherLabel = {
-        let label = UILabel.create("날씨 정보를 불러올 수 없습니다", color: AppColor.subText, font: AppFont.body)
-        label.textAlignment = .center
-        label.isHidden = true
-        return label
-    }()
-
-    private let weatherLoadingIndicator = {
-        let indicator = UIActivityIndicatorView(style: .medium)
-        indicator.hidesWhenStopped = true
-        return indicator
-    }()
-
-
+    // MARK: - Setups
     override func setupHierarchy() {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        [imageView, emptyImageView, infoView, weatherView, introductionView].forEach {
+        [imageView, emptyView, infoView, weatherView, introductionView].forEach {
             contentView.addSubview($0)
         }
 
         [photoImageView, photoLabel].forEach {
-            emptyImageView.addSubview($0)
+            emptyView.addSubview($0)
         }
 
         [addressView, heightView].forEach {
@@ -133,7 +138,7 @@ final class MountainInfoView: BaseView {
             make.height.equalTo(imageView.snp.width).multipliedBy(0.75)
         }
 
-        emptyImageView.snp.makeConstraints { make in
+        emptyView.snp.makeConstraints { make in
             make.edges.equalTo(imageView)
         }
 
@@ -213,23 +218,28 @@ final class MountainInfoView: BaseView {
 
 // MARK: - Binding Methods
 extension MountainInfoView {
-
+    
+    // 산 이름
     func setMountainName(_ name: String) {
-        weatherView.setTitle("\(name) 날씨")
+        weatherView.configure("\(name) 날씨")
     }
-
+    
+    // 산 주소
     func setAddress(_ address: String) {
         addressView.setTitle(title: address)
     }
 
+    // 산 높이
     func setHeight(_ height: String) {
         heightView.setTitle(title: height)
     }
 
+    // 산 소개
     func setIntroduction(_ attributedText: NSAttributedString) {
         introductionTextView.attributedText = attributedText
     }
 
+    // 산 이미지
     func setImage(_ url: URL?) {
         if let url = url {
             imageView.kf.setImage(
@@ -241,17 +251,24 @@ extension MountainInfoView {
             ) { [weak self] result in
                 switch result {
                 case .success:
-                    self?.emptyImageView.isHidden = true
+                    self?.emptyView.isHidden = true
                 case .failure:
-                    self?.emptyImageView.isHidden = false
+                    self?.emptyView.isHidden = false
                 }
             }
         } else {
-            emptyImageView.isHidden = false
+            emptyView.isHidden = false
         }
     }
 
-
+    // 날씨 오류 발생 시
+    func showWeatherLoadingError() {
+        weatherLoadingIndicator.stopAnimating()
+        emptyWeatherLabel.isHidden = false
+        weatherScrollView.isHidden = true
+    }
+    
+    // 날씨
     func setWeeklyForecast(_ forecasts: [DailyForecast]) {
         weatherLoadingIndicator.stopAnimating()
         weatherStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -271,12 +288,7 @@ extension MountainInfoView {
         }
     }
 
-    func showWeatherLoadingError() {
-        weatherLoadingIndicator.stopAnimating()
-        emptyWeatherLabel.isHidden = false
-        weatherScrollView.isHidden = true
-    }
-
+    // 날씨 뷰 생성
     private func createForecastItemView(forecast: DailyForecast) -> UIView {
         let containerView = UIView()
         containerView.backgroundColor = AppColor.boxBackground

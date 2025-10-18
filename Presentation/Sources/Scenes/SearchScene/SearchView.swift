@@ -10,10 +10,12 @@ import SnapKit
 
 final class SearchView: BaseView {
 
+    // 검색 바
     let searchBar = CustomSearchBar()
-
+    
+    // 최근 검색어 레이블
     private let recentSearchTitleLabel = UILabel.create("최근 검색어", color: AppColor.primaryText, font: AppFont.titleS)
-
+    // 모두 지우기 버튼
     let clearAllButton = {
         let button = UIButton()
         button.setTitle("모두 지우기", for: .normal)
@@ -21,7 +23,7 @@ final class SearchView: BaseView {
         button.titleLabel?.font = AppFont.description
         return button
     }()
-
+    // 최근 검색어 컬렉션뷰
     let recentSearchCollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
@@ -33,23 +35,24 @@ final class SearchView: BaseView {
         collectionView.showsHorizontalScrollIndicator = false
         return collectionView
     }()
-
+    // 최근 검색어 없음 레이블
     let recentSearchEmptyLabel = {
         let label = UILabel.create("최근 검색어가 없습니다", color: AppColor.subText, font: AppFont.body)
         label.isHidden = true
         return label
     }()
 
+    // 검색 결과 레이블
     private let resultTitleLabel = UILabel.create("검색 결과", color: AppColor.primaryText, font: AppFont.titleS)
-
+    // 검색 결과 컬렉션뷰
     lazy var resultCollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .clear
         collectionView.keyboardDismissMode = .onDrag
         return collectionView
     }()
-
-    let emptyLabel = {
+    // 검색 결과 없음 레이블
+    let searchedEmptyLabel = {
         let label = UILabel.create("검색 결과가 없습니다", color: AppColor.subText, font: AppFont.body)
         label.textAlignment = .center
         label.isHidden = true
@@ -69,6 +72,8 @@ final class SearchView: BaseView {
 
         return UICollectionViewCompositionalLayout(section: section)
     }
+    
+    // MARK: - Setups
 
     override func setupView() {
         backgroundColor = AppColor.background
@@ -76,7 +81,7 @@ final class SearchView: BaseView {
     }
 
     override func setupHierarchy() {
-        [searchBar, recentSearchTitleLabel, clearAllButton, recentSearchCollectionView, recentSearchEmptyLabel, resultTitleLabel, resultCollectionView, emptyLabel].forEach {
+        [searchBar, recentSearchTitleLabel, clearAllButton, recentSearchCollectionView, recentSearchEmptyLabel, resultTitleLabel, resultCollectionView, searchedEmptyLabel].forEach {
             addSubview($0)
         }
     }
@@ -118,7 +123,7 @@ final class SearchView: BaseView {
             make.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
         }
 
-        emptyLabel.snp.makeConstraints { make in
+        searchedEmptyLabel.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
             make.centerY.equalTo(resultCollectionView)
         }
@@ -127,16 +132,17 @@ final class SearchView: BaseView {
 
 // MARK: - Binding Methods
 extension SearchView {
-    func showEmptyState(_ show: Bool) {
-        emptyLabel.isHidden = !show
+    // 검색 결과 없음 표기
+    func showSearchedEmptyState(_ show: Bool) {
+        searchedEmptyLabel.isHidden = !show
         resultCollectionView.isHidden = show
     }
-
+    // 최근 검색어 없음 표기
     func showRecentSearchEmptyState(_ show: Bool) {
         recentSearchEmptyLabel.isHidden = !show
         recentSearchCollectionView.isHidden = show
     }
-
+    // 검색 바 테두리
     func setSearchBarBorder(isFirstResponder: Bool) {
         searchBar.setBorder(isFirstResponder)
     }

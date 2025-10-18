@@ -11,10 +11,11 @@ import SnapKit
 
 final class MeasureView: BaseView {
 
+    // 산 선택 레이블
     private let selectLabel = UILabel.create("산 선택", color: AppColor.primaryText, font: AppFont.titleM)
-
+    // 검색 바
     let searchBar = CustomSearchBar()
-
+    // 검색 결과 오버레이
     let searchResultsOverlay = {
         let view = UIView()
         view.backgroundColor = AppColor.background
@@ -27,7 +28,7 @@ final class MeasureView: BaseView {
         view.isHidden = true
         return view
     }()
-
+    // 검색 결과 테이블 뷰
     let searchResultsTableView = {
         let tableView = UITableView()
         tableView.backgroundColor = AppColor.background
@@ -37,7 +38,7 @@ final class MeasureView: BaseView {
         tableView.register(cellClass: SearchMountainTableViewCell.self)
         return tableView
     }()
-
+    // 검색 결과 없음 표기 레이블
     private let emptyStateLabel = {
         let label = UILabel.create("검색 결과가 없습니다", color: AppColor.subText, font: AppFont.body)
         label.textAlignment = .center
@@ -45,13 +46,7 @@ final class MeasureView: BaseView {
         return label
     }()
 
-    private let stackView = {
-        let stackView = UIStackView()
-        stackView.axis = .vertical
-        stackView.spacing = AppSpacing.regular
-        return stackView
-    }()
-
+    // 선택된 산 박스
     private let mountainBoxView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
@@ -59,19 +54,19 @@ final class MeasureView: BaseView {
         view.clipsToBounds = true
         return view
     }()
-    
+    // 산 정보
     private let mountainInfoView = {
         let view = ItemView()
         view.setAlignment(.left)
         return view
     }()
-
+    // 산 미선택 시 표기 레이블
     private let placeholderLabel = {
         let label = UILabel.create("검색으로 산을 선택해주세요", color: AppColor.subText, font: AppFont.body)
         label.textAlignment = .center
         return label
     }()
-
+    // 산 취소 버튼
     let cancelButton = {
         let button = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 12)
@@ -80,10 +75,21 @@ final class MeasureView: BaseView {
         button.tintColor = AppColor.subText
         return button
     }()
+    
+    // 변경되는 뷰 담을 스택뷰
+    private let stackView = {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = AppSpacing.regular
+        return stackView
+    }()
 
+    // 시작 버튼
     let startButton = CustomButton(title: "측정 시작", image: AppIcon.play, foreground: .white, background: AppColor.primary)
 
     // MARK: - After Start Measuring
+    
+    // 측정 박스
     private let measuringBoxView: UIView = {
         let view = UIView()
         view.backgroundColor = AppColor.boxBackground
@@ -94,15 +100,16 @@ final class MeasureView: BaseView {
         view.isHidden = true
         return view
     }()
-
+    // 시간 레이블
     private let timeLabel = {
         let label = UILabel.create(color: AppColor.primaryText, font: .systemFont(ofSize: 32, weight: .medium))
         label.textAlignment = .center
         return label
     }()
-    
+    // 경과 시간 텍스트 레이블
     private let timeSubLabel = UILabel.create("경과 시간", color:AppColor.subText, font: AppFont.titleM)
 
+    // 업데이트 지연 안내 레이블
     private let updateInfoLabel = {
         let label = UILabel.create("데이터 업데이트는 약간의 지연이 있습니다", color: AppColor.subText, font: AppFont.description)
         label.textAlignment = .center
@@ -110,8 +117,9 @@ final class MeasureView: BaseView {
         return label
     }()
 
+    // 거리 컨테이너
     private let distanceContainer = UIView()
-
+    // 거리 이미지
     private let distanceIconView: UIImageView = {
         let imageView = UIImageView()
         imageView.image = AppIcon.address
@@ -119,7 +127,7 @@ final class MeasureView: BaseView {
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
-    
+    // 거리 표기
     private let distanceView = {
         let view = ItemView(subtitle: "이동 거리")
         view.setTitleFont(AppFont.titleL)
@@ -127,8 +135,9 @@ final class MeasureView: BaseView {
         return view
     }()
 
+    // 걸음 수 컨테이너
     private let stepsContainer = UIView()
-
+    // 걸음 수 이미지
     private let stepsIconView = {
         let imageView = UIImageView()
         imageView.image = AppIcon.footprints
@@ -136,14 +145,28 @@ final class MeasureView: BaseView {
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
-    
+    // 걸음 수 표기
     private let stepsView = {
         let view = ItemView(subtitle: "걸음 수")
         view.setTitleFont(AppFont.titleL)
         view.setSubTitleFont(AppFont.body)
         return view
     }()
+    
+    // 가로 구분선
+    private let horizontalLineView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.border
+        return view
+    }()
+    // 세로 구분선
+    private let verticalLineView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.border
+        return view
+    }()
 
+    // 측정 취소/종료 스택뷰
     private let measuringButtonsStackView = {
         let stackView = UIStackView()
         stackView.axis = .horizontal
@@ -152,23 +175,12 @@ final class MeasureView: BaseView {
         stackView.isHidden = true
         return stackView
     }()
-    
-    private let horizontalLineView = {
-        let view = UIView()
-        view.backgroundColor = AppColor.border
-        return view
-    }()
-    
-    private let verticalLineView = {
-        let view = UIView()
-        view.backgroundColor = AppColor.border
-        return view
-    }()
-
+    // 측정 취소 버튼
     let cancelMeasuringButton = CustomButton(title: "측정 취소", image: AppIcon.x, foreground: AppColor.dangerText, background: AppColor.danger)
-
+    // 측정 종료 버튼
     let stopButton = CustomButton(title: "측정 종료", image: AppIcon.stop, foreground: .white, background: AppColor.primary)
 
+    // 측정 가능 안내 레이블
     private let backgroundMeasurementInfoLabel = {
         let label = UILabel.create("앱을 종료해도 측정이 가능합니다", color: AppColor.subText, font: AppFont.description)
         label.textAlignment = .center
@@ -177,6 +189,8 @@ final class MeasureView: BaseView {
     }()
 
     // MARK: - Permission Required View
+    
+    // HealthKit 권한 요구 뷰
     private let permissionRequiredView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
@@ -185,7 +199,7 @@ final class MeasureView: BaseView {
         view.isHidden = true
         return view
     }()
-
+    // 권한 요구 이미지
     private let permissionIconView = {
         let imageView = UIImageView()
         imageView.image = AppIcon.exclamation
@@ -193,16 +207,16 @@ final class MeasureView: BaseView {
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
-
+    // 권한 요구 타이틀 레이블
     private let permissionTitleLabel = UILabel.create("'건강' 권한 필요", color: AppColor.primaryText, font: AppFont.titleL)
-
+    // 권한 요구 메세지 레이블
     private let permissionMessageLabel = {
         let label = UILabel.create("측정 기능을 사용하려면\n 설정에서 데이터 접근을 허용해주세요\n(설정 - 앱 - 건강 - 데이터 접근 및 기기)", color: AppColor.subText, font: AppFont.body)
         label.numberOfLines = 0
         label.textAlignment = .center
         return label
     }()
-
+    // 설정 이동 버튼
     let openSettingsButton = CustomButton(title: "설정에서 권한 허용", image: AppIcon.gear, foreground: .white, background: AppColor.primary)
 
     // MARK: - Setups
@@ -411,11 +425,13 @@ final class MeasureView: BaseView {
 
 // MARK: - Binding Methods
 extension MeasureView {
-
+    
+    // 검색 결과 오버레이 Visibility
     func updateSearchResultsOverlayIsHidden(_ isHidden: Bool) {
         searchResultsOverlay.isHidden = isHidden
     }
-
+    
+    // 검색 결과 높이 업데이트
     func updateSearchResults(count: Int) {
         let isEmpty = count == 0
         emptyStateLabel.isHidden = !isEmpty
@@ -435,7 +451,8 @@ extension MeasureView {
             make.height.equalTo(height)
         }
     }
-
+    
+    // 산 선택 반영
     func updateMountainLabelTexts(name: String, address: String) {
         mountainInfoView.setTitle(title: name)
         mountainInfoView.setSubtitle(subtitle: address)
@@ -443,23 +460,27 @@ extension MeasureView {
         placeholderLabel.isHidden = true
         cancelButton.isHidden = false
     }
-
+    
+    // 검색 활성화에 따른 테두리 표기
     func updateSearchBarBorder(isFirstResponder: Bool) {
         searchBar.setBorder(isFirstResponder)
     }
-
+    
+    // 측정 시작 버튼 활성화
     func updateStartButtonIsEnabled(_ isEnabled: Bool) {
         startButton.isEnabled = isEnabled
     }
 
+    // 산 선택 초기화
     func clearMountainSelection() {
         mountainInfoView.isHidden = true
         placeholderLabel.isHidden = false
         cancelButton.isHidden = true
     }
 
+    // 측정 상태에 따른 변경
     func updateMeasuringState(isMeasuring: Bool) {
-        if isMeasuring {
+        if isMeasuring { // 측정 중일 때
             startButton.isHidden = true
             measuringBoxView.isHidden = false
             measuringButtonsStackView.isHidden = false
@@ -475,7 +496,7 @@ extension MeasureView {
                 searchBar.alpha = 0.5
             }
             searchBar.searchTextField.clearButtonMode = .never
-        } else {
+        } else { // 측정 중이 아닐 때
             startButton.isHidden = false
             measuringBoxView.isHidden = true
             measuringButtonsStackView.isHidden = true
@@ -494,16 +515,19 @@ extension MeasureView {
         }
     }
 
+    // 측정 데이터 업데이트
     func updateMeasuringData(time: String, distance: String, steps: String) {
         timeLabel.text = time
         distanceView.setTitle(title: distance)
         stepsView.setTitle(title: steps)
     }
 
+    // 검색 바 초기화
     func clearSearchBar() {
         searchBar.text = ""
     }
 
+    // 권한 허용 뷰 Visibility 설정
     func updatePermissionRequiredViewIsHidden(_ authorized: Bool) {
         if authorized {
             permissionRequiredView.isHidden = true

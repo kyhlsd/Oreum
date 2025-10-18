@@ -17,6 +17,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
 
+    private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let searchTriggerSubject = PassthroughSubject<String, Never>()
     private let selectMountainSubject = PassthroughSubject<MountainInfo, Never>()
 
@@ -42,9 +43,12 @@ final class MeasureViewController: UIViewController, BaseViewController {
         bind()
         setupNavItem()
         setupDelegates()
+        
+        viewDidLoadSubject.send(())
     }
 
     func bind() {
+        // Active 상태가 됐을 떄
         let didBecomeActive = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             .map { _ in () }
             .eraseToAnyPublisher()
@@ -53,8 +57,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
         let stopMeasuringSubject = PassthroughSubject<Void, Never>()
 
         let input = MeasureViewModel.Input(
-            checkPermissionTrigger: Just(()).eraseToAnyPublisher(),
-            checkTrackingStatusTrigger: Just(()).eraseToAnyPublisher(),
+            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
             selectMountain: selectMountainSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap,
@@ -66,21 +69,23 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
         let output = viewModel.transform(input: input)
 
-        // Permission check가 먼저 완료된 후 tracking status 체크
-        output.permissionAuthorized
-            .sink { [weak self] authorized in
-                self?.mainView.updatePermissionRequiredViewIsHidden(authorized)
-            }
-            .store(in: &cancellables)
-
+        // 권한 및 측정 상태 업데이트
         output.authorizedMeasuringState
             .sink { [weak self] state in
-                guard state.authorized else { return }
-                self?.mainView.updateMeasuringState(isMeasuring: state.isMeasuring)
-                self?.setNavItem(isMeasuring: state.isMeasuring)
+                guard let self else { return }
+
+                // 권한에 따라 권한 요청 뷰 표시/숨김
+                mainView.updatePermissionRequiredViewIsHidden(state.authorized)
+
+                // 권한이 있을 때만 측정 상태 UI 업데이트
+                if state.authorized {
+                    mainView.updateMeasuringState(isMeasuring: state.isMeasuring)
+                    setNavItem(isMeasuring: state.isMeasuring)
+                }
             }
             .store(in: &cancellables)
 
+        // 산 검색 결과
         output.searchResults
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
@@ -88,56 +93,56 @@ final class MeasureViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        // 산 검색 오버레이 Visibility 설정
+        output.updateSearchResultsOverlayIsHiddenTrigger
+            .sink { [weak self] isHidden in
+                self?.mainView.updateSearchResultsOverlayIsHidden(isHidden)
+            }
+            .store(in: &cancellables)
+        
+        // 산 검색 결과 높이 설정
+        output.updateSearchResultsTrigger
+            .sink { [weak self] count in
+                self?.mainView.updateSearchResults(count: count)
+            }
+            .store(in: &cancellables)
+        
+        // 산 정보 레이블 업데이트
         output.updateMountainLabelsTrigger
             .sink { [weak self] (name, address) in
                 self?.mainView.updateMountainLabelTexts(name: name, address: address)
             }
             .store(in: &cancellables)
 
-        output.restoreMountainInfoTrigger
-            .sink { [weak self] mountainInfo in
-                if let (name, address) = mountainInfo {
-                    self?.mainView.updateMountainLabelTexts(name: name, address: address)
-                }
-            }
-            .store(in: &cancellables)
-
+        // 산 선택 취소
         output.clearMountainSelectionTrigger
             .sink { [weak self] in
                 self?.mainView.clearMountainSelection()
             }
             .store(in: &cancellables)
         
+        // 측정 시작 버튼 활성화
         output.updateStartButtonIsEnabledTrigger
             .sink { [weak self] isEnabled in
                 self?.mainView.updateStartButtonIsEnabled(isEnabled)
             }
             .store(in: &cancellables)
-        
-        output.updateSearchResultsOverlayIsHiddenTrigger
-            .sink { [weak self] isHidden in
-                self?.mainView.updateSearchResultsOverlayIsHidden(isHidden)
-            }
-            .store(in: &cancellables)
 
-        output.updateSearchResultsTrigger
-            .sink { [weak self] count in
-                self?.mainView.updateSearchResults(count: count)
-            }
-            .store(in: &cancellables)
-
+        // 검색 바 초기화
         output.clearSearchBarTrigger
             .sink { [weak self] in
                 self?.mainView.clearSearchBar()
             }
             .store(in: &cancellables)
 
+        // Activity 데이터 업데이트
         output.updateActivityDataTrigger
             .sink { [weak self] time, distance, steps in
                 self?.mainView.updateMeasuringData(time: time, distance: distance, steps: steps)
             }
             .store(in: &cancellables)
 
+        // 권한 설정 열기
         mainView.openSettingsButton.tap
             .sink {
                 if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
@@ -146,6 +151,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        // 측정 취소 Alert
         mainView.cancelMeasuringButton.tap
             .sink { [weak self] in
                 guard let self else { return }
@@ -157,6 +163,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        // 측정 종료 Alert
         mainView.stopButton.tap
             .sink { [weak self] in
                 guard let self else { return }
@@ -167,18 +174,22 @@ final class MeasureViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        // 기록 저장 완료 시 후기 작성 뷰
         output.savedClimbRecord
             .sink { [weak self] climbRecord in
                 self?.showMeasureCompleteView(climbRecord: climbRecord)
             }
             .store(in: &cancellables)
+        
+        // 에러 Alert
+        output.errorMessage
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
+            }
+            .store(in: &cancellables)
     }
 
-    private func setNavItem(isMeasuring: Bool) {
-        navigationItem.leftBarButtonItem?.isHidden = isMeasuring
-        navigationItem.title = isMeasuring ? "측정 중" : nil
-    }
-
+    // MARK: - Setups
     private func setupNavItem() {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "측정"))
     }
@@ -188,6 +199,15 @@ final class MeasureViewController: UIViewController, BaseViewController {
         mainView.searchResultsTableView.delegate = self
     }
     
+    // MARK: - Private Methods
+    
+    // 네비게이션 타이틀 위치, 텍스트 변경
+    private func setNavItem(isMeasuring: Bool) {
+        navigationItem.leftBarButtonItem?.isHidden = isMeasuring
+        navigationItem.title = isMeasuring ? "측정 중" : nil
+    }
+    
+    // 후기 유도 뷰
     private func showMeasureCompleteView(climbRecord: ClimbRecord) {
         let completeView = MeasureCompleteView()
         completeView.alpha = 0
@@ -222,6 +242,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
         }
     }
     
+    // 측정 취소 Alert
     private func showCancelMeasuringAlert(completionHanlder: @escaping (() -> Void)) {
         let alert = UIAlertController(
             title: "측정 취소",

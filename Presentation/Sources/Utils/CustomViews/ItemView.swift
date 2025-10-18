@@ -40,6 +40,8 @@ final class ItemView: BaseView {
         subtitleLabel.textAlignment = alignment
     }
     
+    // MARK: - Setups
+    
     override func setupView() {
         setAlignment(.center)
     }

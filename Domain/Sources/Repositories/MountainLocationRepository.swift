@@ -9,5 +9,5 @@ import Foundation
 import Combine
 
 public protocol MountainLocationRepository {
-    func fetchMountainLocations() -> AnyPublisher<[MountainLocation], Error> 
+    func fetchMountainLocations() -> AnyPublisher<Result<[MountainLocation], Error>, Never>
 }

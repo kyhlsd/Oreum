@@ -22,9 +22,8 @@ final class SearchViewController: UIViewController, BaseViewController {
 
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let searchTextSubject = PassthroughSubject<String, Never>()
-    private let recentSearchTappedSubject = PassthroughSubject<String, Never>()
     private let deleteRecentSearchSubject = PassthroughSubject<String, Never>()
-    private let clearAllRecentSearchesSubject = PassthroughSubject<Void, Never>()
+    private let recentSearchTappedSubject = PassthroughSubject<String, Never>()
 
     init(viewModel: SearchViewModel) {
         self.viewModel = viewModel
@@ -56,17 +55,12 @@ final class SearchViewController: UIViewController, BaseViewController {
             searchText: searchTextSubject.eraseToAnyPublisher(),
             recentSearchTapped: recentSearchTappedSubject.eraseToAnyPublisher(),
             deleteRecentSearch: deleteRecentSearchSubject.eraseToAnyPublisher(),
-            clearAllRecentSearches: clearAllRecentSearchesSubject.eraseToAnyPublisher()
+            clearAllRecentSearches: mainView.clearAllButton.tap
         )
-
-        mainView.clearAllButton.tap
-            .sink { [weak self] in
-                self?.clearAllRecentSearchesSubject.send(())
-            }
-            .store(in: &cancellables)
 
         let output = viewModel.transform(input: input)
 
+        // 최근 검색어
         output.recentSearches
             .sink { [weak self] searches in
                 self?.applyRecentSearchSnapshot(searches: searches)
@@ -74,21 +68,25 @@ final class SearchViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
 
+        // 검색 결과
         output.searchResults
             .sink { [weak self] results in
                 self?.applyResultSnapshot(results: results)
-                self?.mainView.showEmptyState(results.isEmpty)
+                self?.mainView.showSearchedEmptyState(results.isEmpty)
                 self?.mainView.resultCollectionView.setContentOffset(.zero, animated: false)
             }
             .store(in: &cancellables)
 
+        // 에러 Alert
         output.errorMessage
-            .sink { errorMessage in
-                print(errorMessage)
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
             }
             .store(in: &cancellables)
     }
 
+    // MARK: - Setups
+    
     private func setupNavItem() {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "검색"))
         navigationItem.backButtonTitle = " "
@@ -116,11 +114,9 @@ extension SearchViewController {
         return UICollectionView.CellRegistration<RecentSearchCollectionViewCell, String> { [weak self] cell, indexPath, item in
             guard let self else { return }
             cell.configure(with: item)
-            cell.deleteButton.tap
-                .sink {
-                    self.deleteRecentSearchSubject.send(item)
-                }
-                .store(in: &cancellables)
+            cell.onDeleteTapped = { [weak self] in
+                self?.deleteRecentSearchSubject.send(item)
+            }
         }
     }
     

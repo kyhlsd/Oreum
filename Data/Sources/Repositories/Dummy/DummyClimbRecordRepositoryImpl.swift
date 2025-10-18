@@ -18,7 +18,7 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
 
     private init() {}
     
-    public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<[ClimbRecord], any Error> {
+    public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<Result<[ClimbRecord], Error>, Never> {
         var records = dummyClimbRecords
 
         if !keyword.isEmpty {
@@ -29,71 +29,65 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
         if isOnlyBookmarked {
             records = records.filter { $0.isBookmarked }
         }
-        
+
         records.sort {
             $0.climbDate > $1.climbDate
         }
 
-        return Just(records)
-            .setFailureType(to: Error.self)
+        return Just(.success(records))
             .eraseToAnyPublisher()
     }
 
-    public func save(record: ClimbRecord) -> AnyPublisher<ClimbRecord, Error> {
+    public func save(record: ClimbRecord) -> AnyPublisher<Result<ClimbRecord, Error>, Never> {
         dummyClimbRecords.append(record)
-        return Just(record)
-            .setFailureType(to: Error.self)
+        return Just(.success(record))
             .eraseToAnyPublisher()
     }
     
-    public func toggleBookmark(recordID: String) -> AnyPublisher<Void, any Error> {
-        
+    public func toggleBookmark(recordID: String) -> AnyPublisher<Result<Void, Error>, Never> {
+
         if let index = dummyClimbRecords.firstIndex(where: { $0.id == recordID
         }) {
             dummyClimbRecords[index].isBookmarked.toggle()
         }
-        
-        return Just(())
-            .setFailureType(to: Error.self)
+
+        return Just(.success(()))
             .eraseToAnyPublisher()
     }
     
-    public func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Void, any Error> {
-        
+    public func update(recordID: String, rating: Int, comment: String) -> AnyPublisher<Result<Void, Error>, Never> {
+
         if let index = dummyClimbRecords.firstIndex(where: { $0.id == recordID
         }) {
             dummyClimbRecords[index].score = rating
             dummyClimbRecords[index].comment = comment
         }
-        
-        return Just(())
-            .setFailureType(to: Error.self)
+
+        return Just(.success(()))
             .eraseToAnyPublisher()
     }
     
-    public func delete(recordID: String) -> AnyPublisher<Void, any Error> {
+    public func delete(recordID: String) -> AnyPublisher<Result<Void, Error>, Never> {
 
         if let index = dummyClimbRecords.firstIndex(where: { $0.id == recordID
         }) {
             dummyClimbRecords.remove(at: index)
         }
 
-        return Just(())
-            .setFailureType(to: Error.self)
+        return Just(.success(()))
             .eraseToAnyPublisher()
     }
 
-    public func addImage(recordID: String, imageID: String) -> AnyPublisher<Void, Error> {
+    public func addImage(recordID: String, imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         if let index = dummyClimbRecords.firstIndex(where: { $0.id == recordID }) {
             dummyClimbRecords[index].images.append(imageID)
         }
 
-        return Just(())
-            .setFailureType(to: Error.self)
+        return Just(.success(()))
             .eraseToAnyPublisher()
     }
 
-    public func removeImage(imageID: String) -> AnyPublisher<Void, Error> {
+    public func removeImage(imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         for recordIndex in dummyClimbRecords.indices {
             if let imageIndex = dummyClimbRecords[recordIndex].images.firstIndex(of: imageID) {
                 dummyClimbRecords[recordIndex].images.remove(at: imageIndex)
@@ -101,8 +95,7 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
             }
         }
 
-        return Just(())
-            .setFailureType(to: Error.self)
+        return Just(.success(()))
             .eraseToAnyPublisher()
     }
 }

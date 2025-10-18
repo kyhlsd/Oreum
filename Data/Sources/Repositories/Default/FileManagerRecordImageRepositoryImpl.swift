@@ -16,90 +16,97 @@ public final class FileManagerRecordImageRepositoryImpl: RecordImageRepository {
 
     public init() {}
 
-    private func getImageDirectory() -> URL? {
+    // 이미지 저장 디렉토리를 가져오거나 생성
+    private func getImageDirectory() throws -> URL {
         guard let documentDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            return nil
+            throw FileManagerError.documentDirectoryNotFound
         }
+
         let imageDirectory = documentDirectory.appendingPathComponent("RecordImages", isDirectory: true)
 
         if !fileManager.fileExists(atPath: imageDirectory.path) {
-            try? fileManager.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
+            do {
+                try fileManager.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
+            } catch {
+                throw FileManagerError.failedToCreateImageDirectory
+            }
         }
 
         return imageDirectory
     }
 
-    public func saveImage(imageData: Data) -> AnyPublisher<String, Error> {
+    // 이미지 저장
+    public func saveImage(imageData: Data) -> AnyPublisher<Result<String, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
+                promise(.success(.failure(FileManagerError.repositoryDeallocated)))
                 return
             }
-
-            guard let imageDirectory = getImageDirectory() else {
-                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image directory"])))
-                return
-            }
-
-            let imageID = ObjectId.generate().stringValue
-            let fileURL = imageDirectory.appendingPathComponent("\(imageID).jpg")
 
             do {
+                let imageDirectory = try self.getImageDirectory()
+                let imageID = ObjectId.generate().stringValue
+                let fileURL = imageDirectory.appendingPathComponent("\(imageID).jpg")
+
                 try imageData.write(to: fileURL)
-                promise(.success(imageID))
+                promise(.success(.success(imageID)))
+            } catch let error as FileManagerError {
+                promise(.success(.failure(error)))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(FileManagerError.failedToSaveImage)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func deleteImage(imageID: String) -> AnyPublisher<Void, Error> {
+    // 이미지 삭제
+    public func deleteImage(imageID: String) -> AnyPublisher<Result<Void, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
+                promise(.success(.failure(FileManagerError.repositoryDeallocated)))
                 return
             }
-
-            guard let imageDirectory = getImageDirectory() else {
-                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image directory"])))
-                return
-            }
-
-            let fileURL = imageDirectory.appendingPathComponent("\(imageID).jpg")
 
             do {
+                let imageDirectory = try self.getImageDirectory()
+                let fileURL = imageDirectory.appendingPathComponent("\(imageID).jpg")
+
                 if fileManager.fileExists(atPath: fileURL.path) {
                     try fileManager.removeItem(at: fileURL)
-                } else {
                 }
-                promise(.success(()))
+                promise(.success(.success(())))
+            } catch let error as FileManagerError {
+                promise(.success(.failure(error)))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(FileManagerError.failedToDeleteImage)))
             }
         }
         .eraseToAnyPublisher()
     }
 
-    public func fetchImage(imageID: String) -> AnyPublisher<Data, Error> {
+    // 이미지 가져오기
+    public func fetchImage(imageID: String) -> AnyPublisher<Result<Data, Error>, Never> {
         return Future { [weak self] promise in
             guard let self else {
-                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self is nil"])))
+                promise(.success(.failure(FileManagerError.repositoryDeallocated)))
                 return
             }
-
-            guard let imageDirectory = getImageDirectory() else {
-                promise(.failure(NSError(domain: "FileManagerRecordImageRepositoryImpl", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to get image directory"])))
-                return
-            }
-
-            let fileURL = imageDirectory.appendingPathComponent("\(imageID).jpg")
 
             do {
+                let imageDirectory = try self.getImageDirectory()
+                let fileURL = imageDirectory.appendingPathComponent("\(imageID).jpg")
+
+                guard fileManager.fileExists(atPath: fileURL.path) else {
+                    promise(.success(.failure(FileManagerError.imageFileNotFound)))
+                    return
+                }
+
                 let imageData = try Data(contentsOf: fileURL)
-                promise(.success(imageData))
+                promise(.success(.success(imageData)))
+            } catch let error as FileManagerError {
+                promise(.success(.failure(error)))
             } catch {
-                promise(.failure(error))
+                promise(.success(.failure(FileManagerError.failedToLoadImage)))
             }
         }
         .eraseToAnyPublisher()
