@@ -101,6 +101,9 @@ public final class HealthKitTrackActivityRepositoryImpl: TrackActivityRepository
 
     // MARK: - Observe HealthKit Changes
     private func startObservingHealthKitChanges() {
+        // 기존 Observer가 있다면 먼저 중지
+        stopObservingHealthKitChanges()
+
         let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
         let distanceType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!
 

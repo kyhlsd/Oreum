@@ -14,6 +14,11 @@ public final class SearchSceneDIContainer {
 
     private let configuration: EnvironmentConfigurable
 
+    private lazy var recentSearchRepository = makeRecentSearchRepository()
+    private lazy var mountainInfoRepository = makeMountainInfoRepository()
+    private lazy var forecastRepository = makeForecastRepository()
+    private lazy var geocodeRepository = makeGeocodeRepository()
+    
     public init(configuration: EnvironmentConfigurable) {
         self.configuration = configuration
     }
@@ -55,23 +60,23 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
 
     // MARK: - UseCases
     private func makeFetchMountainsUseCase() -> FetchMountainsUseCase {
-        return FetchMountainsUseCaseImpl(repository: makeMountainInfoRepository())
+        return FetchMountainsUseCaseImpl(repository: mountainInfoRepository)
     }
 
     private func makeFetchRecentSearchesUseCase() -> FetchRecentSearchesUseCase {
-        return FetchRecentSearchesUseCaseImpl(repository: makeRecentSearchRepository())
+        return FetchRecentSearchesUseCaseImpl(repository: recentSearchRepository)
     }
 
     private func makeSaveRecentSearchUseCase() -> SaveRecentSearchUseCase {
-        return SaveRecentSearchUseCaseImpl(repository: makeRecentSearchRepository())
+        return SaveRecentSearchUseCaseImpl(repository: recentSearchRepository)
     }
 
     private func makeDeleteRecentSearchUseCase() -> DeleteRecentSearchUseCase {
-        return DeleteRecentSearchUseCaseImpl(repository: makeRecentSearchRepository())
+        return DeleteRecentSearchUseCaseImpl(repository: recentSearchRepository)
     }
 
     private func makeClearRecentSearchesUseCase() -> ClearRecentSearchesUseCase {
-        return ClearRecentSearchesUseCaseImpl(repository: makeRecentSearchRepository())
+        return ClearRecentSearchesUseCaseImpl(repository: recentSearchRepository)
     }
 
     private func makeFetchCoordinateUseCase() -> FetchCoordinateUseCase {

@@ -22,10 +22,9 @@ final class MeasureViewModel: BaseViewModel {
     private let getClimbingMountainUseCase: GetClimbingMountainUseCase
     private let saveClimbRecordUseCase: SaveClimbRecordUseCase
     private var cancellables = Set<AnyCancellable>()
-    private var timeUpdateTimer: Timer?
+    private var selectedMountain: Mountain?
     private var currentSteps: Int = 0
     private var currentDistance: Int = 0
-    private var selectedMountain: Mountain?
 
     init(
         fetchMountainsUseCase: FetchMountainsUseCase,
@@ -144,7 +143,7 @@ final class MeasureViewModel: BaseViewModel {
             .sink { trackingStatusSubject.send($0) }
             .store(in: &cancellables)
 
-        // 측정 중이면 저장된 산 정보 복원 및 타이머 시작
+        // 측정 중이면 저장된 산 정보 복원
         trackingStatus
             .filter { $0 }
             .sink { [weak self] _ in
@@ -158,8 +157,6 @@ final class MeasureViewModel: BaseViewModel {
                     // 측정 중인 산 정보 복원
                     updateMountainLabelsSubject.send((mountain.name, mountain.address))
                 }
-
-                self.startActivityDataTimer(updateActivityDataSubject: updateActivityDataSubject)
             }
             .store(in: &cancellables)
         
@@ -232,7 +229,6 @@ final class MeasureViewModel: BaseViewModel {
 
                 trackingStatusSubject.send(true)
                 self.startTrackingActivityUseCase.execute(startDate: Date(), mountain: mountain)
-                self.startActivityDataTimer(updateActivityDataSubject: updateActivityDataSubject)
             }
             .store(in: &cancellables)
 
@@ -244,7 +240,6 @@ final class MeasureViewModel: BaseViewModel {
 
                 // 트래킹 중지만 먼저 수행 (데이터는 아직 clear하지 않음)
                 self.stopTrackingActivityUseCase.execute(clearData: false)
-                self.stopActivityDataTimer()
 
                 // 산 정보가 남아있으면 selectedMountain에 복원하고 버튼 활성화
                 if let mountain = self.getClimbingMountainUseCase.execute() {
@@ -254,6 +249,10 @@ final class MeasureViewModel: BaseViewModel {
 
                 // 이제 clear
                 self.stopTrackingActivityUseCase.execute(clearData: true)
+
+                // Activity 데이터 초기화
+                self.currentSteps = 0
+                self.currentDistance = 0
 
                 // 상태 업데이트
                 trackingStatusSubject.send(false)
@@ -319,12 +318,15 @@ final class MeasureViewModel: BaseViewModel {
         // 측정 상태 초기화
         cleanUpSubject
             .sink { [weak self] in
-                // 타이머 종료
-                self?.stopActivityDataTimer()
-                
+                guard let self else { return }
+
                 // 트래킹 중지 및 측정 중 정보 clear
-                self?.stopTrackingActivityUseCase.execute(clearData: true)
-                
+                self.stopTrackingActivityUseCase.execute(clearData: true)
+
+                // Activity 데이터 초기화
+                self.currentSteps = 0
+                self.currentDistance = 0
+
                 // 산 선택, 측정 상태 초기화
                 trackingStatusSubject.send(false)
                 clearMountainSelectionSubject.send()
@@ -333,11 +335,71 @@ final class MeasureViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        // 걸음 수, 이동 거리 데이터 변경 시 자동 업데이트
-        observeActivityDataUpdatesUseCase.dataUpdates
+        // MARK: - Activity Data 업데이트
+
+        // 측정 시작 시 초기 데이터 로드
+        let initialDataTrigger = trackingStatus
+            .filter { $0 }
+            .map { _ in () }
+            .eraseToAnyPublisher()
+
+        // HealthKit 업데이트 시 + 초기 로드 시 걸음 수/거리 데이터 가져오기
+        Publishers.Merge(
+            initialDataTrigger,
+            observeActivityDataUpdatesUseCase.dataUpdates
+        )
+        .flatMap { [weak self] _ -> AnyPublisher<Result<(time: TimeInterval, steps: Int, distance: Int), Error>, Never> in
+            guard let self else {
+                return Empty().eraseToAnyPublisher()
+            }
+            return self.getCurrentActivityDataUseCase.execute()
+        }
+        .sink { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let data):
+                self.currentSteps = data.steps
+                self.currentDistance = data.distance
+
+                let timeString = self.formatTime(data.time)
+                let distanceString = String(format: "%.2f km", Double(data.distance) / 1000.0)
+                let stepsString = "\(data.steps)"
+                updateActivityDataSubject.send((time: timeString, distance: distanceString, steps: stepsString))
+            case .failure:
+                self.currentSteps = 0
+                self.currentDistance = 0
+
+                let timeString = self.formatTime(0)
+                let distanceString = "0.00 km"
+                let stepsString = "0"
+                updateActivityDataSubject.send((time: timeString, distance: distanceString, steps: stepsString))
+            }
+        }
+        .store(in: &cancellables)
+
+        // 1초마다 타이머 이벤트 발생 (측정 중일 때만) - 시간만 업데이트
+        trackingStatus
+            .map { isTracking -> AnyPublisher<Void, Never> in
+                if isTracking {
+                    return Timer.publish(every: 1.0, on: .main, in: .common)
+                        .autoconnect()
+                        .map { _ in () }
+                        .eraseToAnyPublisher()
+                } else {
+                    return Empty().eraseToAnyPublisher()
+                }
+            }
+            .switchToLatest()
             .sink { [weak self] _ in
-                self?.fetchActivityData()
-                self?.updateUI(updateActivityDataSubject: updateActivityDataSubject)
+                guard let self else { return }
+
+                if let startDate = self.startTrackingActivityUseCase.getStartDate() {
+                    let elapsedTime = Date().timeIntervalSince(startDate)
+                    let timeString = self.formatTime(elapsedTime)
+                    let distanceString = String(format: "%.2f km", Double(self.currentDistance) / 1000.0)
+                    let stepsString = "\(self.currentSteps)"
+                    updateActivityDataSubject.send((time: timeString, distance: distanceString, steps: stepsString))
+                }
             }
             .store(in: &cancellables)
 
@@ -359,67 +421,8 @@ final class MeasureViewModel: BaseViewModel {
         )
     }
 
-    // MARK: - Activity Data Timer
-    private func startActivityDataTimer(updateActivityDataSubject: PassthroughSubject<(time: String, distance: String, steps: String), Never>) {
-        stopActivityDataTimer()
-
-        // 즉시 한 번 Activity 데이터 가져오기
-        fetchActivityData()
-        // 즉시 한 번 UI 업데이트
-        updateUI(updateActivityDataSubject: updateActivityDataSubject)
-
-        // 1초마다 시간 업데이트
-        timeUpdateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.updateUI(updateActivityDataSubject: updateActivityDataSubject)
-        }
-    }
-
-    // Timer 종료
-    private func stopActivityDataTimer() {
-        timeUpdateTimer?.invalidate()
-        timeUpdateTimer = nil
-        currentSteps = 0
-        currentDistance = 0
-    }
-
-    // 걸음 수, 이동 거리 불러오기
-    private func fetchActivityData() {
-        getCurrentActivityDataUseCase.execute()
-            .sink { [weak self] result in
-                guard let self else { return }
-                switch result {
-                case .success(let data):
-                    self.currentSteps = data.steps
-                    self.currentDistance = data.distance
-                case .failure:
-                    self.currentSteps = 0
-                    self.currentDistance = 0
-                }
-            }
-            .store(in: &cancellables)
-    }
-
-    // UI update
-    private func updateUI(updateActivityDataSubject: PassthroughSubject<(time: String, distance: String, steps: String), Never>) {
-        getCurrentActivityDataUseCase.execute()
-            .sink { [weak self] result in
-                guard let self else { return }
-                switch result {
-                case .success(let data):
-                    let timeString = self.formatTime(data.time)
-                    let distanceString = String(format: "%.2f km", Double(self.currentDistance) / 1000.0)
-                    let stepsString = "\(self.currentSteps)"
-                    updateActivityDataSubject.send((time: timeString, distance: distanceString, steps: stepsString))
-                case .failure:
-                    let timeString = self.formatTime(0)
-                    let distanceString = "0.00 km"
-                    let stepsString = "0"
-                    updateActivityDataSubject.send((time: timeString, distance: distanceString, steps: stepsString))
-                }
-            }
-            .store(in: &cancellables)
-    }
-
+    // MARK: - Private Methods
+    
     // 시간 표기 형식
     private func formatTime(_ timeInterval: TimeInterval) -> String {
         let totalSeconds = Int(timeInterval)

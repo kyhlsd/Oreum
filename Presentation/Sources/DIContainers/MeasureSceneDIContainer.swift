@@ -13,7 +13,11 @@ import Core
 public final class MeasureSceneDIContainer {
 
     private let configuration: EnvironmentConfigurable
-
+    
+    private lazy var climbRecordRepository = makeClimbRecordRepository()
+    private lazy var mountainInfoRepository = makeMountainInfoRepository()
+    private lazy var trackActivityRepository = makeTrackActivityRepository()
+    
     public init(configuration: EnvironmentConfigurable) {
         self.configuration = configuration
     }
@@ -72,43 +76,43 @@ extension MeasureSceneDIContainer: MeasureSceneFlowCoordinatorDependencies {
 
     // MARK: - UseCases
     private func makeFetchMountainsUseCase() -> FetchMountainsUseCase {
-        return FetchMountainsUseCaseImpl(repository: makeMountainInfoRepository())
+        return FetchMountainsUseCaseImpl(repository: mountainInfoRepository)
     }
 
     private func makeRequestTrackActivityAuthorizationUseCase() -> RequestTrackActivityAuthorizationUseCase {
-        return RequestTrackActivityAuthorizationUseCaseImpl(repository: makeTrackActivityRepository())
+        return RequestTrackActivityAuthorizationUseCaseImpl(repository: trackActivityRepository)
     }
 
     private func makeStartTrackingActivityUseCase() -> StartTrackingActivityUseCase {
-        return StartTrackingActivityUseCaseImpl(repository: makeTrackActivityRepository())
+        return StartTrackingActivityUseCaseImpl(repository: trackActivityRepository)
     }
 
     private func makeGetActivityLogsUseCase() -> GetActivityLogsUseCase {
-        return GetActivityLogsUseCaseImpl(repository: makeTrackActivityRepository())
+        return GetActivityLogsUseCaseImpl(repository: trackActivityRepository)
     }
 
     private func makeStopTrackingActivityUseCase() -> StopTrackingActivityUseCase {
-        return StopTrackingActivityUseCaseImpl(repository: makeTrackActivityRepository())
+        return StopTrackingActivityUseCaseImpl(repository: trackActivityRepository)
     }
 
     private func makeGetTrackingStatusUseCase() -> GetTrackingStatusUseCase {
-        return GetTrackingStatusUseCaseImpl(repository: makeTrackActivityRepository())
+        return GetTrackingStatusUseCaseImpl(repository: trackActivityRepository)
     }
 
     private func makeGetCurrentActivityDataUseCase() -> GetCurrentActivityDataUseCase {
-        return GetCurrentActivityDataUseCaseImpl(repository: makeTrackActivityRepository())
+        return GetCurrentActivityDataUseCaseImpl(repository: trackActivityRepository)
     }
 
     private func makeObserveActivityDataUpdatesUseCase() -> ObserveActivityDataUpdatesUseCase {
-        return ObserveActivityDataUpdatesUseCaseImpl(repository: makeTrackActivityRepository())
+        return ObserveActivityDataUpdatesUseCaseImpl(repository: trackActivityRepository)
     }
 
     private func makeGetClimbingMountainUseCase() -> GetClimbingMountainUseCase {
-        return GetClimbingMountainUseCaseImpl(repository: makeTrackActivityRepository())
+        return GetClimbingMountainUseCaseImpl(repository: trackActivityRepository)
     }
     
     private func makeSaveClimbRecordUseCase() -> SaveClimbRecordUseCase {
-        return SaveClimbRecordUseCaseImpl(repository: makeClimbRecordRepository())
+        return SaveClimbRecordUseCaseImpl(repository: climbRecordRepository)
     }
     
 }
