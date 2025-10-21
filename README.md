@@ -34,8 +34,7 @@
 - Realm을 활용한 1:N 관계형 DB 설계, 양방향 관계 설정으로 데이터 무결성 보장
 - 지도 줌 레벨 기반 Grid 클러스터링으로 시각적 가독성 개선
 - HealthKit을 활용해 앱 종료 중에도 데이터 수집
-- 기기 크기 기반 이미지 리사이징으로 저장 공간 절감 및 성능 향상
-- 디바이스 크기에 따른 이미지 Resizing으로 저장 공간 관리
+- 기기 크기에 따른 이미지 리사이징으로 저장 공간 절감 및 성능 향상
 - Firebase Analytics와 Crashlytics로 사용자 행동 및 안정성 모니터링
 - UIKit(code base, +SwiftUI), Combine, MapKit, CoreLocation, HealthKit, Charts, NWPathMonitor, Tuist, Realm, Alamofire, Kingfisher, SnapKit, Toast, Firebase Analytics, Firebase Crashlytics
 
