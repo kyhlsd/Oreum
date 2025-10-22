@@ -191,9 +191,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
     // MARK: - Setups
     private func setupNavItem() {
-        if #available(iOS 26.0, *) {
-            navigationItem.attributedTitle = AppAppearance.getMainTitle(title: "측정")
-        } else {
+        if #unavailable(iOS 26.0) {
             navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "측정"))
         }
     }
@@ -207,8 +205,13 @@ final class MeasureViewController: UIViewController, BaseViewController {
     
     // 네비게이션 타이틀 위치, 텍스트 변경
     private func setNavItem(isMeasuring: Bool) {
-        navigationItem.leftBarButtonItem?.isHidden = isMeasuring
-        navigationItem.title = isMeasuring ? "측정 중" : nil
+        if #available(iOS 26.0, *) {
+            let title = isMeasuring ? "측정 중" : "측정"
+            navigationItem.attributedTitle = AppAppearance.getMainTitle(title: title)
+        } else {
+            navigationItem.leftBarButtonItem?.isHidden = isMeasuring
+            navigationItem.title = isMeasuring ? "측정 중" : nil
+        }
     }
     
     // 후기 유도 뷰
