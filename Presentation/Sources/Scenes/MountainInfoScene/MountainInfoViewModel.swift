@@ -112,14 +112,10 @@ final class MountainInfoViewModel: BaseViewModel {
     
     // MARK: - Private Methods
     
-    // 산 주소에서 첫번째 행정 구역만 가져오기
+    // 산 주소에서 시/군 단위 행정 구역까지만 가져오기
     private func firstSentence(from text: String) -> String {
-        let pattern = "^[가-힣\\s]+"
-        
-        if let match = text.range(of: pattern, options: .regularExpression) {
-            return String(text[match]).trimmingCharacters(in: .whitespaces)
-        }
-        
-        return ""
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = trimmed.split(separator: " ", maxSplits: 2, omittingEmptySubsequences: true)
+        return parts.prefix(2).joined(separator: " ")
     }
 }

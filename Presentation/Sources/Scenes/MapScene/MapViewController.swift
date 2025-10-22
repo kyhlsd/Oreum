@@ -284,7 +284,7 @@ extension MapViewController: MKMapViewDelegate {
     private func setupMapBoundary() {
         let southKoreaCenter = CLLocationCoordinate2D(latitude: 36.5, longitude: 127.5)
         let regionLatitudinalMeters: CLLocationDistance = 800000
-        let regionLongitudinalMeters: CLLocationDistance = 500000
+        let regionLongitudinalMeters: CLLocationDistance = 600000
         let minZoomDistance: CLLocationDistance = 5000
         let maxZoomDistance: CLLocationDistance = 1000000
         
