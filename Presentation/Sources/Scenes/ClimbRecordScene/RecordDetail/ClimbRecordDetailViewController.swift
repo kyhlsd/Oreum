@@ -195,8 +195,9 @@ final class ClimbRecordDetailViewController: UIViewController, BaseViewControlle
     }
     
     private func setupNavItem() {
-        navigationItem.backButtonTitle = " "
-
+        if #unavailable(iOS 26.0) {
+            navigationItem.backButtonTitle = " "
+        }
         if isFromAddRecord {
             let saveButton = UIBarButtonItem(title: "저장", style: .plain, target: self, action: #selector(saveButtonTapped))
             saveButton.tintColor = AppColor.primary

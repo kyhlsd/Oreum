@@ -161,8 +161,11 @@ final class MapViewController: UIViewController, BaseViewController {
     }
     
     private func setupNavItem() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "명산 지도"))
-        navigationItem.backButtonTitle = " "
+        if #available(iOS 26.0, *) {
+            navigationItem.attributedTitle = AppAppearance.getMainTitle(title: "명산 지도")
+        } else {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "명산 지도"))
+        }
     }
     
     private func setupDelegates() {

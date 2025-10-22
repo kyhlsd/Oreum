@@ -45,6 +45,8 @@ final class ActivityLogViewController: UIViewController, BaseViewController {
     
     private func setupNavItem() {
         navigationItem.title = "활동 타임라인"
-        navigationItem.backButtonTitle = " "
+        if #unavailable(iOS 26.0) {
+            navigationItem.backButtonTitle = " "
+        }
     }
 }

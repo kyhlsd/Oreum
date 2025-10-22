@@ -19,6 +19,13 @@ public enum AppAppearance {
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
     
+    public static func getMainTitle(title: String) -> AttributedString {
+        return AttributedString(title, attributes: AttributeContainer([
+            .foregroundColor: AppColor.primaryText,
+            .font: AppFont.titleL
+        ]))
+    }
+    
     // TabBar 설정
     public static func setupTabAppearance() {
         let appearance = UITabBarAppearance()

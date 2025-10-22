@@ -98,9 +98,13 @@ final class ClimbRecordListViewController: UIViewController, BaseViewController 
     }
 
     private func setupNavItem() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "나의 등산 기록"))
-        navigationItem.backButtonTitle = " "
-
+        if #available(iOS 26.0, *) {
+            navigationItem.attributedTitle = AppAppearance.getMainTitle(title: "나의 등산 기록")
+        } else {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "나의 등산 기록"))
+            navigationItem.backButtonTitle = " "
+        }
+        
         let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonTapped))
         addButton.tintColor = AppColor.primary
         navigationItem.rightBarButtonItem = addButton

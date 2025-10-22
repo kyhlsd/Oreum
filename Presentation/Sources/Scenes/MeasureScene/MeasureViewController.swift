@@ -191,7 +191,11 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
     // MARK: - Setups
     private func setupNavItem() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "측정"))
+        if #available(iOS 26.0, *) {
+            navigationItem.attributedTitle = AppAppearance.getMainTitle(title: "측정")
+        } else {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "측정"))
+        }
     }
 
     private func setupDelegates() {

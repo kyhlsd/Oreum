@@ -88,7 +88,7 @@ final class SearchView: BaseView {
 
     override func setupLayout() {
         searchBar.snp.makeConstraints { make in
-            make.top.equalTo(safeAreaLayoutGuide)
+            make.top.equalTo(safeAreaLayoutGuide).offset(AppSpacing.small)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
             make.height.equalTo(40)
         }
