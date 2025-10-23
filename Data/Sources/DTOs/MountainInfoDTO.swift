@@ -8,7 +8,6 @@
 import Foundation
 import Domain
 
-// 임시 데이터, API 복구 후 변경 예정
 struct MountainInfoDTO: Decodable {
     private let MNTN_CD_INFO: String?                    // 산 코드 정보
     private let MNTN_NM: String                          // 산명

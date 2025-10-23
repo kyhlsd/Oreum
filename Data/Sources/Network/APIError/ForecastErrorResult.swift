@@ -1,5 +1,5 @@
 //
-//  ForecastErrorResponse.swift
+//  ForecastErrorResult.swift
 //  Data
 //
 //  Created by 김영훈 on 10/7/25.

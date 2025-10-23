@@ -39,14 +39,25 @@ struct ShortTermForecastDTO: Decodable {
         let nx: Int
         let ny: Int
     }
-    
+
 }
 
 extension ShortTermForecastDTO {
-    
+
     private struct Header: Decodable {
         let resultCode: String
         let resultMsg: String
     }
-    
+
+}
+
+extension ShortTermForecastDTO.ShortTermForecastItem {
+    func toDomain() -> ForecastItem {
+        return ForecastItem(
+            date: fcstDate,
+            time: fcstTime,
+            category: category,
+            value: fcstValue
+        )
+    }
 }
