@@ -41,7 +41,7 @@ public final class FetchWeeklyForecastUseCaseImpl: FetchWeeklyForecastUseCase {
 
     // MARK: - Private Methods
 
-    /// 위경도 좌표를 기상청 격자 좌표로 변환
+    // 위경도 좌표를 기상청 격자 좌표로 변환
     private func convertToGrid(longitude: Double, latitude: Double) -> (x: Int, y: Int) {
         let RE: Double = 6371.00877      // 지구 반경(km)
         let GRID: Double = 5.0            // 격자 간격(km)
@@ -78,7 +78,7 @@ public final class FetchWeeklyForecastUseCaseImpl: FetchWeeklyForecastUseCase {
         return (x, y)
     }
 
-    /// ForecastItem 배열을 DailyForecast 배열로 가공
+    // ForecastItem 배열을 DailyForecast 배열로 가공
     private func processForecastItems(_ items: [ForecastItem]) -> [DailyForecast] {
         // 날짜별 그룹핑
         let groupedByDate = Dictionary(grouping: items, by: { $0.date })
@@ -119,10 +119,11 @@ public final class FetchWeeklyForecastUseCaseImpl: FetchWeeklyForecastUseCase {
         return dailyForecasts.sorted(by: { $0.date < $1.date })
     }
 
-    /// yyyyMMdd 형식의 날짜 포맷터
+    // yyyyMMdd 형식의 날짜 포맷터
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd"
         return formatter
     }
+    
 }
