@@ -99,7 +99,7 @@ final class ClimbRecordListViewController: UIViewController, BaseViewController 
 
     private func setupNavItem() {
         if #available(iOS 26.0, *) {
-            navigationItem.attributedTitle = AppAppearance.getMainTitle(title: "나의 등산 기록")
+            navigationItem.titleView = NavTitleView(title: "나의 등산 기록")
         } else {
             navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "나의 등산 기록"))
             navigationItem.backButtonTitle = " "

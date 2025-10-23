@@ -89,7 +89,7 @@ final class SearchViewController: UIViewController, BaseViewController {
     
     private func setupNavItem() {
         if #available(iOS 26.0, *) {
-            navigationItem.attributedTitle = AppAppearance.getMainTitle(title: "검색")
+            navigationItem.titleView = NavTitleView(title: "검색")
         } else {
             navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "검색"))
             navigationItem.backButtonTitle = " "
