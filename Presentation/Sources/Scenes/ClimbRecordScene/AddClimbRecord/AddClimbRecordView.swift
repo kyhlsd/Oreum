@@ -51,6 +51,14 @@ final class AddClimbRecordView: BaseView {
         return label
     }()
 
+    // 로딩 인디케이터
+    let loadingIndicator = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        indicator.color = AppColor.primaryText
+        return indicator
+    }()
+
     // 선택된 산 박스
     private let mountainBoxView = {
         let view = UIView()
@@ -130,7 +138,7 @@ final class AddClimbRecordView: BaseView {
 
         dateBoxView.addSubview(datePicker)
 
-        [searchResultsTableView, emptyStateLabel].forEach {
+        [searchResultsTableView, emptyStateLabel, loadingIndicator].forEach {
             searchResultsOverlay.addSubview($0)
         }
     }
@@ -181,6 +189,10 @@ final class AddClimbRecordView: BaseView {
         emptyStateLabel.snp.makeConstraints { make in
             make.center.equalToSuperview()
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
+        }
+
+        loadingIndicator.snp.makeConstraints { make in
+            make.center.equalToSuperview()
         }
 
         dateLabel.snp.makeConstraints { make in
@@ -265,5 +277,17 @@ extension AddClimbRecordView {
     func setNextButtonEnabled(_ isEnabled: Bool) {
         nextButton.isEnabled = isEnabled
         nextButton.alpha = isEnabled ? 1.0 : 0.5
+    }
+
+    // 로딩 인디케이터
+    func setLoadingState(_ isLoading: Bool) {
+        if isLoading {
+            searchResultsOverlay.isHidden = false
+            searchResultsTableView.isHidden = true
+            emptyStateLabel.isHidden = true
+            loadingIndicator.startAnimating()
+        } else {
+            loadingIndicator.stopAnimating()
+        }
     }
 }

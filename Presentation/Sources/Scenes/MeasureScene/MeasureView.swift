@@ -46,6 +46,14 @@ final class MeasureView: BaseView {
         return label
     }()
 
+    // 로딩 인디케이터
+    let loadingIndicator = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        indicator.color = AppColor.primaryText
+        return indicator
+    }()
+
     // 선택된 산 박스
     private let mountainBoxView = {
         let view = UIView()
@@ -233,7 +241,7 @@ final class MeasureView: BaseView {
             addSubview($0)
         }
 
-        [searchResultsTableView, emptyStateLabel].forEach {
+        [searchResultsTableView, emptyStateLabel, loadingIndicator].forEach {
             searchResultsOverlay.addSubview($0)
         }
 
@@ -394,6 +402,10 @@ final class MeasureView: BaseView {
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
         }
 
+        loadingIndicator.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+        }
+
         permissionRequiredView.snp.makeConstraints { make in
             make.center.equalToSuperview()
             make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(24)
@@ -543,5 +555,17 @@ extension MeasureView {
             stackView.isHidden = true
         }
     }
-    
+
+    // 로딩 인디케이터
+    func setLoadingState(_ isLoading: Bool) {
+        if isLoading {
+            searchResultsOverlay.isHidden = false
+            searchResultsTableView.isHidden = true
+            emptyStateLabel.isHidden = true
+            loadingIndicator.startAnimating()
+        } else {
+            loadingIndicator.stopAnimating()
+        }
+    }
+
 }

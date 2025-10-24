@@ -58,6 +58,13 @@ final class SearchView: BaseView {
         label.isHidden = true
         return label
     }()
+    // 로딩 인디케이터
+    let loadingIndicator = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        indicator.color = AppColor.primaryText
+        return indicator
+    }()
 
     private func createLayout() -> UICollectionViewCompositionalLayout {
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(120))
@@ -81,7 +88,7 @@ final class SearchView: BaseView {
     }
 
     override func setupHierarchy() {
-        [searchBar, recentSearchTitleLabel, clearAllButton, recentSearchCollectionView, recentSearchEmptyLabel, resultTitleLabel, resultCollectionView, searchedEmptyLabel].forEach {
+        [searchBar, recentSearchTitleLabel, clearAllButton, recentSearchCollectionView, recentSearchEmptyLabel, resultTitleLabel, resultCollectionView, searchedEmptyLabel, loadingIndicator].forEach {
             addSubview($0)
         }
     }
@@ -127,6 +134,11 @@ final class SearchView: BaseView {
             make.centerX.equalToSuperview()
             make.centerY.equalTo(resultCollectionView)
         }
+
+        loadingIndicator.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalTo(resultCollectionView)
+        }
     }
 }
 
@@ -145,5 +157,13 @@ extension SearchView {
     // 검색 바 테두리
     func setSearchBarBorder(isFirstResponder: Bool) {
         searchBar.setBorder(isFirstResponder)
+    }
+    // 로딩 인디케이터
+    func setLoadingState(_ isLoading: Bool) {
+        if isLoading {
+            loadingIndicator.startAnimating()
+        } else {
+            loadingIndicator.stopAnimating()
+        }
     }
 }

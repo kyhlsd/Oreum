@@ -187,6 +187,13 @@ final class MeasureViewController: UIViewController, BaseViewController {
                 self?.presentDefaultAlert(title: title, message: message)
             }
             .store(in: &cancellables)
+
+        // 로딩 인디케이터
+        output.isLoading
+            .sink { [weak self] isLoading in
+                self?.mainView.setLoadingState(isLoading)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Setups

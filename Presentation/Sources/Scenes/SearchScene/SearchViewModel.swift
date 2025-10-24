@@ -44,12 +44,14 @@ final class SearchViewModel: BaseViewModel {
         let recentSearches: AnyPublisher<[String], Never>
         let searchResults: AnyPublisher<[MountainInfo], Never>
         let errorMessage: AnyPublisher<(String, String), Never>
+        let isLoading: AnyPublisher<Bool, Never>
     }
 
     func transform(input: Input) -> Output {
         let recentSearchesSubject = PassthroughSubject<[String], Never>()
         let searchResultsSubject = PassthroughSubject<[MountainInfo], Never>()
         let errorMessageSubject = PassthroughSubject<(String, String), Never>()
+        let isLoadingSubject = PassthroughSubject<Bool, Never>()
 
         // 최근 검색어 Fetch
         let loadRecentSearchTrigger = PassthroughSubject<Void, Never>()
@@ -121,6 +123,9 @@ final class SearchViewModel: BaseViewModel {
         // 검색 결과 가져오기 (중복 검색 방지)
         searchKeywordPublisher
             .removeDuplicates()
+            .handleEvents(receiveOutput: { _ in
+                isLoadingSubject.send(true)
+            })
             .flatMap { [weak self] keyword -> AnyPublisher<Result<MountainResponse, Error>, Never> in
                 guard let self else { return Empty().eraseToAnyPublisher() }
 
@@ -128,6 +133,7 @@ final class SearchViewModel: BaseViewModel {
                     .eraseToAnyPublisher()
             }
             .sink { result in
+                isLoadingSubject.send(false)
                 switch result {
                 case .success(let response):
                     searchResultsSubject.send(response.body.items.item)
@@ -157,7 +163,8 @@ final class SearchViewModel: BaseViewModel {
         return Output(
             recentSearches: recentSearchesSubject.eraseToAnyPublisher(),
             searchResults: searchResultsSubject.eraseToAnyPublisher(),
-            errorMessage: errorMessageSubject.eraseToAnyPublisher()
+            errorMessage: errorMessageSubject.eraseToAnyPublisher(),
+            isLoading: isLoadingSubject.eraseToAnyPublisher()
         )
     }
 }
