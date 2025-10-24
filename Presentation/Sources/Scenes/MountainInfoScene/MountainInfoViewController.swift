@@ -16,6 +16,7 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
 
     private var cancellables = Set<AnyCancellable>()
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
+    private lazy var imageDataSource = createImageDataSource()
 
     init(viewModel: MountainInfoViewModel) {
         self.viewModel = viewModel
@@ -77,9 +78,10 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
             .store(in: &cancellables)
 
         // 이미지
-        output.imageURL
-            .sink { [weak self] imageURL in
-                self?.mainView.setImage(imageURL)
+        output.imageURLs
+            .sink { [weak self] imageURLs in
+                self?.applyImageSnapshot(imageURLs: imageURLs)
+                self?.mainView.showEmptyImageState(imageURLs.isEmpty)
             }
             .store(in: &cancellables)
         
@@ -92,8 +94,8 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
         
         // 에러 Alert
         output.errorMessage
-            .sink { [weak self] message in
-                self?.presentDefaultAlert(title: "날씨 정보 불러오기 실패", message: message)
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
                 self?.mainView.showWeatherLoadingError()
             }
             .store(in: &cancellables)
@@ -119,6 +121,32 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
             return NSAttributedString(string: text, attributes: attributes)
         }
     }
+}
 
+// MARK: - CollectionView SubMethods
+extension MountainInfoViewController {
 
+    private enum Section: CaseIterable {
+        case main
+    }
+
+    private func createImageRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, URL> {
+        return UICollectionView.CellRegistration<ImageCollectionViewCell, URL> { cell, indexPath, item in
+            cell.setImage(url: item)
+        }
+    }
+
+    private func createImageDataSource() -> UICollectionViewDiffableDataSource<Section, URL> {
+        let registration = createImageRegistration()
+        return UICollectionViewDiffableDataSource<Section, URL>(collectionView: mainView.imageCollectionView) { collectionView, indexPath, item in
+            collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
+        }
+    }
+
+    private func applyImageSnapshot(imageURLs: [URL]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, URL>()
+        snapshot.appendSections(Section.allCases)
+        snapshot.appendItems(imageURLs)
+        imageDataSource.apply(snapshot, animatingDifferences: true)
+    }
 }

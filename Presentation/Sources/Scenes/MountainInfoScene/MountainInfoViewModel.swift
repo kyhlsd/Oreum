@@ -14,11 +14,18 @@ final class MountainInfoViewModel: BaseViewModel {
     private let mountainInfo: MountainInfo
     private let fetchCoordinateUseCase: FetchCoordinateUseCase
     private let fetchWeeklyForecastUseCase: FetchWeeklyForecastUseCase
+    private let fetchMountainImageUseCase: FetchMountainImageUseCase
     private var cancellables = Set<AnyCancellable>()
 
-    init(fetchCoordinateUseCase: FetchCoordinateUseCase, fetchWeeklyForecastUseCase: FetchWeeklyForecastUseCase, mountainInfo: MountainInfo) {
+    init(
+        fetchCoordinateUseCase: FetchCoordinateUseCase,
+        fetchWeeklyForecastUseCase: FetchWeeklyForecastUseCase,
+        fetchMountainImageUseCase: FetchMountainImageUseCase,
+        mountainInfo: MountainInfo
+    ) {
         self.fetchCoordinateUseCase = fetchCoordinateUseCase
         self.fetchWeeklyForecastUseCase = fetchWeeklyForecastUseCase
+        self.fetchMountainImageUseCase = fetchMountainImageUseCase
         self.mountainInfo = mountainInfo
     }
 
@@ -31,9 +38,9 @@ final class MountainInfoViewModel: BaseViewModel {
         let address: AnyPublisher<String, Never>
         let height: AnyPublisher<String, Never>
         let introduction: AnyPublisher<String, Never>
-        let imageURL: AnyPublisher<URL?, Never>
+        let imageURLs: AnyPublisher<[URL], Never>
         let weeklyForecast: AnyPublisher<[DailyForecast], Never>
-        let errorMessage: AnyPublisher<String, Never>
+        let errorMessage: AnyPublisher<(String, String), Never>
     }
 
     func transform(input: Input) -> Output {
@@ -41,9 +48,9 @@ final class MountainInfoViewModel: BaseViewModel {
         let addressSubject = PassthroughSubject<String, Never>()
         let heightSubject = PassthroughSubject<String, Never>()
         let introductionSubject = PassthroughSubject<String, Never>()
-        let imageURLSubject = PassthroughSubject<URL?, Never>()
+        let imageURLsSubject = PassthroughSubject<[URL], Never>()
         let weeklyForecastSubject = PassthroughSubject<[DailyForecast], Never>()
-        let errorMessageSubject = PassthroughSubject<String, Never>()
+        let errorMessageSubject = PassthroughSubject<(String, String), Never>()
 
         let fetchCoordinateTrigger = PassthroughSubject<String, Never>()
         let fetchWeeklyForecastTrigger = PassthroughSubject<Coordinate, Never>()
@@ -62,7 +69,7 @@ final class MountainInfoViewModel: BaseViewModel {
                 case .success(let coordinate):
                     fetchWeeklyForecastTrigger.send(coordinate)
                 case .failure(let error):
-                    errorMessageSubject.send(error.localizedDescription)
+                    errorMessageSubject.send(("주소 변환 실패", error.localizedDescription))
                 }
             }
             .store(in: &cancellables)
@@ -71,8 +78,7 @@ final class MountainInfoViewModel: BaseViewModel {
         fetchWeeklyForecastTrigger
             .flatMap { [weak self] coordinate -> AnyPublisher<Result<[DailyForecast], Error>, Never> in
                 guard let self else {
-                    return Just(.failure(NSError(domain: "SelfDeallocated", code: -1)))
-                        .eraseToAnyPublisher()
+                    return Empty().eraseToAnyPublisher()
                 }
                 return fetchWeeklyForecastUseCase.execute(longitude: coordinate.longitude, latitude: coordinate.latitude)
             }
@@ -81,7 +87,26 @@ final class MountainInfoViewModel: BaseViewModel {
                 case .success(let value):
                     weeklyForecastSubject.send(value)
                 case .failure(let error):
-                    errorMessageSubject.send(error.localizedDescription)
+                    errorMessageSubject.send(("날씨 예보 가져오기 실패", error.localizedDescription))
+                }
+            }
+            .store(in: &cancellables)
+
+        // 산 이미지 가져오기
+        input.viewDidLoad
+            .flatMap { [weak self] _ -> AnyPublisher<Result<[URL], Error>, Never> in
+                guard let self else {
+                    return Empty().eraseToAnyPublisher()
+                }
+                return self.fetchMountainImageUseCase.execute(id: self.mountainInfo.id)
+            }
+            .sink { result in
+                switch result {
+                case .success(let urls):
+                    imageURLsSubject.send(urls)
+                case .failure(let error):
+                    errorMessageSubject.send(("이미지 가져오기 실패", error.localizedDescription))
+                    imageURLsSubject.send([])
                 }
             }
             .store(in: &cancellables)
@@ -98,8 +123,6 @@ final class MountainInfoViewModel: BaseViewModel {
                     heightSubject.send("알 수 없음")
                 }
                 introductionSubject.send(mountainInfo.detail)
-                // TODO: 이미지
-//                imageURLSubject.send(mountainInfo.image.flatMap { URL(string: $0) })
                 fetchCoordinateTrigger.send(firstSentence(from: mountainInfo.address))
             }
             .store(in: &cancellables)
@@ -109,7 +132,7 @@ final class MountainInfoViewModel: BaseViewModel {
             address: addressSubject.eraseToAnyPublisher(),
             height: heightSubject.eraseToAnyPublisher(),
             introduction: introductionSubject.eraseToAnyPublisher(),
-            imageURL: imageURLSubject.eraseToAnyPublisher(),
+            imageURLs: imageURLsSubject.eraseToAnyPublisher(),
             weeklyForecast: weeklyForecastSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher()
         )

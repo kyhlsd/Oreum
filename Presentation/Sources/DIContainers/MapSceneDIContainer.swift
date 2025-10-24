@@ -45,7 +45,12 @@ extension MapSceneDIContainer: MapSceneFlowCoordinatorDependencies {
     }
     
     private func makeMountainInfoViewModel(mountainInfo: MountainInfo) -> MountainInfoViewModel {
-        return MountainInfoViewModel(fetchCoordinateUseCase: makeFetchCoordinateUseCase(), fetchWeeklyForecastUseCase: makeFetchWeeklyForecastUseCase(), mountainInfo: mountainInfo)
+        return MountainInfoViewModel(
+            fetchCoordinateUseCase: makeFetchCoordinateUseCase(),
+            fetchWeeklyForecastUseCase: makeFetchWeeklyForecastUseCase(),
+            fetchMountainImageUseCase: makeFetchMountainImageUseCase(),
+            mountainInfo: mountainInfo
+        )
     }
 
     // MARK: - UseCases
@@ -63,6 +68,10 @@ extension MapSceneDIContainer: MapSceneFlowCoordinatorDependencies {
     
     private func makeFetchWeeklyForecastUseCase() -> FetchWeeklyForecastUseCase {
         return FetchWeeklyForecastUseCaseImpl(repository: forecastRepository)
+    }
+
+    private func makeFetchMountainImageUseCase() -> FetchMountainImageUseCase {
+        return FetchMountainImageUseCaseImpl(repository: mountainInfoRepository)
     }
 
     // MARK: - Repositories

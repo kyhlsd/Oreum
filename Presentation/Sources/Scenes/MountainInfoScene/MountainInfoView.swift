@@ -8,7 +8,6 @@
 import UIKit
 import Domain
 import SnapKit
-import Kingfisher
 
 final class MountainInfoView: BaseView {
 
@@ -16,14 +15,13 @@ final class MountainInfoView: BaseView {
     private let scrollView = UIScrollView()
     private let contentView = UIView()
 
-    // 사진 이미지 뷰
-    private let imageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
-        imageView.backgroundColor = AppColor.cardBackground
-        imageView.kf.indicatorType = .activity
-        return imageView
+    // 사진 컬렉션뷰
+    lazy var imageCollectionView = {
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createImageLayout())
+        collectionView.backgroundColor = AppColor.cardBackground
+        collectionView.isPagingEnabled = true
+        collectionView.showsHorizontalScrollIndicator = false
+        return collectionView
     }()
 
     // 사진 없을 때 표기 뷰
@@ -47,6 +45,19 @@ final class MountainInfoView: BaseView {
         label.textAlignment = .center
         return label
     }()
+
+    private func createImageLayout() -> UICollectionViewCompositionalLayout {
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
+        let section = NSCollectionLayoutSection(group: group)
+        section.orthogonalScrollingBehavior = .groupPaging
+
+        return UICollectionViewCompositionalLayout(section: section)
+    }
 
     // 정보 레이블
     private let infoView = BoxView(title: "정보")
@@ -103,7 +114,7 @@ final class MountainInfoView: BaseView {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        [imageView, emptyView, infoView, weatherView, introductionView].forEach {
+        [imageCollectionView, emptyView, infoView, weatherView, introductionView].forEach {
             contentView.addSubview($0)
         }
 
@@ -133,13 +144,13 @@ final class MountainInfoView: BaseView {
             make.edges.width.equalToSuperview()
         }
 
-        imageView.snp.makeConstraints { make in
+        imageCollectionView.snp.makeConstraints { make in
             make.top.horizontalEdges.equalToSuperview()
-            make.height.equalTo(imageView.snp.width).multipliedBy(0.75)
+            make.height.equalTo(imageCollectionView.snp.width).multipliedBy(0.75)
         }
 
         emptyView.snp.makeConstraints { make in
-            make.edges.equalTo(imageView)
+            make.edges.equalTo(imageCollectionView)
         }
 
         photoImageView.snp.makeConstraints { make in
@@ -153,7 +164,7 @@ final class MountainInfoView: BaseView {
         }
 
         infoView.snp.makeConstraints { make in
-            make.top.equalTo(imageView.snp.bottom).offset(AppSpacing.regular)
+            make.top.equalTo(imageCollectionView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
         }
 
@@ -239,26 +250,10 @@ extension MountainInfoView {
         introductionTextView.attributedText = attributedText
     }
 
-    // 산 이미지
-    func setImage(_ url: URL?) {
-        if let url = url {
-            imageView.kf.setImage(
-                with: url,
-                options: [
-                    .processor(DownsamplingImageProcessor(size: CGSize(width: DeviceSize.width, height: DeviceSize.width * 0.75))),
-                    .scaleFactor(DeviceSize.scale)
-                ]
-            ) { [weak self] result in
-                switch result {
-                case .success:
-                    self?.emptyView.isHidden = true
-                case .failure:
-                    self?.emptyView.isHidden = false
-                }
-            }
-        } else {
-            emptyView.isHidden = false
-        }
+    // 이미지 없음 표시
+    func showEmptyImageState(_ show: Bool) {
+        emptyView.isHidden = !show
+        imageCollectionView.isHidden = show
     }
 
     // 날씨 오류 발생 시

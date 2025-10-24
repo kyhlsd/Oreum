@@ -11,6 +11,7 @@ import Alamofire
 enum MountainRouter: Router {
     
     case getMountainInfo(keyword: String, page: Int)
+    case getImage(id: Int)
     
     var baseURL: String {
         return APIInfos.Mountain.baseURL
@@ -22,7 +23,7 @@ enum MountainRouter: Router {
     
     var method: HTTPMethod {
         switch self {
-        case .getMountainInfo:
+        case .getMountainInfo, .getImage:
             return .get
         }
     }
@@ -31,6 +32,8 @@ enum MountainRouter: Router {
         switch self {
         case .getMountainInfo:
             return "mntInfoOpenAPI2"
+        case .getImage:
+            return "mntInfoImgOpenAPI2"
         }
     }
     
@@ -40,6 +43,13 @@ enum MountainRouter: Router {
             return [
                 URLQueryItem(name: "searchWrd", value: keyword),
                 URLQueryItem(name: "pageNo", value: String(page)),
+                URLQueryItem(name: "numOfRows", value: "20"),
+                URLQueryItem(name: "ServiceKey", value: apiKey)
+            ]
+        case .getImage(let id):
+            return [
+                URLQueryItem(name: "mntiListNo", value: String(id)),
+                URLQueryItem(name: "pageNo", value: "1"),
                 URLQueryItem(name: "numOfRows", value: "20"),
                 URLQueryItem(name: "ServiceKey", value: apiKey)
             ]

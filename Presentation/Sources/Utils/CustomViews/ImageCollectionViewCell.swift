@@ -25,6 +25,21 @@ final class ImageCollectionViewCell: BaseCollectionViewCell {
             imageView.image = nil
         }
     }
+
+    func setImage(url: URL) {
+        imageView.kf.setImage(
+            with: url,
+            options: [
+                .processor(DownsamplingImageProcessor(size: CGSize(width: DeviceSize.width, height: DeviceSize.width * 0.75))),
+                .scaleFactor(DeviceSize.scale)
+            ]
+        )
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        imageView.image = nil
+    }
     
     // MARK: - Setups
     

@@ -29,4 +29,19 @@ public final class DefaultMountainInfoRepositoryImpl: MountainInfoRepository {
 
     }
     
+    // 산 이미지
+    public func fetchImage(id: Int) -> AnyPublisher<Result<[URL], any Error>, Never> {
+        return NetworkManager.shared.callXMLRequest(url: MountainRouter.getImage(id: id), type: MountainImageResponseDTO.self)
+            .map { result in
+                switch result {
+                case .success(let dto):
+                    let items = dto.toURL()
+                    return .success(items)
+                case .failure(let apiError):
+                    return .failure(apiError)
+                }
+            }
+            .eraseToAnyPublisher()
+    }
+    
 }

@@ -54,6 +54,7 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
         return MountainInfoViewModel(
             fetchCoordinateUseCase: makeFetchCoordinateUseCase(),
             fetchWeeklyForecastUseCase: makeFetchWeeklyForecastUseCase(),
+            fetchMountainImageUseCase: makeFetchMountainImageUseCase(),
             mountainInfo: mountainInfo
         )
     }
@@ -85,6 +86,10 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
     
     private func makeFetchWeeklyForecastUseCase() -> FetchWeeklyForecastUseCase {
         return FetchWeeklyForecastUseCaseImpl(repository: makeForecastRepository())
+    }
+
+    private func makeFetchMountainImageUseCase() -> FetchMountainImageUseCase {
+        return FetchMountainImageUseCaseImpl(repository: mountainInfoRepository)
     }
 
     // MARK: - Repositories
