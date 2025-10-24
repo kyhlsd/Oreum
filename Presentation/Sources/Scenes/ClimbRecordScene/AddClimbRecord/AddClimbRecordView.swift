@@ -283,7 +283,6 @@ extension AddClimbRecordView {
     func setLoadingState(_ isLoading: Bool) {
         if isLoading {
             searchResultsOverlay.isHidden = false
-            searchResultsTableView.isHidden = true
             emptyStateLabel.isHidden = true
             loadingIndicator.startAnimating()
         } else {

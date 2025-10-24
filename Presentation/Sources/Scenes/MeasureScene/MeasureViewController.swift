@@ -19,6 +19,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
 
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let searchTriggerSubject = PassthroughSubject<String, Never>()
+    private let loadMoreTriggerSubject = PassthroughSubject<Void, Never>()
     private let selectMountainSubject = PassthroughSubject<MountainInfo, Never>()
 
     var showRecordDetail: ((ClimbRecord) -> Void)?
@@ -59,6 +60,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
         let input = MeasureViewModel.Input(
             viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
+            loadMoreTrigger: loadMoreTriggerSubject.eraseToAnyPublisher(),
             selectMountain: selectMountainSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap,
             startMeasuring: mainView.startButton.tap,
@@ -89,6 +91,12 @@ final class MeasureViewController: UIViewController, BaseViewController {
         output.searchResults
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
+            }
+            .store(in: &cancellables)
+
+        // 새로운 검색 시 스크롤 위로 올리기
+        searchTriggerSubject
+            .sink { [weak self] _ in
                 self?.mainView.searchResultsTableView.setContentOffset(.zero, animated: false)
             }
             .store(in: &cancellables)
@@ -318,6 +326,14 @@ extension MeasureViewController: UITableViewDelegate {
 
         guard let mountain = dataSource.itemIdentifier(for: indexPath) else { return }
         selectMountainSubject.send(mountain)
+    }
+
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        let totalItems = dataSource.snapshot().numberOfItems
+        // 마지막 셀보다 3개 전에 도달하면 다음 페이지 로드 시도
+        if indexPath.row == totalItems - 3 {
+            loadMoreTriggerSubject.send(())
+        }
     }
     
     private func createDataSource() -> UITableViewDiffableDataSource<Section, MountainInfo> {

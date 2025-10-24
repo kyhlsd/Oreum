@@ -20,6 +20,7 @@ final class AddClimbRecordViewController: UIViewController, BaseViewController {
     private lazy var dataSource = createDataSource()
 
     private let searchTriggerSubject = PassthroughSubject<String, Never>()
+    private let loadMoreTriggerSubject = PassthroughSubject<Void, Never>()
     private let mountainSelectedSubject = PassthroughSubject<Mountain, Never>()
     private let dateChangedSubject = PassthroughSubject<Date, Never>()
 
@@ -48,6 +49,7 @@ final class AddClimbRecordViewController: UIViewController, BaseViewController {
     func bind() {
         let input = AddClimbRecordViewModel.Input(
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
+            loadMoreTrigger: loadMoreTriggerSubject.eraseToAnyPublisher(),
             mountainSelected: mountainSelectedSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap,
             dateChanged: dateChangedSubject.eraseToAnyPublisher(),
@@ -56,10 +58,16 @@ final class AddClimbRecordViewController: UIViewController, BaseViewController {
 
         let output = viewModel.transform(input: input)
 
-        // 검색 결과 반영, 스크롤 위로 올리기
+        // 검색 결과 반영
         output.searchResults
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
+            }
+            .store(in: &cancellables)
+
+        // 새로운 검색 시 스크롤 위로 올리기
+        searchTriggerSubject
+            .sink { [weak self] _ in
                 self?.mainView.searchResultsTableView.setContentOffset(.zero, animated: false)
             }
             .store(in: &cancellables)
@@ -189,6 +197,14 @@ extension AddClimbRecordViewController: UITableViewDelegate {
         guard let mountain = dataSource.itemIdentifier(for: indexPath) else { return }
         view.endEditing(true)
         mountainSelectedSubject.send(mountain)
+    }
+
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        let totalItems = dataSource.snapshot().numberOfItems
+        // 마지막 셀보다 3개 전에 도달하면 다음 페이지 로드 시도
+        if indexPath.row == totalItems - 3 {
+            loadMoreTriggerSubject.send(())
+        }
     }
 
     private func createDataSource() -> UITableViewDiffableDataSource<Section, Mountain> {

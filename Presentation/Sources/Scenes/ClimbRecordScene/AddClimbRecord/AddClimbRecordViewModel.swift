@@ -13,6 +13,7 @@ final class AddClimbRecordViewModel: BaseViewModel {
 
     struct Input {
         let searchTrigger: AnyPublisher<String, Never>
+        let loadMoreTrigger: AnyPublisher<Void, Never>
         let mountainSelected: AnyPublisher<Mountain, Never>
         let cancelMountain: AnyPublisher<Void, Never>
         let dateChanged: AnyPublisher<Date, Never>
@@ -51,14 +52,24 @@ final class AddClimbRecordViewModel: BaseViewModel {
         let pushDetailVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
         let updateSearchResultsCountSubject = PassthroughSubject<Int, Never>()
-        let isLoadingSubject = PassthroughSubject<Bool, Never>()
+        let isLoadingSubject = CurrentValueSubject<Bool, Never>(false)
 
         // 검색 결과
         let searchResultsSubject = PassthroughSubject<[Mountain], Never>()
 
+        // 페이지네이션 상태
+        let currentPageSubject = CurrentValueSubject<Int, Never>(1)
+        let currentKeywordSubject = CurrentValueSubject<String, Never>("")
+        let isLastPageSubject = CurrentValueSubject<Bool, Never>(false)
+        let currentMountainsSubject = CurrentValueSubject<[Mountain], Never>([])
+
+        // 새로운 검색
         input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
-            .handleEvents(receiveOutput: { _ in
+            .handleEvents(receiveOutput: { keyword in
+                currentKeywordSubject.send(keyword)
+                currentPageSubject.send(1)
+                isLastPageSubject.send(false)
                 isLoadingSubject.send(true)
             })
             .flatMap { [weak self] keyword -> AnyPublisher<Result<MountainResponse, Error>, Never> in
@@ -72,9 +83,50 @@ final class AddClimbRecordViewModel: BaseViewModel {
                 switch result {
                 case .success(let response):
                     let mountains = response.body.items.item.map { $0.toMountain() }
+                    currentMountainsSubject.send(mountains)
                     searchResultsSubject.send(mountains)
+
+                    // 마지막 페이지 체크
+                    if mountains.count >= response.body.totalCount {
+                        isLastPageSubject.send(true)
+                    }
                 case .failure:
+                    currentMountainsSubject.send([])
                     searchResultsSubject.send([])
+                    isLastPageSubject.send(true)
+                }
+            }
+            .store(in: &cancellables)
+
+        // 더 불러오기
+        input.loadMoreTrigger
+            .filter { !isLoadingSubject.value && !isLastPageSubject.value }
+            .handleEvents(receiveOutput: { _ in
+                isLoadingSubject.send(true)
+            })
+            .map { _ in (currentKeywordSubject.value, currentPageSubject.value + 1) }
+            .flatMap { [weak self] (keyword, page) -> AnyPublisher<Result<MountainResponse, Error>, Never> in
+                guard let self else {
+                    return Empty().eraseToAnyPublisher()
+                }
+                return self.searchMountainUseCase.execute(keyword: keyword, page: page)
+            }
+            .sink { result in
+                isLoadingSubject.send(false)
+                switch result {
+                case .success(let response):
+                    let newMountains = response.body.items.item.map { $0.toMountain() }
+                    let allMountains = currentMountainsSubject.value + newMountains
+                    currentMountainsSubject.send(allMountains)
+                    searchResultsSubject.send(allMountains)
+                    currentPageSubject.send(currentPageSubject.value + 1)
+
+                    // 마지막 페이지 체크
+                    if allMountains.count >= response.body.totalCount {
+                        isLastPageSubject.send(true)
+                    }
+                case .failure:
+                    isLastPageSubject.send(true)
                 }
             }
             .store(in: &cancellables)

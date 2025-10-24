@@ -35,6 +35,7 @@ final class SearchViewModel: BaseViewModel {
     struct Input {
         let viewDidLoad: AnyPublisher<Void, Never>
         let searchText: AnyPublisher<String, Never>
+        let loadMoreTrigger: AnyPublisher<Void, Never>
         let recentSearchTapped: AnyPublisher<String, Never>
         let deleteRecentSearch: AnyPublisher<String, Never>
         let clearAllRecentSearches: AnyPublisher<Void, Never>
@@ -51,7 +52,13 @@ final class SearchViewModel: BaseViewModel {
         let recentSearchesSubject = PassthroughSubject<[String], Never>()
         let searchResultsSubject = PassthroughSubject<[MountainInfo], Never>()
         let errorMessageSubject = PassthroughSubject<(String, String), Never>()
-        let isLoadingSubject = PassthroughSubject<Bool, Never>()
+        let isLoadingSubject = CurrentValueSubject<Bool, Never>(false)
+
+        // 페이지네이션 상태
+        let currentPageSubject = CurrentValueSubject<Int, Never>(1)
+        let currentKeywordSubject = CurrentValueSubject<String, Never>("")
+        let isLastPageSubject = CurrentValueSubject<Bool, Never>(false)
+        let currentMountainsSubject = CurrentValueSubject<[MountainInfo], Never>([])
 
         // 최근 검색어 Fetch
         let loadRecentSearchTrigger = PassthroughSubject<Void, Never>()
@@ -120,10 +127,13 @@ final class SearchViewModel: BaseViewModel {
         .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         .share()
 
-        // 검색 결과 가져오기 (중복 검색 방지)
+        // 새로운 검색 (중복 검색 방지)
         searchKeywordPublisher
             .removeDuplicates()
-            .handleEvents(receiveOutput: { _ in
+            .handleEvents(receiveOutput: { keyword in
+                currentKeywordSubject.send(keyword)
+                currentPageSubject.send(1)
+                isLastPageSubject.send(false)
                 isLoadingSubject.send(true)
             })
             .flatMap { [weak self] keyword -> AnyPublisher<Result<MountainResponse, Error>, Never> in
@@ -136,10 +146,52 @@ final class SearchViewModel: BaseViewModel {
                 isLoadingSubject.send(false)
                 switch result {
                 case .success(let response):
-                    searchResultsSubject.send(response.body.items.item)
+                    let mountains = response.body.items.item
+                    currentMountainsSubject.send(mountains)
+                    searchResultsSubject.send(mountains)
+
+                    // 마지막 페이지 체크
+                    if mountains.count >= response.body.totalCount {
+                        isLastPageSubject.send(true)
+                    }
                 case .failure(let error):
                     errorMessageSubject.send(("검색 결과 불러오기 실패", error.localizedDescription))
+                    currentMountainsSubject.send([])
                     searchResultsSubject.send([])
+                    isLastPageSubject.send(true)
+                }
+            }
+            .store(in: &cancellables)
+
+        // 더 불러오기
+        input.loadMoreTrigger
+            .filter { !isLoadingSubject.value && !isLastPageSubject.value }
+            .handleEvents(receiveOutput: { _ in
+                isLoadingSubject.send(true)
+            })
+            .map { _ in (currentKeywordSubject.value, currentPageSubject.value + 1) }
+            .flatMap { [weak self] (keyword, page) -> AnyPublisher<Result<MountainResponse, Error>, Never> in
+                guard let self else {
+                    return Empty().eraseToAnyPublisher()
+                }
+                return self.searchMountainUseCase.execute(keyword: keyword, page: page)
+            }
+            .sink { result in
+                isLoadingSubject.send(false)
+                switch result {
+                case .success(let response):
+                    let newMountains = response.body.items.item
+                    let allMountains = currentMountainsSubject.value + newMountains
+                    currentMountainsSubject.send(allMountains)
+                    searchResultsSubject.send(allMountains)
+                    currentPageSubject.send(currentPageSubject.value + 1)
+
+                    // 마지막 페이지 체크
+                    if allMountains.count >= response.body.totalCount {
+                        isLastPageSubject.send(true)
+                    }
+                case .failure:
+                    isLastPageSubject.send(true)
                 }
             }
             .store(in: &cancellables)
