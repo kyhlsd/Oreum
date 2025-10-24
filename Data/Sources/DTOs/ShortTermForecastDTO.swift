@@ -8,7 +8,7 @@
 import Foundation
 import Domain
 
-struct ShortTermForecastDTO: Decodable {
+struct ShortTermForecastDTO: Decodable, Sendable {
     
     let response: ForecastResponse
     

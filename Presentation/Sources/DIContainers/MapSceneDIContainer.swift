@@ -71,7 +71,12 @@ extension MapSceneDIContainer: MapSceneFlowCoordinatorDependencies {
     }
     
     private func makeMountainInfoRepository() -> MountainInfoRepository {
-        return JSONMountainInfoRepositoryImpl()
+        switch configuration.environment {
+        case .release, .dev:
+            return DefaultMountainInfoRepositoryImpl()
+        case .dummy:
+            return DummyMountainInfoRepositoryImpl()
+        }
     }
     
     private func makeGeocodeRepository() -> GeocodeRepository {

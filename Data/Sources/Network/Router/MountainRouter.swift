@@ -40,7 +40,7 @@ enum MountainRouter: Router {
             return [
                 URLQueryItem(name: "searchWrd", value: keyword),
                 URLQueryItem(name: "pageNo", value: String(page)),
-                URLQueryItem(name: "numOfRows", value: String(page)),
+                URLQueryItem(name: "numOfRows", value: "20"),
                 URLQueryItem(name: "ServiceKey", value: apiKey)
             ]
         }

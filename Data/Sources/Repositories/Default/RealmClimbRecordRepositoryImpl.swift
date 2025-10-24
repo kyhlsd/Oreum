@@ -67,6 +67,15 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
             do {
                 let realmRecord = ClimbRecordRealm(from: record)
                 try realm.write {
+                    // MountainRealm의 중복 저장 방지
+                    if let mountain = realmRecord.mountain {
+                        if let existingMountain = realm.object(ofType: MountainRealm.self, forPrimaryKey: mountain.id) {
+                            realmRecord.mountain = existingMountain
+                        } else {
+                            realm.add(mountain)
+                        }
+                    }
+                    // ClimbRecordRealm 저장
                     realm.add(realmRecord)
                 }
                 let savedRecord = realmRecord.toDomain()

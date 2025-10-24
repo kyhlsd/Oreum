@@ -136,8 +136,8 @@ final class MapViewController: UIViewController, BaseViewController {
     private func setupAnnotationViewBuilder() {
         // 상세 정보 보기 선택 시
         annotationViewBuilder.mountainInfoButtonTapped
-            .sink { [weak self] name, height in
-                self?.mountainInfoButtonTappedSubject.send((name, height))
+            .sink { [weak self] name, id in
+                self?.mountainInfoButtonTappedSubject.send((name, id))
             }
             .store(in: &cancellables)
 

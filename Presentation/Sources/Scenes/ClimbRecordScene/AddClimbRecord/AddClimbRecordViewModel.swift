@@ -31,15 +31,15 @@ final class AddClimbRecordViewModel: BaseViewModel {
         let errorMessage: AnyPublisher<(String, String), Never>
     }
 
-    private let fetchMountainsUseCase: FetchMountainsUseCase
+    private let searchMountainUseCase: SearchMountainUseCase
     private let saveClimbRecordUseCase: SaveClimbRecordUseCase
     private var cancellables = Set<AnyCancellable>()
 
     init(
-        fetchMountainsUseCase: FetchMountainsUseCase,
+        searchMountainUseCase: SearchMountainUseCase,
         saveClimbRecordUseCase: SaveClimbRecordUseCase
     ) {
-        self.fetchMountainsUseCase = fetchMountainsUseCase
+        self.searchMountainUseCase = searchMountainUseCase
         self.saveClimbRecordUseCase = saveClimbRecordUseCase
     }
 
@@ -56,16 +56,16 @@ final class AddClimbRecordViewModel: BaseViewModel {
 
         input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
-            .flatMap { [weak self] keyword -> AnyPublisher<Result<[MountainInfo], Error>, Never> in
+            .flatMap { [weak self] keyword -> AnyPublisher<Result<MountainResponse, Error>, Never> in
                 guard let self else {
-                    return Just(.success([])).eraseToAnyPublisher()
+                    return Empty().eraseToAnyPublisher()
                 }
-                return self.fetchMountainsUseCase.execute(keyword: keyword)
+                return self.searchMountainUseCase.execute(keyword: keyword, page: 1)
             }
             .sink { result in
                 switch result {
-                case .success(let mountainInfos):
-                    let mountains = mountainInfos.map { $0.toMountain() }
+                case .success(let response):
+                    let mountains = response.body.items.item.map { $0.toMountain() }
                     searchResultsSubject.send(mountains)
                 case .failure:
                     searchResultsSubject.send([])

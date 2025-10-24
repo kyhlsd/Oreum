@@ -9,6 +9,7 @@ import Foundation
 import Combine
 import Network
 import Alamofire
+import XMLCoder
 
 public final class NetworkManager {
     
@@ -41,7 +42,7 @@ public final class NetworkManager {
         guard isConnected else {
             return Just(.failure(.network)).eraseToAnyPublisher()
         }
-        
+
         return Future<Result<T, APIError>, Never> { promise in
             AF.request(url)
                 .validate()
@@ -60,5 +61,42 @@ public final class NetworkManager {
         }
         .eraseToAnyPublisher()
     }
-    
+
+    // XML 응답
+    func callXMLRequest<T: Decodable & Sendable>(url: Router, type: T.Type = T.self) -> AnyPublisher<Result<T, APIError>, Never> {
+        guard isConnected else {
+            return Just(.failure(.network)).eraseToAnyPublisher()
+        }
+
+        return Future<Result<T, APIError>, Never> { promise in
+            AF.request(url)
+                .validate()
+                .responseData { response in
+                    switch response.result {
+                    case .success(let data):
+                        do {
+                            let decoder = XMLDecoder()
+                            let value = try decoder.decode(type, from: data)
+                            promise(.success(.success(value)))
+                        } catch {
+                            promise(.success(.failure(.unknown)))
+                        }
+                    case .failure:
+                        if let data = response.data {
+                            do {
+                                let decoder = XMLDecoder()
+                                let errorResult = try decoder.decode(url.errorResponse, from: data)
+                                promise(.success(.failure(.some(message: errorResult.message))))
+                            } catch {
+                                promise(.success(.failure(.unknown)))
+                            }
+                        } else {
+                            promise(.success(.failure(.unknown)))
+                        }
+                    }
+                }
+        }
+        .eraseToAnyPublisher()
+    }
+
 }

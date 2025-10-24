@@ -92,9 +92,14 @@ final class MountainInfoViewModel: BaseViewModel {
 
                 mountainNameSubject.send(mountainInfo.name)
                 addressSubject.send(mountainInfo.address)
-                heightSubject.send("\(mountainInfo.height)m")
+                if let height = mountainInfo.height {
+                    heightSubject.send("\(height)m")
+                } else {
+                    heightSubject.send("알 수 없음")
+                }
                 introductionSubject.send(mountainInfo.detail)
-                imageURLSubject.send(mountainInfo.image.flatMap { URL(string: $0) })
+                // TODO: 이미지
+//                imageURLSubject.send(mountainInfo.image.flatMap { URL(string: $0) })
                 fetchCoordinateTrigger.send(firstSentence(from: mountainInfo.address))
             }
             .store(in: &cancellables)

@@ -11,7 +11,7 @@ import Domain
 
 final class MeasureViewModel: BaseViewModel {
 
-    private let fetchMountainsUseCase: FetchMountainsUseCase
+    private let searchMountainUseCase: SearchMountainUseCase
     private let requestTrackActivityAuthorizationUseCase: RequestTrackActivityAuthorizationUseCase
     private let startTrackingActivityUseCase: StartTrackingActivityUseCase
     private let getActivityLogsUseCase: GetActivityLogsUseCase
@@ -27,7 +27,7 @@ final class MeasureViewModel: BaseViewModel {
     private var currentDistance: Int = 0
 
     init(
-        fetchMountainsUseCase: FetchMountainsUseCase,
+        searchMountainUseCase: SearchMountainUseCase,
         requestTrackActivityAuthorizationUseCase: RequestTrackActivityAuthorizationUseCase,
         startTrackingActivityUseCase: StartTrackingActivityUseCase,
         getActivityLogsUseCase: GetActivityLogsUseCase,
@@ -38,7 +38,7 @@ final class MeasureViewModel: BaseViewModel {
         getClimbingMountainUseCase: GetClimbingMountainUseCase,
         saveClimbRecordUseCase: SaveClimbRecordUseCase
     ) {
-        self.fetchMountainsUseCase = fetchMountainsUseCase
+        self.searchMountainUseCase = searchMountainUseCase
         self.requestTrackActivityAuthorizationUseCase = requestTrackActivityAuthorizationUseCase
         self.startTrackingActivityUseCase = startTrackingActivityUseCase
         self.getActivityLogsUseCase = getActivityLogsUseCase
@@ -167,16 +167,16 @@ final class MeasureViewModel: BaseViewModel {
 
         input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
-            .flatMap { [weak self] keyword -> AnyPublisher<Result<[MountainInfo], Error>, Never> in
+            .flatMap { [weak self] keyword -> AnyPublisher<Result<MountainResponse, Error>, Never> in
                 guard let self else {
-                    return Just(.success([])).eraseToAnyPublisher()
+                    return Empty().eraseToAnyPublisher()
                 }
-                return self.fetchMountainsUseCase.execute(keyword: keyword)
+                return self.searchMountainUseCase.execute(keyword: keyword, page: 1)
             }
             .sink { result in
                 switch result {
-                case .success(let results):
-                    searchResultsSubject.send(results)
+                case .success(let response):
+                    searchResultsSubject.send(response.body.items.item)
                 case .failure(let error):
                     errorMessageSubject.send(("검색 결과 받아오기 실패", error.localizedDescription))
                     searchResultsSubject.send([])

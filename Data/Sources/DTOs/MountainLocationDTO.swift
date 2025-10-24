@@ -9,6 +9,7 @@ import Foundation
 import Domain
 
 struct MountainLocationDTO: Decodable {
+    private let id: Int
     private let name: String
     private let latitude: Double
     private let longitude: Double
@@ -19,6 +20,7 @@ struct MountainLocationDTO: Decodable {
 extension MountainLocationDTO {
     func toDomain() -> MountainLocation {
         return MountainLocation(
+            id: id,
             name: name,
             latitude: latitude,
             longitude: longitude,

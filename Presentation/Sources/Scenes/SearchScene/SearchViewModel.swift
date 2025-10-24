@@ -11,7 +11,7 @@ import Domain
 
 final class SearchViewModel: BaseViewModel {
 
-    private let fetchMountainsUseCase: FetchMountainsUseCase
+    private let searchMountainUseCase: SearchMountainUseCase
     private let fetchRecentSearchesUseCase: FetchRecentSearchesUseCase
     private let saveRecentSearchUseCase: SaveRecentSearchUseCase
     private let deleteRecentSearchUseCase: DeleteRecentSearchUseCase
@@ -19,13 +19,13 @@ final class SearchViewModel: BaseViewModel {
     private var cancellables = Set<AnyCancellable>()
 
     init(
-        fetchMountainsUseCase: FetchMountainsUseCase,
+        searchMountainUseCase: SearchMountainUseCase,
         fetchRecentSearchesUseCase: FetchRecentSearchesUseCase,
         saveRecentSearchUseCase: SaveRecentSearchUseCase,
         deleteRecentSearchUseCase: DeleteRecentSearchUseCase,
         clearRecentSearchesUseCase: ClearRecentSearchesUseCase
     ) {
-        self.fetchMountainsUseCase = fetchMountainsUseCase
+        self.searchMountainUseCase = searchMountainUseCase
         self.fetchRecentSearchesUseCase = fetchRecentSearchesUseCase
         self.saveRecentSearchUseCase = saveRecentSearchUseCase
         self.deleteRecentSearchUseCase = deleteRecentSearchUseCase
@@ -116,27 +116,21 @@ final class SearchViewModel: BaseViewModel {
             input.recentSearchTapped
         )
         .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        .share()
 
         // 검색 결과 가져오기 (중복 검색 방지)
-        let searchResultPublisher = searchKeywordPublisher
+        searchKeywordPublisher
             .removeDuplicates()
-            .flatMap { [weak self] keyword -> AnyPublisher<(String, Result<[MountainInfo], Error>), Never> in
-                guard let self else { return Just((keyword, .success([]))).eraseToAnyPublisher() }
+            .flatMap { [weak self] keyword -> AnyPublisher<Result<MountainResponse, Error>, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
 
-                return self.fetchMountainsUseCase.execute(keyword: keyword)
-                    .map { result -> (String, Result<[MountainInfo], Error>) in
-                        (keyword, result)
-                    }
+                return self.searchMountainUseCase.execute(keyword: keyword, page: 1)
                     .eraseToAnyPublisher()
             }
-            .share()
-
-        // 검색 결과 전송
-        searchResultPublisher
-            .sink { (keyword, result) in
+            .sink { result in
                 switch result {
-                case .success(let results):
-                    searchResultsSubject.send(results)
+                case .success(let response):
+                    searchResultsSubject.send(response.body.items.item)
                 case .failure(let error):
                     errorMessageSubject.send(("검색 결과 불러오기 실패", error.localizedDescription))
                     searchResultsSubject.send([])

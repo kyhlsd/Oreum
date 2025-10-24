@@ -8,6 +8,5 @@
 import Combine
 
 public protocol MountainInfoRepository {
-    func fetchMountains(keyword: String) -> AnyPublisher<Result<[MountainInfo], Error>, Never>
-    func fetchMountainInfo(name: String, height: Int) -> AnyPublisher<Result<MountainInfo, Error>, Never>
+    func searchMountain(keyword: String, page: Int) -> AnyPublisher<Result<MountainResponse, Error>, Never>
 }

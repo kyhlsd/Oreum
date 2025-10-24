@@ -126,7 +126,8 @@ let project = Project(
                     dependencies: [
                         .target(name: "Domain"),
                         .external(name: "RealmSwift"),
-                        .external(name: "Alamofire")
+                        .external(name: "Alamofire"),
+                        .external(name: "XMLCoder")
                     ],
                     settings: .settings(
                         base: [

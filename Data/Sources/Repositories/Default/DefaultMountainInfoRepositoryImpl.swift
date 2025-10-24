@@ -9,25 +9,24 @@ import Foundation
 import Combine
 import Domain
 
-//public final class DefaultMountainInfoRepositoryImpl: MountainInfoRepository {
-//
-//    public init() {}
-//
-//    // 산 검색
-//    public func fetchMountains(keyword: String) -> AnyPublisher<Result<[MountainInfo], Error>, Never> {
-//
-//        guard !keyword.isEmpty else {
-//            return Just(.success([]))
-//                .eraseToAnyPublisher()
-//        }
-//
-//        
-//    }
-//
-//    // TODO: 산 코드 기반으로 수정하고, Usecase에서 처리하기
-//    // 산 상세 정보 불러오기
-//    public func fetchMountainInfo(name: String, height: Int) -> AnyPublisher<Result<Domain.MountainInfo, any Error>, Never> {
-//        
-//    }
-//    
-//}
+public final class DefaultMountainInfoRepositoryImpl: MountainInfoRepository {
+
+    public init() {}
+
+    // 산 검색
+    public func searchMountain(keyword: String, page: Int) -> AnyPublisher<Result<MountainResponse, Error>, Never> {
+        return NetworkManager.shared.callXMLRequest(url: MountainRouter.getMountainInfo(keyword: keyword, page: page), type: MountainResponseDTO.self)
+            .map { result in
+                switch result {
+                case .success(let dto):
+                    let items = dto.toDomain()
+                    return .success(items)
+                case .failure(let apiError):
+                    return .failure(apiError)
+                }
+            }
+            .eraseToAnyPublisher()
+
+    }
+    
+}
