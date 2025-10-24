@@ -90,7 +90,8 @@ final class AddClimbRecordViewModel: BaseViewModel {
                     if mountains.count >= response.body.totalCount {
                         isLastPageSubject.send(true)
                     }
-                case .failure:
+                case .failure(let error):
+                    errorSubject.send(("검색 실패", error.localizedDescription))
                     currentMountainsSubject.send([])
                     searchResultsSubject.send([])
                     isLastPageSubject.send(true)
@@ -125,7 +126,8 @@ final class AddClimbRecordViewModel: BaseViewModel {
                     if allMountains.count >= response.body.totalCount {
                         isLastPageSubject.send(true)
                     }
-                case .failure:
+                case .failure(let error):
+                    errorSubject.send(("검색 실패", error.localizedDescription))
                     isLastPageSubject.send(true)
                 }
             }

@@ -202,7 +202,7 @@ final class MeasureViewModel: BaseViewModel {
                         isLastPageSubject.send(true)
                     }
                 case .failure(let error):
-                    errorMessageSubject.send(("검색 결과 받아오기 실패", error.localizedDescription))
+                    errorMessageSubject.send(("검색 실패", error.localizedDescription))
                     currentMountainsSubject.send([])
                     searchResultsSubject.send([])
                     isLastPageSubject.send(true)
@@ -237,7 +237,8 @@ final class MeasureViewModel: BaseViewModel {
                     if allMountains.count >= response.body.totalCount {
                         isLastPageSubject.send(true)
                     }
-                case .failure:
+                case .failure(let error):
+                    errorMessageSubject.send(("검색 실패", error.localizedDescription))
                     isLastPageSubject.send(true)
                 }
             }
