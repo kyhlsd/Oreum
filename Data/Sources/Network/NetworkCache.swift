@@ -23,6 +23,12 @@ actor NetworkCache {
     // 디스크 캐시 최대 용량 (기본 100MB)
     private let diskCacheLimit: Int
 
+    // 캐시 크기 추적
+    private var currentCacheSize: Int = 0
+    private var lastSizeCalculation: Date?
+    private let sizeRecalculationInterval: TimeInterval = 300 // 5분마다 재계산
+    private let sizeThreshold: Double = 0.8 // 80% 차면 정리
+
     private init(cacheExpiration: TimeInterval = 3600, diskCacheLimit: Int = 100 * 1024 * 1024) {
         self.cacheExpiration = cacheExpiration
         self.diskCacheLimit = diskCacheLimit
@@ -37,6 +43,11 @@ actor NetworkCache {
         // 메모리 캐시 설정
         memoryCache.countLimit = 100 // 최대 100개 항목
         memoryCache.totalCostLimit = 50 * 1024 * 1024 // 최대 50MB
+
+        // 초기 캐시 크기 계산
+        Task {
+            await calculateCacheSize()
+        }
     }
 
     // MARK: - Public Methods
@@ -154,25 +165,53 @@ actor NetworkCache {
             return nil
         }
 
-        return try? Data(contentsOf: fileURL)
+        // 파일 읽기
+        guard let data = try? Data(contentsOf: fileURL) else {
+            return nil
+        }
+
+        // Access Date 업데이트 (LRU)
+        updateAccessDate(for: fileURL)
+
+        return data
     }
 
     private func saveDiskCache(_ data: Data, for key: String) {
-        // 용량 체크 및 정리
-        ensureDiskCacheLimit()
-
         let fileURL = diskCacheURL(for: key)
+
+        // 기존 파일 크기 확인
+        let existingSize = getFileSize(at: fileURL)
+
+        // 파일 저장
         try? data.write(to: fileURL, options: .atomic)
+
+        // 캐시 크기 증분 업데이트
+        currentCacheSize = currentCacheSize - existingSize + data.count
+
+        // 용량 체크 및 정리
+        ensureDiskCacheLimitIfNeeded()
     }
 
     private func removeDiskCache(for key: String) {
         let fileURL = diskCacheURL(for: key)
+
+        // 파일 크기 확인
+        let fileSize = getFileSize(at: fileURL)
+
+        // 파일 삭제
         try? FileManager.default.removeItem(at: fileURL)
+
+        // 캐시 크기 업데이트
+        currentCacheSize = max(0, currentCacheSize - fileSize)
     }
 
     private func clearDiskCache() {
         try? FileManager.default.removeItem(at: diskCacheDirectory)
         createCacheDirectoryIfNeeded()
+
+        // 캐시 크기 초기화
+        currentCacheSize = 0
+        lastSizeCalculation = Date()
     }
 
     private func diskCacheURL(for key: String) -> URL {
@@ -180,16 +219,26 @@ actor NetworkCache {
         return diskCacheDirectory.appendingPathComponent(fileName)
     }
 
-    // 디스크 캐시 용량 확인 및 초과 시 오래된 파일 삭제 (LRU)
-    private func ensureDiskCacheLimit() {
+    // 임계값 기반 캐시 용량 체크
+    private func ensureDiskCacheLimitIfNeeded() {
+        // 주기적으로 실제 크기 재계산
+        recalculateCacheSizeIfNeeded()
+
+        // 임계값(80%) 초과 시에만 정리 작업 실행
+        let threshold = Int(Double(diskCacheLimit) * sizeThreshold)
+        guard currentCacheSize > threshold else { return }
+
+        performCacheEviction()
+    }
+
+    // LRU 기반 캐시 정리
+    private func performCacheEviction() {
         guard let fileURLs = try? FileManager.default.contentsOfDirectory(
             at: diskCacheDirectory,
             includingPropertiesForKeys: [.fileSizeKey, .contentAccessDateKey],
             options: .skipsHiddenFiles
         ) else { return }
 
-        // 전체 디스크 캐시 크기 계산
-        var totalSize = 0
         var filesWithInfo: [(url: URL, size: Int, accessDate: Date)] = []
 
         for fileURL in fileURLs {
@@ -199,25 +248,82 @@ actor NetworkCache {
                 continue
             }
 
-            totalSize += fileSize
             filesWithInfo.append((url: fileURL, size: fileSize, accessDate: accessDate))
         }
 
-        // 용량 초과 시 오래된 파일부터 삭제
-        if totalSize > diskCacheLimit {
-            // 접근 날짜 기준 오름차순 정렬 (오래된 것부터)
-            filesWithInfo.sort { $0.accessDate < $1.accessDate }
+        // 접근 날짜 기준 오름차순 정렬
+        filesWithInfo.sort { $0.accessDate < $1.accessDate }
 
-            var currentSize = totalSize
-            for fileInfo in filesWithInfo {
-                if currentSize <= diskCacheLimit {
-                    break
-                }
+        // 목표 크기까지 오래된 파일 삭제
+        let targetSize = Int(Double(diskCacheLimit) * 0.7) // 70%
+        var totalSize = currentCacheSize
 
-                try? FileManager.default.removeItem(at: fileInfo.url)
-                currentSize -= fileInfo.size
+        for fileInfo in filesWithInfo {
+            if totalSize <= targetSize {
+                break
+            }
+
+            try? FileManager.default.removeItem(at: fileInfo.url)
+            totalSize -= fileInfo.size
+        }
+
+        // 실제 크기 재계산
+        calculateCacheSize()
+    }
+
+    // 전체 캐시 크기 계산
+    private func calculateCacheSize() {
+        guard let fileURLs = try? FileManager.default.contentsOfDirectory(
+            at: diskCacheDirectory,
+            includingPropertiesForKeys: [.fileSizeKey],
+            options: .skipsHiddenFiles
+        ) else {
+            currentCacheSize = 0
+            lastSizeCalculation = Date()
+            return
+        }
+
+        var totalSize = 0
+        for fileURL in fileURLs {
+            if let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
+               let fileSize = resourceValues.fileSize {
+                totalSize += fileSize
             }
         }
+
+        currentCacheSize = totalSize
+        lastSizeCalculation = Date()
+    }
+
+    // 주기적으로 실제 크기 재계산
+    private func recalculateCacheSizeIfNeeded() {
+        guard let lastCalculation = lastSizeCalculation else {
+            calculateCacheSize()
+            return
+        }
+
+        let elapsed = Date().timeIntervalSince(lastCalculation)
+        if elapsed > sizeRecalculationInterval {
+            calculateCacheSize()
+        }
+    }
+
+    // 파일 크기 조회
+    private func getFileSize(at url: URL) -> Int {
+        guard let resourceValues = try? url.resourceValues(forKeys: [.fileSizeKey]),
+              let fileSize = resourceValues.fileSize else {
+            return 0
+        }
+        return fileSize
+    }
+
+    // Access Date 업데이트
+    private func updateAccessDate(for url: URL) {
+        let now = Date()
+        try? FileManager.default.setAttributes(
+            [.modificationDate: now],
+            ofItemAtPath: url.path
+        )
     }
 }
 

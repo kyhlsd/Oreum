@@ -59,8 +59,7 @@ final class MountainInfoViewModel: BaseViewModel {
         fetchCoordinateTrigger
             .flatMap { [weak self] address -> AnyPublisher<Result<Coordinate, Error>, Never> in
                 guard let self else {
-                    return Just(.failure(NSError(domain: "SelfDeallocated", code: -1)))
-                        .eraseToAnyPublisher()
+                    return Empty().eraseToAnyPublisher()
                 }
                 return fetchCoordinateUseCase.execute(address: address)
             }
