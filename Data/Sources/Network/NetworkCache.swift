@@ -114,7 +114,7 @@ actor NetworkCache {
     func cleanExpiredCache() async {
         guard let fileURLs = try? FileManager.default.contentsOfDirectory(
             at: diskCacheDirectory,
-            includingPropertiesForKeys: [.contentModificationDateKey],
+            includingPropertiesForKeys: [.creationDateKey],
             options: .skipsHiddenFiles
         ) else { return }
 
@@ -122,12 +122,12 @@ actor NetworkCache {
 
         for fileURL in fileURLs {
             guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-                  let modificationDate = attributes[.modificationDate] as? Date else {
+                  let creationDate = attributes[.creationDate] as? Date else {
                 continue
             }
 
             // 만료 확인
-            if now.timeIntervalSince(modificationDate) > cacheExpiration {
+            if now.timeIntervalSince(creationDate) > cacheExpiration {
                 try? FileManager.default.removeItem(at: fileURL)
             }
         }
@@ -152,14 +152,14 @@ actor NetworkCache {
             return nil
         }
 
-        // 파일 수정 날짜 확인 (만료 체크)
+        // 파일 생성 날짜 확인 (만료 체크)
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-              let modificationDate = attributes[.modificationDate] as? Date else {
+              let creationDate = attributes[.creationDate] as? Date else {
             return nil
         }
 
         let now = Date()
-        if now.timeIntervalSince(modificationDate) > cacheExpiration {
+        if now.timeIntervalSince(creationDate) > cacheExpiration {
             // 만료된 파일 삭제
             try? FileManager.default.removeItem(at: fileURL)
             return nil
@@ -170,8 +170,8 @@ actor NetworkCache {
             return nil
         }
 
-        // Access Date 업데이트 (LRU)
-        updateAccessDate(for: fileURL)
+        // Modification Date 업데이트 (LRU)
+        updateModificationDate(for: fileURL)
 
         return data
     }
@@ -235,24 +235,24 @@ actor NetworkCache {
     private func performCacheEviction() {
         guard let fileURLs = try? FileManager.default.contentsOfDirectory(
             at: diskCacheDirectory,
-            includingPropertiesForKeys: [.fileSizeKey, .contentAccessDateKey],
+            includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey],
             options: .skipsHiddenFiles
         ) else { return }
 
-        var filesWithInfo: [(url: URL, size: Int, accessDate: Date)] = []
+        var filesWithInfo: [(url: URL, size: Int, modificationDate: Date)] = []
 
         for fileURL in fileURLs {
-            guard let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .contentAccessDateKey]),
+            guard let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey]),
                   let fileSize = resourceValues.fileSize,
-                  let accessDate = resourceValues.contentAccessDate else {
+                  let modificationDate = resourceValues.contentModificationDate else {
                 continue
             }
 
-            filesWithInfo.append((url: fileURL, size: fileSize, accessDate: accessDate))
+            filesWithInfo.append((url: fileURL, size: fileSize, modificationDate: modificationDate))
         }
 
-        // 접근 날짜 기준 오름차순 정렬
-        filesWithInfo.sort { $0.accessDate < $1.accessDate }
+        // 수정 날짜 기준 오름차순 정렬 (오래 안읽은 것부터)
+        filesWithInfo.sort { $0.modificationDate < $1.modificationDate }
 
         // 목표 크기까지 오래된 파일 삭제
         let targetSize = Int(Double(diskCacheLimit) * 0.7) // 70%
@@ -317,8 +317,8 @@ actor NetworkCache {
         return fileSize
     }
 
-    // Access Date 업데이트
-    private func updateAccessDate(for url: URL) {
+    // Modification Date 업데이트 (LRU)
+    private func updateModificationDate(for url: URL) {
         let now = Date()
         try? FileManager.default.setAttributes(
             [.modificationDate: now],
