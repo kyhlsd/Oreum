@@ -15,8 +15,7 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
     private let realm: Realm?
 
     public init() {
-        self.realm = try? Realm()
-        print(realm?.configuration.fileURL ?? "realm initialization failed")
+        self.realm = RealmHelper.shared
     }
 
     // 기록 가져오기
