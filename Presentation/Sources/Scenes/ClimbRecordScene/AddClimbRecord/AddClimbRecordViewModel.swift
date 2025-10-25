@@ -13,6 +13,7 @@ final class AddClimbRecordViewModel: BaseViewModel {
 
     struct Input {
         let searchTrigger: AnyPublisher<String, Never>
+        let loadMoreTrigger: AnyPublisher<Void, Never>
         let mountainSelected: AnyPublisher<Mountain, Never>
         let cancelMountain: AnyPublisher<Void, Never>
         let dateChanged: AnyPublisher<Date, Never>
@@ -29,17 +30,18 @@ final class AddClimbRecordViewModel: BaseViewModel {
         let updateNextButtonIsEnabledTrigger: AnyPublisher<Bool, Never>
         let pushDetailVC: AnyPublisher<ClimbRecord, Never>
         let errorMessage: AnyPublisher<(String, String), Never>
+        let isLoading: AnyPublisher<Bool, Never>
     }
 
-    private let fetchMountainsUseCase: FetchMountainsUseCase
+    private let searchMountainUseCase: SearchMountainUseCase
     private let saveClimbRecordUseCase: SaveClimbRecordUseCase
     private var cancellables = Set<AnyCancellable>()
 
     init(
-        fetchMountainsUseCase: FetchMountainsUseCase,
+        searchMountainUseCase: SearchMountainUseCase,
         saveClimbRecordUseCase: SaveClimbRecordUseCase
     ) {
-        self.fetchMountainsUseCase = fetchMountainsUseCase
+        self.searchMountainUseCase = searchMountainUseCase
         self.saveClimbRecordUseCase = saveClimbRecordUseCase
     }
 
@@ -50,25 +52,83 @@ final class AddClimbRecordViewModel: BaseViewModel {
         let pushDetailVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let updateSearchResultsOverlayIsHiddenSubject = PassthroughSubject<Bool, Never>()
         let updateSearchResultsCountSubject = PassthroughSubject<Int, Never>()
+        let isLoadingSubject = CurrentValueSubject<Bool, Never>(false)
 
         // 검색 결과
         let searchResultsSubject = PassthroughSubject<[Mountain], Never>()
 
+        // 페이지네이션 상태
+        let currentPageSubject = CurrentValueSubject<Int, Never>(1)
+        let currentKeywordSubject = CurrentValueSubject<String, Never>("")
+        let isLastPageSubject = CurrentValueSubject<Bool, Never>(false)
+        let currentMountainsSubject = CurrentValueSubject<[Mountain], Never>([])
+
+        // 새로운 검색
         input.searchTrigger
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
-            .flatMap { [weak self] keyword -> AnyPublisher<Result<[MountainInfo], Error>, Never> in
+            .handleEvents(receiveOutput: { keyword in
+                currentKeywordSubject.send(keyword)
+                currentPageSubject.send(1)
+                isLastPageSubject.send(false)
+                isLoadingSubject.send(true)
+            })
+            .flatMap { [weak self] keyword -> AnyPublisher<Result<MountainResponse, Error>, Never> in
                 guard let self else {
-                    return Just(.success([])).eraseToAnyPublisher()
+                    return Empty().eraseToAnyPublisher()
                 }
-                return self.fetchMountainsUseCase.execute(keyword: keyword)
+                return self.searchMountainUseCase.execute(keyword: keyword, page: 1)
             }
             .sink { result in
+                isLoadingSubject.send(false)
                 switch result {
-                case .success(let mountainInfos):
-                    let mountains = mountainInfos.map { $0.toMountain() }
+                case .success(let response):
+                    let mountains = response.body.items.item.map { $0.toMountain() }
+                    currentMountainsSubject.send(mountains)
                     searchResultsSubject.send(mountains)
-                case .failure:
+
+                    // 마지막 페이지 체크
+                    if mountains.count >= response.body.totalCount {
+                        isLastPageSubject.send(true)
+                    }
+                case .failure(let error):
+                    errorSubject.send(("검색 실패", error.localizedDescription))
+                    currentMountainsSubject.send([])
                     searchResultsSubject.send([])
+                    isLastPageSubject.send(true)
+                }
+            }
+            .store(in: &cancellables)
+
+        // 더 불러오기
+        input.loadMoreTrigger
+            .filter { !isLoadingSubject.value && !isLastPageSubject.value }
+            .handleEvents(receiveOutput: { _ in
+                isLoadingSubject.send(true)
+            })
+            .map { _ in (currentKeywordSubject.value, currentPageSubject.value + 1) }
+            .flatMap { [weak self] (keyword, page) -> AnyPublisher<Result<MountainResponse, Error>, Never> in
+                guard let self else {
+                    return Empty().eraseToAnyPublisher()
+                }
+                return self.searchMountainUseCase.execute(keyword: keyword, page: page)
+            }
+            .sink { result in
+                isLoadingSubject.send(false)
+                switch result {
+                case .success(let response):
+                    let newMountains = response.body.items.item.map { $0.toMountain() }
+                    let allMountains = currentMountainsSubject.value + newMountains
+                    currentMountainsSubject.send(allMountains)
+                    searchResultsSubject.send(allMountains)
+                    currentPageSubject.send(currentPageSubject.value + 1)
+
+                    // 마지막 페이지 체크
+                    if allMountains.count >= response.body.totalCount {
+                        isLastPageSubject.send(true)
+                    }
+                case .failure(let error):
+                    errorSubject.send(("검색 실패", error.localizedDescription))
+                    isLastPageSubject.send(true)
                 }
             }
             .store(in: &cancellables)
@@ -101,10 +161,9 @@ final class AddClimbRecordViewModel: BaseViewModel {
 
         let hideOverlay = updateSearchResultsOverlayIsHiddenSubject.eraseToAnyPublisher()
 
-        // 검색 결과 개수 업데이트 및 오버레이 표시
+        // 검색 결과 개수 업데이트
         searchResults
             .sink { results in
-                updateSearchResultsOverlayIsHiddenSubject.send(false)
                 updateSearchResultsCountSubject.send(results.count)
             }
             .store(in: &cancellables)
@@ -161,7 +220,8 @@ final class AddClimbRecordViewModel: BaseViewModel {
             clearSearchBarTrigger: clearSearchBar,
             updateNextButtonIsEnabledTrigger: nextButtonEnabled,
             pushDetailVC: pushDetailVCSubject.eraseToAnyPublisher(),
-            errorMessage: errorSubject.eraseToAnyPublisher()
+            errorMessage: errorSubject.eraseToAnyPublisher(),
+            isLoading: isLoadingSubject.eraseToAnyPublisher()
         )
     }
 }

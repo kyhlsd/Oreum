@@ -27,6 +27,10 @@ enum ForecastRouter: Router {
         }
     }
     
+    var responseType: ResponseType {
+        return .json
+    }
+    
     var version: String {
         switch self {
         case .getShortTermForecast:

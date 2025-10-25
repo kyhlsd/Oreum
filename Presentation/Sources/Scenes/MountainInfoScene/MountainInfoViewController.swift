@@ -9,13 +9,17 @@ import UIKit
 import Combine
 import Domain
 
-final class MountainInfoViewController: UIViewController, BaseViewController {
+final class MountainInfoViewController: UIViewController, BaseViewController, NetworkStatusObservable {
 
     let mainView = MountainInfoView()
     let viewModel: MountainInfoViewModel
 
+    var networkStatusBanner: NetworkStatusBannerView?
+    var networkStatusCancellable: AnyCancellable?
+    
     private var cancellables = Set<AnyCancellable>()
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
+    private let viewDidAppearSubject = PassthroughSubject<Void, Never>()
 
     init(viewModel: MountainInfoViewModel) {
         self.viewModel = viewModel
@@ -34,91 +38,82 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        setupDelegates()
+        setupNetworkStatusObserver()
         bind()
 
         viewDidLoadSubject.send(())
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        viewDidAppearSubject.send(())
+    }
+    
+    deinit {
+        removeNetworkStatusObserver()
+    }
+
     func bind() {
         let input = MountainInfoViewModel.Input(
-            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher()
+            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
+            viewDidAppear: viewDidAppearSubject.eraseToAnyPublisher()
         )
 
         let output = viewModel.transform(input: input)
 
-        // 산 이름
-        output.mountainName
-            .sink { [weak self] name in
-                self?.navigationItem.title = name
-                self?.mainView.setMountainName(name)
-            }
-            .store(in: &cancellables)
-
-        // 주소
-        output.address
-            .sink { [weak self] address in
-                self?.mainView.setAddress(address)
-            }
-            .store(in: &cancellables)
-        
-        // 높이
-        output.height
-            .sink { [weak self] height in
-                self?.mainView.setHeight(height)
-            }
-            .store(in: &cancellables)
-
-        // 산 소개 문구
-        output.introduction
-            .sink { [weak self] introduction in
-                let attributedText = self?.createIntroductionAttributedString(from: introduction) ?? NSAttributedString()
-                self?.mainView.setIntroduction(attributedText)
+        // 산 기본 정보
+        output.mountainInfo
+            .sink { [weak self] info in
+                self?.navigationItem.title = info.name
+                self?.mainView.setMountainInfo(info)
             }
             .store(in: &cancellables)
 
         // 이미지
-        output.imageURL
-            .sink { [weak self] imageURL in
-                self?.mainView.setImage(imageURL)
+        output.imageURLs
+            .sink { [weak self] imageURLs in
+                self?.mainView.imageCollectionView.reloadData()
+                self?.mainView.showEmptyImageState(imageURLs.isEmpty)
             }
             .store(in: &cancellables)
-        
+
         // 날씨
         output.weeklyForecast
             .sink { [weak self] weeklyForecast in
                 self?.mainView.setWeeklyForecast(weeklyForecast)
             }
             .store(in: &cancellables)
-        
+
         // 에러 Alert
         output.errorMessage
-            .sink { [weak self] message in
-                self?.presentDefaultAlert(title: "날씨 정보 불러오기 실패", message: message)
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
                 self?.mainView.showWeatherLoadingError()
             }
             .store(in: &cancellables)
     }
+    
+    private func setupDelegates() {
+        mainView.imageCollectionView.dataSource = self
+    }
+    
+}
 
-    private func createIntroductionAttributedString(from text: String) -> NSAttributedString {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 8
+// MARK: - UICollectionViewDataSource
+extension MountainInfoViewController: UICollectionViewDataSource {
 
-        if text.isEmpty {
-            let attributes: [NSAttributedString.Key: Any] = [
-                .paragraphStyle: paragraphStyle,
-                .font: AppFont.body,
-                .foregroundColor: AppColor.tertiaryText
-            ]
-            return NSAttributedString(string: "소개 문구가 없습니다.", attributes: attributes)
-        } else {
-            let attributes: [NSAttributedString.Key: Any] = [
-                .paragraphStyle: paragraphStyle,
-                .font: AppFont.body,
-                .foregroundColor: AppColor.subText
-            ]
-            return NSAttributedString(string: text, attributes: attributes)
-        }
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return viewModel.imageURLStrings.count
     }
 
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(for: indexPath, cellClass: ImageCollectionViewCell.self)
 
+        let imageURLString = viewModel.imageURLStrings[indexPath.item]
+        cell.setImage(urlString: imageURLString)
+
+        return cell
+    }
 }

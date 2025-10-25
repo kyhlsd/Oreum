@@ -11,38 +11,16 @@ import Domain
 
 public final class DummyMountainInfoRepositoryImpl: MountainInfoRepository {
 
-    // Dummy data
-    private let dummyMountainInfos = MountainInfo.dummy
-
     public init() {}
-
-    public func fetchMountainInfo(name: String, height: Int) -> AnyPublisher<Result<MountainInfo, Error>, Never> {
-        let mountains = dummyMountainInfos.filter {
-            $0.name.first == name.first &&
-            abs($0.height - height) < 3
-        }
-
-        if let mountainInfo = mountains.first {
-            return Just(.success(mountainInfo))
-                .eraseToAnyPublisher()
-        } else {
-            return Just(.failure(JSONError.mountainNotFound))
-                .eraseToAnyPublisher()
-        }
-    }
     
-    public func fetchMountains(keyword: String) -> AnyPublisher<Result<[MountainInfo], Error>, Never> {
-        guard !keyword.isEmpty else {
-            return Just(.success([]))
-                .eraseToAnyPublisher()
-        }
+    public func searchMountain(keyword: String, page: Int) -> AnyPublisher<Result<MountainResponse, Error>, Never> {
+        return Just(.success(MountainResponse.dummy))
+            .eraseToAnyPublisher()
+    }
 
-        let filtered = dummyMountainInfos.filter { mountain in
-            mountain.name.localizedCaseInsensitiveContains(keyword) ||
-            mountain.address.localizedCaseInsensitiveContains(keyword)
-        }
-
-        return Just(.success(filtered))
+    public func fetchImage(id: Int) -> AnyPublisher<Result<[String], any Error>, Never> {
+        let urlStrings = [String](repeating: "https://picsum.photos/200/300", count: 3)
+        return Just(.success(urlStrings))
             .eraseToAnyPublisher()
     }
 }

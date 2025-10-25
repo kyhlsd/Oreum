@@ -9,16 +9,20 @@ import UIKit
 import Combine
 import Domain
 
-final class MeasureViewController: UIViewController, BaseViewController {
+final class MeasureViewController: UIViewController, BaseViewController, NetworkStatusObservable {
 
     let mainView = MeasureView()
     let viewModel: MeasureViewModel
 
+    var networkStatusBanner: NetworkStatusBannerView?
+    var networkStatusCancellable: AnyCancellable?
+    
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
 
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let searchTriggerSubject = PassthroughSubject<String, Never>()
+    private let loadMoreTriggerSubject = PassthroughSubject<Void, Never>()
     private let selectMountainSubject = PassthroughSubject<MountainInfo, Never>()
 
     var showRecordDetail: ((ClimbRecord) -> Void)?
@@ -43,8 +47,13 @@ final class MeasureViewController: UIViewController, BaseViewController {
         bind()
         setupNavItem()
         setupDelegates()
+        setupNetworkStatusObserver()
         
         viewDidLoadSubject.send(())
+    }
+    
+    deinit {
+        removeNetworkStatusObserver()
     }
 
     func bind() {
@@ -59,6 +68,7 @@ final class MeasureViewController: UIViewController, BaseViewController {
         let input = MeasureViewModel.Input(
             viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
             searchTrigger: searchTriggerSubject.eraseToAnyPublisher(),
+            loadMoreTrigger: loadMoreTriggerSubject.eraseToAnyPublisher(),
             selectMountain: selectMountainSubject.eraseToAnyPublisher(),
             cancelMountain: mainView.cancelButton.tap,
             startMeasuring: mainView.startButton.tap,
@@ -89,6 +99,12 @@ final class MeasureViewController: UIViewController, BaseViewController {
         output.searchResults
             .sink { [weak self] mountains in
                 self?.applySnapshot(mountains: mountains)
+            }
+            .store(in: &cancellables)
+
+        // 새로운 검색 시 스크롤 위로 올리기
+        searchTriggerSubject
+            .sink { [weak self] _ in
                 self?.mainView.searchResultsTableView.setContentOffset(.zero, animated: false)
             }
             .store(in: &cancellables)
@@ -187,11 +203,22 @@ final class MeasureViewController: UIViewController, BaseViewController {
                 self?.presentDefaultAlert(title: title, message: message)
             }
             .store(in: &cancellables)
+
+        // 로딩 인디케이터
+        output.isLoading
+            .sink { [weak self] isLoading in
+                self?.mainView.setLoadingState(isLoading)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Setups
     private func setupNavItem() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "측정"))
+        if #available(iOS 26.0, *) {
+            navigationItem.titleView = NavTitleView(title: "측정")
+        } else {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "측정"))
+        }
     }
 
     private func setupDelegates() {
@@ -203,8 +230,17 @@ final class MeasureViewController: UIViewController, BaseViewController {
     
     // 네비게이션 타이틀 위치, 텍스트 변경
     private func setNavItem(isMeasuring: Bool) {
-        navigationItem.leftBarButtonItem?.isHidden = isMeasuring
-        navigationItem.title = isMeasuring ? "측정 중" : nil
+        if #available(iOS 26.0, *) {
+            if isMeasuring {
+                navigationItem.titleView = nil
+                navigationItem.title = "측정 중"
+            } else {
+                navigationItem.titleView = NavTitleView(title: "측정")
+            }
+        } else {
+            navigationItem.leftBarButtonItem?.isHidden = isMeasuring
+            navigationItem.title = isMeasuring ? "측정 중" : nil
+        }
     }
     
     // 후기 유도 뷰
@@ -298,6 +334,14 @@ extension MeasureViewController: UITableViewDelegate {
 
         guard let mountain = dataSource.itemIdentifier(for: indexPath) else { return }
         selectMountainSubject.send(mountain)
+    }
+
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        let totalItems = dataSource.snapshot().numberOfItems
+        // 마지막 셀보다 3개 전에 도달하면 다음 페이지 로드 시도
+        if indexPath.row == totalItems - 3 {
+            loadMoreTriggerSubject.send(())
+        }
     }
     
     private func createDataSource() -> UITableViewDiffableDataSource<Section, MountainInfo> {

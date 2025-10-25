@@ -303,7 +303,11 @@ extension ClimbRecordDetailView {
     func setData(climbRecord: ClimbRecord) {
         dateView.setTitle(title: AppFormatter.dateFormatter.string(from: climbRecord.climbDate))
         addressView.setTitle(title: climbRecord.mountain.address)
-        heightView.setTitle(title: climbRecord.mountain.height.formatted() + "m")
+        if let height = climbRecord.mountain.height {
+            heightView.setTitle(title: height.formatted() + "m")
+        } else {
+            heightView.setTitle(title: "알 수 없음")
+        }
         setReview(rating: climbRecord.score, comment: climbRecord.comment)
     }
     

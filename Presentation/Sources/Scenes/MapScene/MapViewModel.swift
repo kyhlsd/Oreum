@@ -88,12 +88,12 @@ final class MapViewModel: NSObject, BaseViewModel {
         // 상세 정보 보기 버튼
         input.mountainInfoButtonTapped
             .throttle(for: .seconds(0.3), scheduler: RunLoop.main, latest: true)
-            .flatMap { [weak self] (name, height) -> AnyPublisher<Result<MountainInfo, Error>, Never> in
+            .flatMap { [weak self] (name, id) -> AnyPublisher<Result<MountainInfo, Error>, Never> in
                 guard let self else {
                     return Empty().eraseToAnyPublisher()
                 }
 
-                return self.fetchMountainInfoUseCase.execute(name: name, height: height)
+                return self.fetchMountainInfoUseCase.execute(name: name, mountainID: id)
             }
             .sink { [weak self] result in
                 switch result {

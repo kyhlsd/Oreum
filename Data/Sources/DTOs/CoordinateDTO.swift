@@ -8,7 +8,7 @@
 import Foundation
 import Domain
 
-struct CoordinateDTO: Decodable {
+struct CoordinateDTO: Decodable, Sendable {
     
     private let response: GeocodeResponse
     

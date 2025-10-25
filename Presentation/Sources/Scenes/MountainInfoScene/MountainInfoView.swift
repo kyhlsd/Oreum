@@ -8,7 +8,6 @@
 import UIKit
 import Domain
 import SnapKit
-import Kingfisher
 
 final class MountainInfoView: BaseView {
 
@@ -16,14 +15,14 @@ final class MountainInfoView: BaseView {
     private let scrollView = UIScrollView()
     private let contentView = UIView()
 
-    // 사진 이미지 뷰
-    private let imageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
-        imageView.backgroundColor = AppColor.cardBackground
-        imageView.kf.indicatorType = .activity
-        return imageView
+    // 사진 컬렉션뷰
+    lazy var imageCollectionView = {
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createImageLayout())
+        collectionView.backgroundColor = AppColor.cardBackground
+        collectionView.isPagingEnabled = true
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.register(cellClass: ImageCollectionViewCell.self)
+        return collectionView
     }()
 
     // 사진 없을 때 표기 뷰
@@ -97,13 +96,27 @@ final class MountainInfoView: BaseView {
         textView.isEditable = false
         return textView
     }()
+    
+    // MARK: - Private Methods
+    private func createImageLayout() -> UICollectionViewCompositionalLayout {
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
+        let section = NSCollectionLayoutSection(group: group)
+        section.orthogonalScrollingBehavior = .groupPaging
+
+        return UICollectionViewCompositionalLayout(section: section)
+    }
 
     // MARK: - Setups
     override func setupHierarchy() {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        [imageView, emptyView, infoView, weatherView, introductionView].forEach {
+        [imageCollectionView, emptyView, infoView, weatherView, introductionView].forEach {
             contentView.addSubview($0)
         }
 
@@ -133,13 +146,13 @@ final class MountainInfoView: BaseView {
             make.edges.width.equalToSuperview()
         }
 
-        imageView.snp.makeConstraints { make in
+        imageCollectionView.snp.makeConstraints { make in
             make.top.horizontalEdges.equalToSuperview()
-            make.height.equalTo(imageView.snp.width).multipliedBy(0.75)
+            make.height.equalTo(imageCollectionView.snp.width).multipliedBy(0.75)
         }
 
         emptyView.snp.makeConstraints { make in
-            make.edges.equalTo(imageView)
+            make.edges.equalTo(imageCollectionView)
         }
 
         photoImageView.snp.makeConstraints { make in
@@ -153,7 +166,7 @@ final class MountainInfoView: BaseView {
         }
 
         infoView.snp.makeConstraints { make in
-            make.top.equalTo(imageView.snp.bottom).offset(AppSpacing.regular)
+            make.top.equalTo(imageCollectionView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
         }
 
@@ -218,47 +231,54 @@ final class MountainInfoView: BaseView {
 
 // MARK: - Binding Methods
 extension MountainInfoView {
-    
-    // 산 이름
-    func setMountainName(_ name: String) {
-        weatherView.configure("\(name) 날씨")
-    }
-    
-    // 산 주소
-    func setAddress(_ address: String) {
-        addressView.setTitle(title: address)
-    }
 
-    // 산 높이
-    func setHeight(_ height: String) {
-        heightView.setTitle(title: height)
-    }
+    // 산 기본 정보 설정
+    func setMountainInfo(_ info: MountainInfo) {
+        // 산 이름
+        weatherView.configure("\(info.name) 날씨")
 
-    // 산 소개
-    func setIntroduction(_ attributedText: NSAttributedString) {
-        introductionTextView.attributedText = attributedText
-    }
+        // 산 주소
+        addressView.setTitle(title: info.address)
 
-    // 산 이미지
-    func setImage(_ url: URL?) {
-        if let url = url {
-            imageView.kf.setImage(
-                with: url,
-                options: [
-                    .processor(DownsamplingImageProcessor(size: CGSize(width: DeviceSize.width, height: DeviceSize.width * 0.75))),
-                    .scaleFactor(DeviceSize.scale)
-                ]
-            ) { [weak self] result in
-                switch result {
-                case .success:
-                    self?.emptyView.isHidden = true
-                case .failure:
-                    self?.emptyView.isHidden = false
-                }
+        // 산 높이
+        let heightString = info.height.map { "\($0)m" } ?? "알 수 없음"
+        heightView.setTitle(title: heightString)
+
+        // 산 소개
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let attributedText = self?.createIntroductionAttributedString(from: info.detail) ?? NSAttributedString()
+            DispatchQueue.main.async {
+                self?.introductionTextView.attributedText = attributedText
             }
-        } else {
-            emptyView.isHidden = false
         }
+    }
+
+    // AttributedString 생성
+    private func createIntroductionAttributedString(from text: String) -> NSAttributedString {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 8
+
+        if text.isEmpty {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .paragraphStyle: paragraphStyle,
+                .font: AppFont.body,
+                .foregroundColor: AppColor.tertiaryText
+            ]
+            return NSAttributedString(string: "소개 문구가 없습니다.", attributes: attributes)
+        } else {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .paragraphStyle: paragraphStyle,
+                .font: AppFont.body,
+                .foregroundColor: AppColor.subText
+            ]
+            return NSAttributedString(string: text, attributes: attributes)
+        }
+    }
+
+    // 이미지 없음 표시
+    func showEmptyImageState(_ show: Bool) {
+        emptyView.isHidden = !show
+        imageCollectionView.isHidden = show
     }
 
     // 날씨 오류 발생 시

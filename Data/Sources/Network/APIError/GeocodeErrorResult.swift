@@ -1,5 +1,5 @@
 //
-//  GeocoderErrorResponse.swift
+//  GeocodeErrorResult.swift
 //  Data
 //
 //  Created by 김영훈 on 10/6/25.

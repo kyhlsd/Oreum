@@ -114,7 +114,7 @@ final class MapAnnotationViewBuilder {
             .sink { [weak self] in
                 self?.mountainInfoButtonTapped.send((
                     mountainDistance.mountainLocation.name,
-                    mountainDistance.mountainLocation.height
+                    mountainDistance.mountainLocation.id
                 ))
             }
             .store(in: &cancellables)

@@ -8,5 +8,5 @@
 import Combine
 
 public protocol ForecastRepository {
-    func fetchShortTermForecast(longitude: Double, latitude: Double) -> AnyPublisher<Result<[DailyForecast], Error>, Never>
+    func fetchShortTermForecast(nx: Int, ny: Int) -> AnyPublisher<Result<[ForecastItem], Error>, Never>
 }

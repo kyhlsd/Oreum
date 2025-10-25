@@ -11,7 +11,7 @@ import Domain
 
 final class SearchViewModel: BaseViewModel {
 
-    private let fetchMountainsUseCase: FetchMountainsUseCase
+    private let searchMountainUseCase: SearchMountainUseCase
     private let fetchRecentSearchesUseCase: FetchRecentSearchesUseCase
     private let saveRecentSearchUseCase: SaveRecentSearchUseCase
     private let deleteRecentSearchUseCase: DeleteRecentSearchUseCase
@@ -19,13 +19,13 @@ final class SearchViewModel: BaseViewModel {
     private var cancellables = Set<AnyCancellable>()
 
     init(
-        fetchMountainsUseCase: FetchMountainsUseCase,
+        searchMountainUseCase: SearchMountainUseCase,
         fetchRecentSearchesUseCase: FetchRecentSearchesUseCase,
         saveRecentSearchUseCase: SaveRecentSearchUseCase,
         deleteRecentSearchUseCase: DeleteRecentSearchUseCase,
         clearRecentSearchesUseCase: ClearRecentSearchesUseCase
     ) {
-        self.fetchMountainsUseCase = fetchMountainsUseCase
+        self.searchMountainUseCase = searchMountainUseCase
         self.fetchRecentSearchesUseCase = fetchRecentSearchesUseCase
         self.saveRecentSearchUseCase = saveRecentSearchUseCase
         self.deleteRecentSearchUseCase = deleteRecentSearchUseCase
@@ -35,6 +35,7 @@ final class SearchViewModel: BaseViewModel {
     struct Input {
         let viewDidLoad: AnyPublisher<Void, Never>
         let searchText: AnyPublisher<String, Never>
+        let loadMoreTrigger: AnyPublisher<Void, Never>
         let recentSearchTapped: AnyPublisher<String, Never>
         let deleteRecentSearch: AnyPublisher<String, Never>
         let clearAllRecentSearches: AnyPublisher<Void, Never>
@@ -44,12 +45,20 @@ final class SearchViewModel: BaseViewModel {
         let recentSearches: AnyPublisher<[String], Never>
         let searchResults: AnyPublisher<[MountainInfo], Never>
         let errorMessage: AnyPublisher<(String, String), Never>
+        let isLoading: AnyPublisher<Bool, Never>
     }
 
     func transform(input: Input) -> Output {
         let recentSearchesSubject = PassthroughSubject<[String], Never>()
         let searchResultsSubject = PassthroughSubject<[MountainInfo], Never>()
         let errorMessageSubject = PassthroughSubject<(String, String), Never>()
+        let isLoadingSubject = CurrentValueSubject<Bool, Never>(false)
+
+        // 페이지네이션 상태
+        let currentPageSubject = CurrentValueSubject<Int, Never>(1)
+        let currentKeywordSubject = CurrentValueSubject<String, Never>("")
+        let isLastPageSubject = CurrentValueSubject<Bool, Never>(false)
+        let currentMountainsSubject = CurrentValueSubject<[MountainInfo], Never>([])
 
         // 최근 검색어 Fetch
         let loadRecentSearchTrigger = PassthroughSubject<Void, Never>()
@@ -116,30 +125,74 @@ final class SearchViewModel: BaseViewModel {
             input.recentSearchTapped
         )
         .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        .share()
 
-        // 검색 결과 가져오기 (중복 검색 방지)
-        let searchResultPublisher = searchKeywordPublisher
+        // 새로운 검색 (중복 검색 방지)
+        searchKeywordPublisher
             .removeDuplicates()
-            .flatMap { [weak self] keyword -> AnyPublisher<(String, Result<[MountainInfo], Error>), Never> in
-                guard let self else { return Just((keyword, .success([]))).eraseToAnyPublisher() }
+            .handleEvents(receiveOutput: { keyword in
+                currentKeywordSubject.send(keyword)
+                currentPageSubject.send(1)
+                isLastPageSubject.send(false)
+                isLoadingSubject.send(true)
+            })
+            .flatMap { [weak self] keyword -> AnyPublisher<Result<MountainResponse, Error>, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
 
-                return self.fetchMountainsUseCase.execute(keyword: keyword)
-                    .map { result -> (String, Result<[MountainInfo], Error>) in
-                        (keyword, result)
-                    }
+                return self.searchMountainUseCase.execute(keyword: keyword, page: 1)
                     .eraseToAnyPublisher()
             }
-            .share()
-
-        // 검색 결과 전송
-        searchResultPublisher
-            .sink { (keyword, result) in
+            .sink { result in
+                isLoadingSubject.send(false)
                 switch result {
-                case .success(let results):
-                    searchResultsSubject.send(results)
+                case .success(let response):
+                    let mountains = response.body.items.item
+                    currentMountainsSubject.send(mountains)
+                    searchResultsSubject.send(mountains)
+
+                    // 마지막 페이지 체크
+                    if mountains.count >= response.body.totalCount {
+                        isLastPageSubject.send(true)
+                    }
                 case .failure(let error):
-                    errorMessageSubject.send(("검색 결과 불러오기 실패", error.localizedDescription))
+                    errorMessageSubject.send(("검색 실패", error.localizedDescription))
+                    currentMountainsSubject.send([])
                     searchResultsSubject.send([])
+                    isLastPageSubject.send(true)
+                }
+            }
+            .store(in: &cancellables)
+
+        // 더 불러오기
+        input.loadMoreTrigger
+            .filter { !isLoadingSubject.value && !isLastPageSubject.value }
+            .handleEvents(receiveOutput: { _ in
+                isLoadingSubject.send(true)
+            })
+            .map { _ in (currentKeywordSubject.value, currentPageSubject.value + 1) }
+            .flatMap { [weak self] (keyword, page) -> AnyPublisher<Result<MountainResponse, Error>, Never> in
+                guard let self else {
+                    return Empty().eraseToAnyPublisher()
+                }
+                return self.searchMountainUseCase.execute(keyword: keyword, page: page)
+            }
+            .sink { result in
+                isLoadingSubject.send(false)
+                switch result {
+                case .success(let response):
+                    let newMountains = response.body.items.item
+                    let allMountains = currentMountainsSubject.value + newMountains
+                    currentMountainsSubject.send(allMountains)
+                    searchResultsSubject.send(allMountains)
+                    currentPageSubject.send(currentPageSubject.value + 1)
+
+                    // 마지막 페이지 체크
+                    if allMountains.count >= response.body.totalCount {
+                        isLastPageSubject.send(true)
+                    }
+                case .failure(let error):
+                    errorMessageSubject.send(("검색 실패", error.localizedDescription))
+                    isLastPageSubject.send(true)
                 }
             }
             .store(in: &cancellables)
@@ -163,7 +216,8 @@ final class SearchViewModel: BaseViewModel {
         return Output(
             recentSearches: recentSearchesSubject.eraseToAnyPublisher(),
             searchResults: searchResultsSubject.eraseToAnyPublisher(),
-            errorMessage: errorMessageSubject.eraseToAnyPublisher()
+            errorMessage: errorMessageSubject.eraseToAnyPublisher(),
+            isLoading: isLoadingSubject.eraseToAnyPublisher()
         )
     }
 }

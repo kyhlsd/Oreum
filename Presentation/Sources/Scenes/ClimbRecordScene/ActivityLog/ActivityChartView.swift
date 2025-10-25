@@ -72,6 +72,7 @@ struct ActivityChartView: View {
     private let minChartWidth = 250.0
     private let chartHeight = 200.0
     private let yMinValue = 0.0
+    private let color = Color.green
     
     var body: some View {
         let yMaxValue = calculateYMax()
@@ -86,22 +87,22 @@ struct ActivityChartView: View {
                         y: .value(dataSource.metric == .step ? "걸음 수" : "이동거리(m)",
                                   dataSource.metric == .step ? log.step : log.distance)
                     )
-                    .foregroundStyle(dataSource.metric == .step ? .green : .blue)
+                    .foregroundStyle(color)
                     .interpolationMethod(.monotone)
-                    
+
                     AreaMark(
                         x: .value("시간", log.time),
                         y: .value(dataSource.metric == .step ? "걸음 수" : "이동거리(m)",
                                   dataSource.metric == .step ? log.step : log.distance)
                     )
-                    .foregroundStyle((dataSource.metric == .step ? Color.green : Color.blue).opacity(0.3))
-                    
+                    .foregroundStyle(color.opacity(0.3))
+
                     PointMark(
                         x: .value("시간", log.time),
                         y: .value(dataSource.metric == .step ? "걸음 수" : "이동거리(m)",
                                   dataSource.metric == .step ? log.step : log.distance)
                     )
-                    .foregroundStyle(dataSource.metric == .step ? Color.green : Color.blue)
+                    .foregroundStyle(color)
                     .symbolSize(24)
                 }
                 .frame(width: chartWidth(), height: chartHeight)

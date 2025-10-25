@@ -85,7 +85,7 @@ final class ClimbRecordListView: BaseView {
     
     override func setupLayout() {
         searchBar.snp.makeConstraints { make in
-            make.top.equalTo(safeAreaLayoutGuide)
+            make.top.equalTo(safeAreaLayoutGuide).offset(AppSpacing.small)
             make.height.equalTo(40)
             make.leading.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
             make.trailing.equalTo(bookmarkButton.snp.leading)
