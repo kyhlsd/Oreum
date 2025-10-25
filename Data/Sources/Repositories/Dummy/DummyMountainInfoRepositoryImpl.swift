@@ -18,10 +18,9 @@ public final class DummyMountainInfoRepositoryImpl: MountainInfoRepository {
             .eraseToAnyPublisher()
     }
 
-    public func fetchImage(id: Int) -> AnyPublisher<Result<[URL], any Error>, Never> {
-        let urls = [String](repeating: "https://picsum.photos/200/300", count: 3)
-            .compactMap { URL(string: $0) }
-        return Just(.success(urls))
+    public func fetchImage(id: Int) -> AnyPublisher<Result<[String], any Error>, Never> {
+        let urlStrings = [String](repeating: "https://picsum.photos/200/300", count: 3)
+        return Just(.success(urlStrings))
             .eraseToAnyPublisher()
     }
 }

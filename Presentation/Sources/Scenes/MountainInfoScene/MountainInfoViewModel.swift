@@ -17,6 +17,8 @@ final class MountainInfoViewModel: BaseViewModel {
     private let fetchMountainImageUseCase: FetchMountainImageUseCase
     private var cancellables = Set<AnyCancellable>()
 
+    private(set) var imageURLStrings: [String] = []
+
     init(
         fetchCoordinateUseCase: FetchCoordinateUseCase,
         fetchWeeklyForecastUseCase: FetchWeeklyForecastUseCase,
@@ -31,29 +33,27 @@ final class MountainInfoViewModel: BaseViewModel {
 
     struct Input {
         let viewDidLoad: AnyPublisher<Void, Never>
+        let viewDidAppear: AnyPublisher<Void, Never>
     }
 
     struct Output {
-        let mountainName: AnyPublisher<String, Never>
-        let address: AnyPublisher<String, Never>
-        let height: AnyPublisher<String, Never>
-        let introduction: AnyPublisher<String, Never>
-        let imageURLs: AnyPublisher<[URL], Never>
+        let mountainInfo: AnyPublisher<MountainInfo, Never>
+        let imageURLs: AnyPublisher<[String], Never>
         let weeklyForecast: AnyPublisher<[DailyForecast], Never>
         let errorMessage: AnyPublisher<(String, String), Never>
     }
 
     func transform(input: Input) -> Output {
-        let mountainNameSubject = PassthroughSubject<String, Never>()
-        let addressSubject = PassthroughSubject<String, Never>()
-        let heightSubject = PassthroughSubject<String, Never>()
-        let introductionSubject = PassthroughSubject<String, Never>()
-        let imageURLsSubject = PassthroughSubject<[URL], Never>()
+        let mountainInfoSubject = PassthroughSubject<MountainInfo, Never>()
+        let imageURLsSubject = PassthroughSubject<[String], Never>()
         let weeklyForecastSubject = PassthroughSubject<[DailyForecast], Never>()
         let errorMessageSubject = PassthroughSubject<(String, String), Never>()
 
         let fetchCoordinateTrigger = PassthroughSubject<String, Never>()
         let fetchWeeklyForecastTrigger = PassthroughSubject<Coordinate, Never>()
+        let viewDidAppear = input.viewDidAppear
+            .prefix(1)
+            .share()
         
         // Geocoding
         fetchCoordinateTrigger
@@ -92,46 +92,44 @@ final class MountainInfoViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        // 산 이미지 가져오기
+        // 기본 정보 표시
         input.viewDidLoad
-            .flatMap { [weak self] _ -> AnyPublisher<Result<[URL], Error>, Never> in
+            .sink { [weak self] in
+                guard let self else { return }
+                mountainInfoSubject.send(mountainInfo)
+            }
+            .store(in: &cancellables)
+
+        // API 호출
+        viewDidAppear
+            .flatMap { [weak self] _ -> AnyPublisher<Result<[String], Error>, Never> in
                 guard let self else {
                     return Empty().eraseToAnyPublisher()
                 }
                 return self.fetchMountainImageUseCase.execute(id: self.mountainInfo.id)
             }
-            .sink { result in
+            .sink { [weak self] result in
                 switch result {
-                case .success(let urls):
-                    imageURLsSubject.send(urls)
+                case .success(let urlStrings):
+                    self?.imageURLStrings = urlStrings
+                    imageURLsSubject.send(urlStrings)
                 case .failure(let error):
+                    self?.imageURLStrings = []
                     errorMessageSubject.send(("이미지 가져오기 실패", error.localizedDescription))
                     imageURLsSubject.send([])
                 }
             }
             .store(in: &cancellables)
-        
-        input.viewDidLoad
+
+        viewDidAppear
             .sink { [weak self] in
                 guard let self else { return }
-
-                mountainNameSubject.send(mountainInfo.name)
-                addressSubject.send(mountainInfo.address)
-                if let height = mountainInfo.height {
-                    heightSubject.send("\(height)m")
-                } else {
-                    heightSubject.send("알 수 없음")
-                }
-                introductionSubject.send(mountainInfo.detail)
                 fetchCoordinateTrigger.send(firstSentence(from: mountainInfo.address))
             }
             .store(in: &cancellables)
 
         return Output(
-            mountainName: mountainNameSubject.eraseToAnyPublisher(),
-            address: addressSubject.eraseToAnyPublisher(),
-            height: heightSubject.eraseToAnyPublisher(),
-            introduction: introductionSubject.eraseToAnyPublisher(),
+            mountainInfo: mountainInfoSubject.eraseToAnyPublisher(),
             imageURLs: imageURLsSubject.eraseToAnyPublisher(),
             weeklyForecast: weeklyForecastSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher()

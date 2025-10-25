@@ -16,7 +16,7 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
 
     private var cancellables = Set<AnyCancellable>()
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
-    private lazy var imageDataSource = createImageDataSource()
+    private let viewDidAppearSubject = PassthroughSubject<Void, Never>()
 
     init(viewModel: MountainInfoViewModel) {
         self.viewModel = viewModel
@@ -35,63 +35,53 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        setupDelegates()
         bind()
 
         viewDidLoadSubject.send(())
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        viewDidAppearSubject.send(())
+    }
+    
+    private func setupDelegates() {
+        mainView.imageCollectionView.dataSource = self
+    }
+
     func bind() {
         let input = MountainInfoViewModel.Input(
-            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher()
+            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
+            viewDidAppear: viewDidAppearSubject.eraseToAnyPublisher()
         )
 
         let output = viewModel.transform(input: input)
 
-        // 산 이름
-        output.mountainName
-            .sink { [weak self] name in
-                self?.navigationItem.title = name
-                self?.mainView.setMountainName(name)
-            }
-            .store(in: &cancellables)
-
-        // 주소
-        output.address
-            .sink { [weak self] address in
-                self?.mainView.setAddress(address)
-            }
-            .store(in: &cancellables)
-        
-        // 높이
-        output.height
-            .sink { [weak self] height in
-                self?.mainView.setHeight(height)
-            }
-            .store(in: &cancellables)
-
-        // 산 소개 문구
-        output.introduction
-            .sink { [weak self] introduction in
-                let attributedText = self?.createIntroductionAttributedString(from: introduction) ?? NSAttributedString()
-                self?.mainView.setIntroduction(attributedText)
+        // 산 기본 정보
+        output.mountainInfo
+            .sink { [weak self] info in
+                self?.navigationItem.title = info.name
+                self?.mainView.setMountainInfo(info)
             }
             .store(in: &cancellables)
 
         // 이미지
         output.imageURLs
             .sink { [weak self] imageURLs in
-                self?.applyImageSnapshot(imageURLs: imageURLs)
+                self?.mainView.imageCollectionView.reloadData()
                 self?.mainView.showEmptyImageState(imageURLs.isEmpty)
             }
             .store(in: &cancellables)
-        
+
         // 날씨
         output.weeklyForecast
             .sink { [weak self] weeklyForecast in
                 self?.mainView.setWeeklyForecast(weeklyForecast)
             }
             .store(in: &cancellables)
-        
+
         // 에러 Alert
         output.errorMessage
             .sink { [weak self] (title, message) in
@@ -100,53 +90,21 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
     }
-
-    private func createIntroductionAttributedString(from text: String) -> NSAttributedString {
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 8
-
-        if text.isEmpty {
-            let attributes: [NSAttributedString.Key: Any] = [
-                .paragraphStyle: paragraphStyle,
-                .font: AppFont.body,
-                .foregroundColor: AppColor.tertiaryText
-            ]
-            return NSAttributedString(string: "소개 문구가 없습니다.", attributes: attributes)
-        } else {
-            let attributes: [NSAttributedString.Key: Any] = [
-                .paragraphStyle: paragraphStyle,
-                .font: AppFont.body,
-                .foregroundColor: AppColor.subText
-            ]
-            return NSAttributedString(string: text, attributes: attributes)
-        }
-    }
 }
 
-// MARK: - CollectionView SubMethods
-extension MountainInfoViewController {
+// MARK: - UICollectionViewDataSource
+extension MountainInfoViewController: UICollectionViewDataSource {
 
-    private enum Section: CaseIterable {
-        case main
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return viewModel.imageURLStrings.count
     }
 
-    private func createImageRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, URL> {
-        return UICollectionView.CellRegistration<ImageCollectionViewCell, URL> { cell, indexPath, item in
-            cell.setImage(url: item)
-        }
-    }
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(for: indexPath, cellClass: ImageCollectionViewCell.self)
 
-    private func createImageDataSource() -> UICollectionViewDiffableDataSource<Section, URL> {
-        let registration = createImageRegistration()
-        return UICollectionViewDiffableDataSource<Section, URL>(collectionView: mainView.imageCollectionView) { collectionView, indexPath, item in
-            collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
-        }
-    }
+        let imageURLString = viewModel.imageURLStrings[indexPath.item]
+        cell.setImage(urlString: imageURLString)
 
-    private func applyImageSnapshot(imageURLs: [URL]) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, URL>()
-        snapshot.appendSections(Section.allCases)
-        snapshot.appendItems(imageURLs)
-        imageDataSource.apply(snapshot, animatingDifferences: true)
+        return cell
     }
 }

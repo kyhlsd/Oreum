@@ -71,7 +71,7 @@ public final class NetworkManager {
         return Future<Result<T, APIError>, Never> { promise in
             AF.request(url)
                 .validate()
-                .responseData { response in
+                .responseData(queue: DispatchQueue.global(qos: .userInitiated)) { response in
                     switch response.result {
                     case .success(let data):
                         do {
@@ -96,6 +96,7 @@ public final class NetworkManager {
                     }
                 }
         }
+        .receive(on: DispatchQueue.main)
         .eraseToAnyPublisher()
     }
 

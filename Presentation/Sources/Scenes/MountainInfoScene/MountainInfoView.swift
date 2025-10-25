@@ -21,6 +21,7 @@ final class MountainInfoView: BaseView {
         collectionView.backgroundColor = AppColor.cardBackground
         collectionView.isPagingEnabled = true
         collectionView.showsHorizontalScrollIndicator = false
+        collectionView.register(cellClass: ImageCollectionViewCell.self)
         return collectionView
     }()
 
@@ -45,19 +46,6 @@ final class MountainInfoView: BaseView {
         label.textAlignment = .center
         return label
     }()
-
-    private func createImageLayout() -> UICollectionViewCompositionalLayout {
-        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
-        let item = NSCollectionLayoutItem(layoutSize: itemSize)
-
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
-        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-
-        let section = NSCollectionLayoutSection(group: group)
-        section.orthogonalScrollingBehavior = .groupPaging
-
-        return UICollectionViewCompositionalLayout(section: section)
-    }
 
     // 정보 레이블
     private let infoView = BoxView(title: "정보")
@@ -108,6 +96,20 @@ final class MountainInfoView: BaseView {
         textView.isEditable = false
         return textView
     }()
+    
+    // MARK: - Private Methods
+    private func createImageLayout() -> UICollectionViewCompositionalLayout {
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
+        let section = NSCollectionLayoutSection(group: group)
+        section.orthogonalScrollingBehavior = .groupPaging
+
+        return UICollectionViewCompositionalLayout(section: section)
+    }
 
     // MARK: - Setups
     override func setupHierarchy() {
@@ -229,25 +231,48 @@ final class MountainInfoView: BaseView {
 
 // MARK: - Binding Methods
 extension MountainInfoView {
-    
-    // 산 이름
-    func setMountainName(_ name: String) {
-        weatherView.configure("\(name) 날씨")
-    }
-    
-    // 산 주소
-    func setAddress(_ address: String) {
-        addressView.setTitle(title: address)
+
+    // 산 기본 정보 설정
+    func setMountainInfo(_ info: MountainInfo) {
+        // 산 이름
+        weatherView.configure("\(info.name) 날씨")
+
+        // 산 주소
+        addressView.setTitle(title: info.address)
+
+        // 산 높이
+        let heightString = info.height.map { "\($0)m" } ?? "알 수 없음"
+        heightView.setTitle(title: heightString)
+
+        // 산 소개
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let attributedText = self?.createIntroductionAttributedString(from: info.detail) ?? NSAttributedString()
+            DispatchQueue.main.async {
+                self?.introductionTextView.attributedText = attributedText
+            }
+        }
     }
 
-    // 산 높이
-    func setHeight(_ height: String) {
-        heightView.setTitle(title: height)
-    }
+    // AttributedString 생성
+    private func createIntroductionAttributedString(from text: String) -> NSAttributedString {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 8
 
-    // 산 소개
-    func setIntroduction(_ attributedText: NSAttributedString) {
-        introductionTextView.attributedText = attributedText
+        if text.isEmpty {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .paragraphStyle: paragraphStyle,
+                .font: AppFont.body,
+                .foregroundColor: AppColor.tertiaryText
+            ]
+            return NSAttributedString(string: "소개 문구가 없습니다.", attributes: attributes)
+        } else {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .paragraphStyle: paragraphStyle,
+                .font: AppFont.body,
+                .foregroundColor: AppColor.subText
+            ]
+            return NSAttributedString(string: text, attributes: attributes)
+        }
     }
 
     // 이미지 없음 표시

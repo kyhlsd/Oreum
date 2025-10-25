@@ -35,9 +35,9 @@ fileprivate struct MountainImageDTO: Decodable {
 }
 
 extension MountainImageResponseDTO {
-    func toURL() -> [URL] {
-        return body.items.item.compactMap {
-            URL(string: APIInfos.MountainImage.baseURL + $0.imgfilename)
+    func toURLStrings() -> [String] {
+        return body.items.item.map {
+            APIInfos.MountainImage.baseURL + $0.imgfilename
         }
     }
 }
