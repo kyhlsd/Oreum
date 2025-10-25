@@ -28,6 +28,10 @@ enum MountainRouter: Router {
         }
     }
     
+    var responseType: ResponseType {
+        return .xml
+    }
+    
     var paths: String? {
         switch self {
         case .getMountainInfo:

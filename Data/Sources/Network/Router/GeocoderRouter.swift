@@ -27,6 +27,10 @@ enum GeocoderRouter: Router {
         }
     }
     
+    var responseType: ResponseType {
+        return .json
+    }
+    
     var paths: String? {
         switch self {
         case .getCoordinate:

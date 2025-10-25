@@ -22,13 +22,18 @@ public final class NetworkManager: Sendable {
 
     nonisolated(unsafe) private(set) var isConnected = true
     
+    // MARK: - Network Monitor
     public func startMonitoring() {
         monitor.pathUpdateHandler = { [weak self] path in
             guard let self else { return }
             
             if path.status == .satisfied {
+                networkConnectedHandler()
                 isConnected = true
             } else {
+                if isConnected {
+                    networkDisconnectedHandler()
+                }
                 isConnected = false
             }
         }
@@ -39,8 +44,27 @@ public final class NetworkManager: Sendable {
         monitor.cancel()
     }
     
-    // JSON 응답
+    private func networkConnectedHandler() {
+        
+    }
+    
+    private func networkDisconnectedHandler() {
+        
+    }
+    
+    // MARK: - CallRequest
+    
     func callRequest<T: Decodable & Sendable>(url: Router, type: T.Type = T.self) -> AnyPublisher<Result<T, APIError>, Never> {
+        switch url.responseType {
+        case .json:
+            return callJSONRequest(url: url, type: type)
+        case .xml:
+            return callXMLRequest(url: url, type: type)
+        }
+    }
+    
+    // JSON 응답
+    private func callJSONRequest<T: Decodable & Sendable>(url: Router, type: T.Type = T.self) -> AnyPublisher<Result<T, APIError>, Never> {
         return Future<Result<T, APIError>, Never> { [weak self] promise in
             guard let self else {
                 promise(.success(.failure(.unknown)))
@@ -109,7 +133,7 @@ public final class NetworkManager: Sendable {
     }
 
     // XML 응답
-    func callXMLRequest<T: Decodable & Sendable>(url: Router, type: T.Type = T.self) -> AnyPublisher<Result<T, APIError>, Never> {
+    private func callXMLRequest<T: Decodable & Sendable>(url: Router, type: T.Type = T.self) -> AnyPublisher<Result<T, APIError>, Never> {
         return Future<Result<T, APIError>, Never> { [weak self] promise in
             guard let self else {
                 promise(.success(.failure(.unknown)))

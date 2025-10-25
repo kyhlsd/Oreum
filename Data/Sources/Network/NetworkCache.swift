@@ -17,8 +17,11 @@ actor NetworkCache {
     // L2: 디스크 캐시 경로
     private let diskCacheDirectory: URL
 
-    // 캐시 만료 시간 (기본 1시간)
-    private let cacheExpiration: TimeInterval
+    // 메모리 캐시 만료 시간 (1시간)
+    private let memoryCacheExpiration: TimeInterval
+
+    // 디스크 캐시 만료 시간 (24시간)
+    private let diskCacheExpiration: TimeInterval
 
     // 디스크 캐시 최대 용량 (기본 100MB)
     private let diskCacheLimit: Int
@@ -29,8 +32,9 @@ actor NetworkCache {
     private let sizeRecalculationInterval: TimeInterval = 300 // 5분마다 재계산
     private let sizeThreshold: Double = 0.8 // 80% 차면 정리
 
-    private init(cacheExpiration: TimeInterval = 3600, diskCacheLimit: Int = 100 * 1024 * 1024) {
-        self.cacheExpiration = cacheExpiration
+    private init(memoryCacheExpiration: TimeInterval = 3600, diskCacheExpiration: TimeInterval = 86400, diskCacheLimit: Int = 100 * 1024 * 1024) {
+        self.memoryCacheExpiration = memoryCacheExpiration
+        self.diskCacheExpiration = diskCacheExpiration
         self.diskCacheLimit = diskCacheLimit
 
         // 디스크 캐시 디렉토리 설정
@@ -70,7 +74,7 @@ actor NetworkCache {
         // L2: 디스크 캐시 확인
         if let diskData = getDiskCache(for: key) {
             // 메모리 캐시에도 저장
-            let cachedData = CachedData(data: diskData, expiration: cacheExpiration)
+            let cachedData = CachedData(data: diskData, expiration: memoryCacheExpiration)
             memoryCache.setObject(cachedData, forKey: cacheKey)
             return diskData
         }
@@ -81,7 +85,7 @@ actor NetworkCache {
     // 캐시에 데이터 저장 (NSCache + FileManager)
     func setData(_ data: Data, for key: String) async {
         let cacheKey = NSString(string: key)
-        let cachedData = CachedData(data: data, expiration: cacheExpiration)
+        let cachedData = CachedData(data: data, expiration: memoryCacheExpiration)
 
         // L1: 메모리 캐시 저장
         memoryCache.setObject(cachedData, forKey: cacheKey, cost: data.count)
@@ -127,7 +131,7 @@ actor NetworkCache {
             }
 
             // 만료 확인
-            if now.timeIntervalSince(creationDate) > cacheExpiration {
+            if now.timeIntervalSince(creationDate) > diskCacheExpiration {
                 try? FileManager.default.removeItem(at: fileURL)
             }
         }
@@ -159,7 +163,7 @@ actor NetworkCache {
         }
 
         let now = Date()
-        if now.timeIntervalSince(creationDate) > cacheExpiration {
+        if now.timeIntervalSince(creationDate) > diskCacheExpiration {
             // 만료된 파일 삭제
             try? FileManager.default.removeItem(at: fileURL)
             return nil

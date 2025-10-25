@@ -15,7 +15,7 @@ public final class DefaultMountainInfoRepositoryImpl: MountainInfoRepository {
 
     // 산 검색
     public func searchMountain(keyword: String, page: Int) -> AnyPublisher<Result<MountainResponse, Error>, Never> {
-        return NetworkManager.shared.callXMLRequest(url: MountainRouter.getMountainInfo(keyword: keyword, page: page), type: MountainResponseDTO.self)
+        return NetworkManager.shared.callRequest(url: MountainRouter.getMountainInfo(keyword: keyword, page: page), type: MountainResponseDTO.self)
             .map { result in
                 switch result {
                 case .success(let dto):
@@ -31,7 +31,7 @@ public final class DefaultMountainInfoRepositoryImpl: MountainInfoRepository {
     
     // 산 이미지
     public func fetchImage(id: Int) -> AnyPublisher<Result<[String], any Error>, Never> {
-        return NetworkManager.shared.callXMLRequest(url: MountainRouter.getImage(id: id), type: MountainImageResponseDTO.self)
+        return NetworkManager.shared.callRequest(url: MountainRouter.getImage(id: id), type: MountainImageResponseDTO.self)
             .map { result in
                 switch result {
                 case .success(let dto):
