@@ -8,7 +8,7 @@
 import Foundation
 import Alamofire
 
-protocol Router: URLRequestConvertible {
+public protocol Router: URLRequestConvertible {
     
     var baseURL: String { get }
     var apiKey: String { get }

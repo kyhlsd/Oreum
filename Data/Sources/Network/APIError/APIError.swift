@@ -24,6 +24,6 @@ enum APIError: LocalizedError {
     }
 }
 
-protocol APIErrorConvertible: Decodable {
+public protocol APIErrorConvertible: Decodable {
     var message: String { get }
 }

@@ -21,6 +21,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             FirebaseApp.configure()
         }
         NetworkManager.shared.startMonitoring()
+
+        // 만료된 캐시 정리
+        NetworkManager.shared.cleanExpiredCache()
+
         return true
     }
 
