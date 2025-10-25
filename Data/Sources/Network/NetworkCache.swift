@@ -7,12 +7,12 @@
 
 import Foundation
 
-public final class NetworkCache {
+actor NetworkCache {
 
-    public static let shared = NetworkCache()
+    static let shared = NetworkCache()
 
     // L1: 메모리 캐시 (NSCache)
-    private let memoryCache = NSCache<NSString, CachedData>()
+    nonisolated(unsafe) private let memoryCache = NSCache<NSString, CachedData>()
 
     // L2: 디스크 캐시 경로
     private let diskCacheDirectory: URL
@@ -42,7 +42,7 @@ public final class NetworkCache {
     // MARK: - Public Methods
 
     // 캐시에서 데이터 조회 (NSCache → FileManager → nil)
-    public func getData(for key: String) -> Data? {
+    func getData(for key: String) async -> Data? {
         let cacheKey = NSString(string: key)
 
         // L1: 메모리 캐시 확인
@@ -68,7 +68,7 @@ public final class NetworkCache {
     }
 
     // 캐시에 데이터 저장 (NSCache + FileManager)
-    public func setData(_ data: Data, for key: String) {
+    func setData(_ data: Data, for key: String) async {
         let cacheKey = NSString(string: key)
         let cachedData = CachedData(data: data, expiration: cacheExpiration)
 
@@ -80,7 +80,7 @@ public final class NetworkCache {
     }
 
     // 특정 키의 캐시 삭제
-    public func removeData(for key: String) {
+    func removeData(for key: String) async {
         let cacheKey = NSString(string: key)
 
         // 메모리 캐시 삭제
@@ -91,7 +91,7 @@ public final class NetworkCache {
     }
 
     // 모든 캐시 삭제
-    public func clearAll() {
+    func clearAll() async {
         // 메모리 캐시 삭제
         memoryCache.removeAllObjects()
 
@@ -100,7 +100,7 @@ public final class NetworkCache {
     }
 
     // 만료된 캐시 정리
-    public func cleanExpiredCache() {
+    func cleanExpiredCache() async {
         guard let fileURLs = try? FileManager.default.contentsOfDirectory(
             at: diskCacheDirectory,
             includingPropertiesForKeys: [.contentModificationDateKey],
@@ -124,7 +124,7 @@ public final class NetworkCache {
 
     // MARK: - Private Methods
 
-    private func createCacheDirectoryIfNeeded() {
+    nonisolated private func createCacheDirectoryIfNeeded() {
         if !FileManager.default.fileExists(atPath: diskCacheDirectory.path) {
             try? FileManager.default.createDirectory(
                 at: diskCacheDirectory,

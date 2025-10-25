@@ -23,7 +23,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         NetworkManager.shared.startMonitoring()
 
         // 만료된 캐시 정리
-        NetworkManager.shared.cleanExpiredCache()
+        Task {
+            await NetworkManager.shared.cleanExpiredCache()
+        }
 
         return true
     }
