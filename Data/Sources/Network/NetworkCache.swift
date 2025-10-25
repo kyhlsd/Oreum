@@ -20,8 +20,12 @@ public final class NetworkCache {
     // 캐시 만료 시간 (기본 1시간)
     private let cacheExpiration: TimeInterval
 
-    private init(cacheExpiration: TimeInterval = 3600) {
+    // 디스크 캐시 최대 용량 (기본 100MB)
+    private let diskCacheLimit: Int
+
+    private init(cacheExpiration: TimeInterval = 3600, diskCacheLimit: Int = 100 * 1024 * 1024) {
         self.cacheExpiration = cacheExpiration
+        self.diskCacheLimit = diskCacheLimit
 
         // 디스크 캐시 디렉토리 설정
         let cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -154,6 +158,9 @@ public final class NetworkCache {
     }
 
     private func saveDiskCache(_ data: Data, for key: String) {
+        // 용량 체크 및 정리
+        ensureDiskCacheLimit()
+
         let fileURL = diskCacheURL(for: key)
         try? data.write(to: fileURL, options: .atomic)
     }
@@ -171,6 +178,46 @@ public final class NetworkCache {
     private func diskCacheURL(for key: String) -> URL {
         let fileName = key.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? key
         return diskCacheDirectory.appendingPathComponent(fileName)
+    }
+
+    // 디스크 캐시 용량 확인 및 초과 시 오래된 파일 삭제 (LRU)
+    private func ensureDiskCacheLimit() {
+        guard let fileURLs = try? FileManager.default.contentsOfDirectory(
+            at: diskCacheDirectory,
+            includingPropertiesForKeys: [.fileSizeKey, .contentAccessDateKey],
+            options: .skipsHiddenFiles
+        ) else { return }
+
+        // 전체 디스크 캐시 크기 계산
+        var totalSize = 0
+        var filesWithInfo: [(url: URL, size: Int, accessDate: Date)] = []
+
+        for fileURL in fileURLs {
+            guard let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .contentAccessDateKey]),
+                  let fileSize = resourceValues.fileSize,
+                  let accessDate = resourceValues.contentAccessDate else {
+                continue
+            }
+
+            totalSize += fileSize
+            filesWithInfo.append((url: fileURL, size: fileSize, accessDate: accessDate))
+        }
+
+        // 용량 초과 시 오래된 파일부터 삭제
+        if totalSize > diskCacheLimit {
+            // 접근 날짜 기준 오름차순 정렬 (오래된 것부터)
+            filesWithInfo.sort { $0.accessDate < $1.accessDate }
+
+            var currentSize = totalSize
+            for fileInfo in filesWithInfo {
+                if currentSize <= diskCacheLimit {
+                    break
+                }
+
+                try? FileManager.default.removeItem(at: fileInfo.url)
+                currentSize -= fileInfo.size
+            }
+        }
     }
 }
 
