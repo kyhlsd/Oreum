@@ -42,7 +42,7 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
     // MARK: - ViewModels
     private func makeSearchViewModel() -> SearchViewModel {
         return SearchViewModel(
-            fetchMountainsUseCase: makeFetchMountainsUseCase(),
+            searchMountainUseCase: makeSearchMountainUseCase(),
             fetchRecentSearchesUseCase: makeFetchRecentSearchesUseCase(),
             saveRecentSearchUseCase: makeSaveRecentSearchUseCase(),
             deleteRecentSearchUseCase: makeDeleteRecentSearchUseCase(),
@@ -54,13 +54,14 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
         return MountainInfoViewModel(
             fetchCoordinateUseCase: makeFetchCoordinateUseCase(),
             fetchWeeklyForecastUseCase: makeFetchWeeklyForecastUseCase(),
+            fetchMountainImageUseCase: makeFetchMountainImageUseCase(),
             mountainInfo: mountainInfo
         )
     }
 
     // MARK: - UseCases
-    private func makeFetchMountainsUseCase() -> FetchMountainsUseCase {
-        return FetchMountainsUseCaseImpl(repository: mountainInfoRepository)
+    private func makeSearchMountainUseCase() -> SearchMountainUseCase {
+        return SearchMountainUseCaseImpl(repository: mountainInfoRepository)
     }
 
     private func makeFetchRecentSearchesUseCase() -> FetchRecentSearchesUseCase {
@@ -87,9 +88,18 @@ extension SearchSceneDIContainer: SearchSceneFlowCoordinatorDependencies {
         return FetchWeeklyForecastUseCaseImpl(repository: makeForecastRepository())
     }
 
+    private func makeFetchMountainImageUseCase() -> FetchMountainImageUseCase {
+        return FetchMountainImageUseCaseImpl(repository: mountainInfoRepository)
+    }
+
     // MARK: - Repositories
     private func makeMountainInfoRepository() -> MountainInfoRepository {
-        return JSONMountainInfoRepositoryImpl()
+        switch configuration.environment {
+        case .release, .dev:
+            return DefaultMountainInfoRepositoryImpl()
+        case .dummy:
+            return DummyMountainInfoRepositoryImpl()
+        }
     }
 
     private func makeRecentSearchRepository() -> RecentSearchRepository {

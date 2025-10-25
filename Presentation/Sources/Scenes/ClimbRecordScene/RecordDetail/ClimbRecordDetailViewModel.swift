@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 import Domain
+import Core
 
 protocol ClimbRecordDetailViewModelDelegate: AnyObject {
     func updateReview(id: String, rating: Int, comment: String)

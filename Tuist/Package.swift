@@ -10,7 +10,8 @@ import PackageDescription
             "Alamofire": .staticFramework,
             "Kingfisher": .staticFramework,
             "SnapKit": .staticFramework,
-            "Toast": .staticFramework
+            "Toast": .staticFramework,
+            "XMLCoder": .staticFramework
         ]
     )
 #endif
@@ -23,6 +24,7 @@ let package = Package(
         .package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.5.0"), // Kingfisher
         .package(url: "https://github.com/SnapKit/SnapKit.git", from: "5.7.1"), // SnapKit
         .package(url: "https://github.com/scalessec/Toast-Swift.git", from: "5.1.1"), // Toast
-        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "11.0.0") // Firebase
+        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "11.0.0"), // Firebase
+        .package(url: "https://github.com/CoreOffice/XMLCoder.git", from: "0.17.1") // XMLCoder
     ]
 )

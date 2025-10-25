@@ -23,7 +23,7 @@ final class ClimbRecordRealm: Object {
 extension ClimbRecordRealm {
     func toDomain() -> ClimbRecord {
         return ClimbRecord(id: id.stringValue,
-                           mountain: mountain?.toDomain() ?? Mountain(id: UUID().uuidString, name: "error", address: "error", height: 0, isFamous: false),
+                           mountain: mountain?.toDomain() ?? Mountain(id: -1, name: "error", address: "error", height: nil, isFamous: false),
                            timeLog: timeLog.map { $0.toDomain() },
                            images: images.map { $0.toDomain() },
                            score: score,

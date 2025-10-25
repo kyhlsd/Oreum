@@ -30,7 +30,11 @@ final class CustomSearchBar: UISearchBar {
         searchTextField.textColor = AppColor.inputText
         searchTextField.leftView?.tintColor = AppColor.mossGreen
         backgroundImage = UIImage()
-        searchTextField.subviews.first?.isHidden = true
+        if #available(iOS 26.0, *) {
+            setSearchFieldBackgroundImage(UIImage(), for: .normal)
+        } else {
+            searchTextField.subviews.first?.isHidden = true
+        }
         layer.borderWidth = 2.0
         layer.cornerRadius = AppRadius.radius
         returnKeyType = .search

@@ -10,13 +10,16 @@ import Combine
 import MapKit
 import Domain
 
-final class MapViewController: UIViewController, BaseViewController {
+final class MapViewController: UIViewController, BaseViewController, NetworkStatusObservable {
 
     var pushInfoVC: ((MountainInfo) -> Void)?
 
     let mainView = MapView()
     let viewModel: MapViewModel
 
+    var networkStatusBanner: NetworkStatusBannerView?
+    var networkStatusCancellable: AnyCancellable?
+    
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
 
@@ -51,9 +54,14 @@ final class MapViewController: UIViewController, BaseViewController {
         setupDelegates()
         setupMapBoundary()
         setupAnnotationViewBuilder()
+        setupNetworkStatusObserver()
         bind()
 
         viewDidLoadSubject.send(())
+    }
+    
+    deinit {
+        removeNetworkStatusObserver()
     }
 
     func bind() {
@@ -136,8 +144,8 @@ final class MapViewController: UIViewController, BaseViewController {
     private func setupAnnotationViewBuilder() {
         // 상세 정보 보기 선택 시
         annotationViewBuilder.mountainInfoButtonTapped
-            .sink { [weak self] name, height in
-                self?.mountainInfoButtonTappedSubject.send((name, height))
+            .sink { [weak self] name, id in
+                self?.mountainInfoButtonTappedSubject.send((name, id))
             }
             .store(in: &cancellables)
 
@@ -161,8 +169,11 @@ final class MapViewController: UIViewController, BaseViewController {
     }
     
     private func setupNavItem() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "명산 지도"))
-        navigationItem.backButtonTitle = " "
+        if #available(iOS 26.0, *) {
+            navigationItem.titleView = NavTitleView(title: "명산 지도")
+        } else {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "명산 지도"))
+        }
     }
     
     private func setupDelegates() {
@@ -281,7 +292,7 @@ extension MapViewController: MKMapViewDelegate {
     private func setupMapBoundary() {
         let southKoreaCenter = CLLocationCoordinate2D(latitude: 36.5, longitude: 127.5)
         let regionLatitudinalMeters: CLLocationDistance = 800000
-        let regionLongitudinalMeters: CLLocationDistance = 500000
+        let regionLongitudinalMeters: CLLocationDistance = 600000
         let minZoomDistance: CLLocationDistance = 5000
         let maxZoomDistance: CLLocationDistance = 1000000
         

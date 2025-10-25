@@ -15,6 +15,7 @@ final class ImageCollectionViewCell: BaseCollectionViewCell {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
+        imageView.kf.indicatorType = .activity
         return imageView
     }()
 
@@ -24,6 +25,26 @@ final class ImageCollectionViewCell: BaseCollectionViewCell {
         } else {
             imageView.image = nil
         }
+    }
+
+    func setImage(urlString: String) {
+        guard let url = URL(string: urlString) else {
+            imageView.image = nil
+            return
+        }
+        imageView.kf.setImage(
+            with: url,
+            options: [
+                .backgroundDecode,
+                .processor(DownsamplingImageProcessor(size: CGSize(width: DeviceSize.width, height: DeviceSize.width * 0.75))),
+                .scaleFactor(DeviceSize.scale)
+            ]
+        )
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        imageView.image = nil
     }
     
     // MARK: - Setups

@@ -13,26 +13,48 @@ public final class DummyForecastRepositoryImpl: ForecastRepository {
 
     public init() {}
 
-    public func fetchShortTermForecast(longitude: Double, latitude: Double) -> AnyPublisher<Result<[DailyForecast], Error>, Never> {
-        let today = Calendar.current.startOfDay(for: Date())
+    public func fetchShortTermForecast(nx: Int, ny: Int) -> AnyPublisher<Result<[ForecastItem], Error>, Never> {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd"
 
-        let dummyForecasts = (0..<7).map { dayOffset in
-            let date = Calendar.current.date(byAdding: .day, value: dayOffset, to: today) ?? today
-            let minTemp = Double.random(in: 10...15)
-            let maxTemp = Double.random(in: 20...28)
-            let pop = Int.random(in: 0...100)
-            let pty = Int.random(in: 0...3)
+        var dummyItems: [ForecastItem] = []
 
-            return DailyForecast(
-                date: date,
-                minTemp: minTemp,
-                maxTemp: maxTemp,
-                pop: pop,
-                pty: pty
-            )
+        // 7일치 더미 데이터 생성
+        for dayOffset in 0..<7 {
+            let date = Calendar.current.date(byAdding: .day, value: dayOffset, to: Date()) ?? Date()
+            let dateString = dateFormatter.string(from: date)
+
+            // 하루에 8개 시간대 (3시간 간격)
+            for hour in stride(from: 0, to: 24, by: 3) {
+                let timeString = String(format: "%02d00", hour)
+
+                // TMP (기온)
+                dummyItems.append(ForecastItem(
+                    date: dateString,
+                    time: timeString,
+                    category: "TMP",
+                    value: String(format: "%.1f", Double.random(in: 10...28))
+                ))
+
+                // POP (강수확률)
+                dummyItems.append(ForecastItem(
+                    date: dateString,
+                    time: timeString,
+                    category: "POP",
+                    value: String(Int.random(in: 0...100))
+                ))
+
+                // PTY (강수형태)
+                dummyItems.append(ForecastItem(
+                    date: dateString,
+                    time: timeString,
+                    category: "PTY",
+                    value: String(Int.random(in: 0...3))
+                ))
+            }
         }
 
-        return Just(.success(dummyForecasts))
+        return Just(.success(dummyItems))
             .delay(for: .seconds(0.5), scheduler: RunLoop.main)
             .eraseToAnyPublisher()
     }

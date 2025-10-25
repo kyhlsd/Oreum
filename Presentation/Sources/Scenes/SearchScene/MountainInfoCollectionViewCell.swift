@@ -37,7 +37,9 @@ final class MountainInfoCollectionViewCell: BaseCollectionViewCell {
     func configure(with mountainInfo: MountainInfo) {
         imageItemView.setTitle(title: mountainInfo.name)
         imageItemView.setSubtitle(subtitle: mountainInfo.address)
-        heightLabel.text = "\(mountainInfo.height)m"
+        if let height = mountainInfo.height {
+            heightLabel.text = "\(height)m"
+        }
         infoLabel.text = mountainInfo.detail
     }
 

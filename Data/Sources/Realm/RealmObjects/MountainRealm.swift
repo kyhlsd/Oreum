@@ -10,21 +10,21 @@ import RealmSwift
 import Domain
 
 final class MountainRealm: Object {
-    @Persisted(primaryKey: true) private var id: ObjectId
+    @Persisted(primaryKey: true) var id: Int
     @Persisted var name: String
     @Persisted private var address: String
-    @Persisted private var height: Int
+    @Persisted private var height: Int?
     @Persisted private var isFamous: Bool
 }
 
 extension MountainRealm {
     func toDomain() -> Mountain {
-        return Mountain(id: id.stringValue, name: name, address: address, height: height, isFamous: isFamous)
+        return Mountain(id: id, name: name, address: address, height: height, isFamous: isFamous)
     }
     
     convenience init(from domain: Mountain) {
         self.init()
-        self.id = (try? ObjectId(string: domain.id)) ?? ObjectId.generate()
+        self.id = domain.id
         self.name = domain.name
         self.address = domain.address
         self.height = domain.height

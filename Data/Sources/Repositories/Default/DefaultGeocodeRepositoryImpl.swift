@@ -15,9 +15,6 @@ public final class DefaultGeocodeRepositoryImpl: GeocodeRepository {
     
     // Geocoding
     public func fetchCoordinate(address: String) -> AnyPublisher<Result<Coordinate, Error>, Never> {
-        if address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return Just(.failure(APIError.some(message: "주소 값이 없습니다."))).eraseToAnyPublisher()
-        }
         return NetworkManager.shared
             .callRequest(url: GeocoderRouter.getCoordinate(address: address), type: CoordinateDTO.self)
             .map { result in

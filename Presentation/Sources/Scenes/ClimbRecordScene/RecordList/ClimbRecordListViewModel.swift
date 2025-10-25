@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 import Domain
+import Core
 
 final class ClimbRecordListViewModel: BaseViewModel {
 

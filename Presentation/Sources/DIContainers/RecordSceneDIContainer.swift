@@ -61,7 +61,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
 
     private func makeAddClimbRecordViewModel() -> AddClimbRecordViewModel {
         return AddClimbRecordViewModel(
-            fetchMountainsUseCase: makeFetchMountainsUseCase(),
+            searchMountainUseCase: makeSearchMountainUseCase(),
             saveClimbRecordUseCase: makeSaveClimbRecordUseCase()
         )
     }
@@ -91,8 +91,8 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
         return SaveClimbRecordUseCaseImpl(repository: climbRecordRepository)
     }
 
-    private func makeFetchMountainsUseCase() -> FetchMountainsUseCase {
-        return FetchMountainsUseCaseImpl(repository: mountainInfoRepository)
+    private func makeSearchMountainUseCase() -> SearchMountainUseCase {
+        return SearchMountainUseCaseImpl(repository: mountainInfoRepository)
     }
     
     private func makeSaveRecordImageUseCase() -> SaveRecordImageUseCase {
@@ -126,7 +126,12 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeMountainInfoRepository() -> MountainInfoRepository {
-        return JSONMountainInfoRepositoryImpl()
+        switch configuration.environment {
+        case .release, .dev:
+            return DefaultMountainInfoRepositoryImpl()
+        case .dummy:
+            return DummyMountainInfoRepositoryImpl()
+        }
     }
     
     private func makeRecordImageRepository() -> RecordImageRepository {

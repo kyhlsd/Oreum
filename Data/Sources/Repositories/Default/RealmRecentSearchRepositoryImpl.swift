@@ -15,7 +15,7 @@ public final class RealmRecentSearchRepositoryImpl: RecentSearchRepository {
     private let realm: Realm?
 
     public init() {
-        self.realm = try? Realm()
+        self.realm = RealmHelper.shared
     }
 
     // 모든 검색어 가져오기

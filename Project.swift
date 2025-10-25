@@ -2,7 +2,7 @@ import ProjectDescription
 
 let iOSVersion = "16.0"
 let teamID = "4QUWH828P3"
-let appVersion = "1.1.0"
+let appVersion = "1.2.0"
 let buildNumber = "1"
 
 let project = Project(
@@ -124,9 +124,11 @@ let project = Project(
                     sources: ["Data/Sources/**"],
                     resources: ["Data/Resources/**"],
                     dependencies: [
+                        .target(name: "Core"),
                         .target(name: "Domain"),
                         .external(name: "RealmSwift"),
-                        .external(name: "Alamofire")
+                        .external(name: "Alamofire"),
+                        .external(name: "XMLCoder")
                     ],
                     settings: .settings(
                         base: [

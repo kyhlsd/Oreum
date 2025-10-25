@@ -8,14 +8,21 @@
 import Foundation
 import Alamofire
 
-protocol Router: URLRequestConvertible {
+public protocol Router: URLRequestConvertible {
     
     var baseURL: String { get }
     var apiKey: String { get }
     var method: HTTPMethod { get }
+    var responseType: ResponseType { get }
     var paths: String? { get }
     var queryItems: [URLQueryItem] { get }
     var errorResponse: APIErrorConvertible.Type { get }
+    
+}
+
+public enum ResponseType {
+    case json
+    case xml
 }
 
 extension Router {
