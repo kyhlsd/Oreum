@@ -18,6 +18,7 @@ final class ClimbRecordDetailViewController: UIViewController, BaseViewControlle
 
     let mainView = ClimbRecordDetailView()
     let viewModel: ClimbRecordDetailViewModel
+    
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
     private let keyboardObserver = KeyboardHeightObserver()
@@ -55,7 +56,6 @@ final class ClimbRecordDetailViewController: UIViewController, BaseViewControlle
 
         viewDidLoadSubject.send(())
     }
-
     
     func bind() {
         let saveButtonTap: AnyPublisher<(Int, String), Never> = mainView.saveButton.tap

@@ -8,48 +8,58 @@
 import Foundation
 import Combine
 import Network
+import Core
 import Alamofire
 import XMLCoder
 
 public final class NetworkManager: Sendable {
 
     public static let shared = NetworkManager()
-    private init() {}
 
     private let queue = DispatchQueue.global(qos: .background)
     private let monitor = NWPathMonitor()
     private let cache = NetworkCache.shared
 
-    nonisolated(unsafe) private(set) var isConnected = true
-    
+    nonisolated(unsafe) private let isConnectedSubject = CurrentValueSubject<Bool, Never>(true)
+    nonisolated(unsafe) private var cancellables = Set<AnyCancellable>()
+
+    public var isConnected: Bool {
+        isConnectedSubject.value
+    }
+
+    private init() {
+        setupNetworkStatusSubscription()
+    }
+
     // MARK: - Network Monitor
     public func startMonitoring() {
         monitor.pathUpdateHandler = { [weak self] path in
             guard let self else { return }
-            
+
             if path.status == .satisfied {
-                networkConnectedHandler()
-                isConnected = true
+                self.isConnectedSubject.send(true)
             } else {
-                if isConnected {
-                    networkDisconnectedHandler()
-                }
-                isConnected = false
+                self.isConnectedSubject.send(false)
             }
         }
         monitor.start(queue: queue)
     }
-    
+
     public func stopMonitoring() {
         monitor.cancel()
     }
-    
-    private func networkConnectedHandler() {
-        
-    }
-    
-    private func networkDisconnectedHandler() {
-        
+
+    private func setupNetworkStatusSubscription() {
+        isConnectedSubject
+            .removeDuplicates()
+            .sink { isConnected in
+                NotificationCenter.default.post(
+                    name: .networkStatusChanged,
+                    object: nil,
+                    userInfo: ["isConnected": isConnected]
+                )
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - CallRequest
@@ -94,7 +104,7 @@ public final class NetworkManager: Sendable {
                 }
 
                 // 네트워크 연결 확인
-                guard self.isConnected else {
+                guard self.isConnectedSubject.value else {
                     promise(.success(.failure(.network)))
                     return
                 }
@@ -163,7 +173,7 @@ public final class NetworkManager: Sendable {
                 }
 
                 // 네트워크 연결 확인
-                guard self.isConnected else {
+                guard self.isConnectedSubject.value else {
                     promise(.success(.failure(.network)))
                     return
                 }

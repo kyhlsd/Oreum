@@ -9,11 +9,14 @@ import UIKit
 import Combine
 import Domain
 
-final class MountainInfoViewController: UIViewController, BaseViewController {
+final class MountainInfoViewController: UIViewController, BaseViewController, NetworkStatusObservable {
 
     let mainView = MountainInfoView()
     let viewModel: MountainInfoViewModel
 
+    var networkStatusBanner: NetworkStatusBannerView?
+    var networkStatusCancellable: AnyCancellable?
+    
     private var cancellables = Set<AnyCancellable>()
     private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let viewDidAppearSubject = PassthroughSubject<Void, Never>()
@@ -36,6 +39,7 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
         super.viewDidLoad()
 
         setupDelegates()
+        setupNetworkStatusObserver()
         bind()
 
         viewDidLoadSubject.send(())
@@ -47,8 +51,8 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
         viewDidAppearSubject.send(())
     }
     
-    private func setupDelegates() {
-        mainView.imageCollectionView.dataSource = self
+    deinit {
+        removeNetworkStatusObserver()
     }
 
     func bind() {
@@ -90,6 +94,11 @@ final class MountainInfoViewController: UIViewController, BaseViewController {
             }
             .store(in: &cancellables)
     }
+    
+    private func setupDelegates() {
+        mainView.imageCollectionView.dataSource = self
+    }
+    
 }
 
 // MARK: - UICollectionViewDataSource

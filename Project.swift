@@ -124,6 +124,7 @@ let project = Project(
                     sources: ["Data/Sources/**"],
                     resources: ["Data/Resources/**"],
                     dependencies: [
+                        .target(name: "Core"),
                         .target(name: "Domain"),
                         .external(name: "RealmSwift"),
                         .external(name: "Alamofire"),

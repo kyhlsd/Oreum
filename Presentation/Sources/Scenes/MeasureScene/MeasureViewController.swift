@@ -9,11 +9,14 @@ import UIKit
 import Combine
 import Domain
 
-final class MeasureViewController: UIViewController, BaseViewController {
+final class MeasureViewController: UIViewController, BaseViewController, NetworkStatusObservable {
 
     let mainView = MeasureView()
     let viewModel: MeasureViewModel
 
+    var networkStatusBanner: NetworkStatusBannerView?
+    var networkStatusCancellable: AnyCancellable?
+    
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
 
@@ -44,8 +47,13 @@ final class MeasureViewController: UIViewController, BaseViewController {
         bind()
         setupNavItem()
         setupDelegates()
+        setupNetworkStatusObserver()
         
         viewDidLoadSubject.send(())
+    }
+    
+    deinit {
+        removeNetworkStatusObserver()
     }
 
     func bind() {

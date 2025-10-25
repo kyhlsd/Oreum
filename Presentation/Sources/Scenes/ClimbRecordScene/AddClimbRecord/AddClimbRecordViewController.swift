@@ -9,13 +9,17 @@ import UIKit
 import Combine
 import Domain
 
-final class AddClimbRecordViewController: UIViewController, BaseViewController {
+final class AddClimbRecordViewController: UIViewController, BaseViewController, NetworkStatusObservable {
 
     var dismissVC: (() -> Void)?
     var pushVC: ((ClimbRecord) -> Void)?
 
     let mainView = AddClimbRecordView()
     let viewModel: AddClimbRecordViewModel
+    
+    var networkStatusBanner: NetworkStatusBannerView?
+    var networkStatusCancellable: AnyCancellable?
+    
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
 
@@ -44,6 +48,11 @@ final class AddClimbRecordViewController: UIViewController, BaseViewController {
         bind()
         setupNavItem()
         setupDelegates()
+        setupNetworkStatusObserver()
+    }
+    
+    deinit {
+        removeNetworkStatusObserver()
     }
 
     func bind() {

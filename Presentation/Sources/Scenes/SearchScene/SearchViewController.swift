@@ -9,12 +9,15 @@ import UIKit
 import Combine
 import Domain
 
-final class SearchViewController: UIViewController, BaseViewController {
+final class SearchViewController: UIViewController, BaseViewController, NetworkStatusObservable {
 
     var pushInfoVC: ((MountainInfo) -> Void)?
 
     let mainView = SearchView()
     let viewModel: SearchViewModel
+    
+    var networkStatusBanner: NetworkStatusBannerView?
+    var networkStatusCancellable: AnyCancellable?
 
     private var cancellables = Set<AnyCancellable>()
     private lazy var recentSearchDataSource = createRecentSearchDataSource()
@@ -45,9 +48,14 @@ final class SearchViewController: UIViewController, BaseViewController {
 
         setupNavItem()
         setupDelegates()
+        setupNetworkStatusObserver()
         bind()
 
         viewDidLoadSubject.send(())
+    }
+    
+    deinit {
+        removeNetworkStatusObserver()
     }
 
     func bind() {

@@ -10,13 +10,16 @@ import Combine
 import MapKit
 import Domain
 
-final class MapViewController: UIViewController, BaseViewController {
+final class MapViewController: UIViewController, BaseViewController, NetworkStatusObservable {
 
     var pushInfoVC: ((MountainInfo) -> Void)?
 
     let mainView = MapView()
     let viewModel: MapViewModel
 
+    var networkStatusBanner: NetworkStatusBannerView?
+    var networkStatusCancellable: AnyCancellable?
+    
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataSource = createDataSource()
 
@@ -51,9 +54,14 @@ final class MapViewController: UIViewController, BaseViewController {
         setupDelegates()
         setupMapBoundary()
         setupAnnotationViewBuilder()
+        setupNetworkStatusObserver()
         bind()
 
         viewDidLoadSubject.send(())
+    }
+    
+    deinit {
+        removeNetworkStatusObserver()
     }
 
     func bind() {
