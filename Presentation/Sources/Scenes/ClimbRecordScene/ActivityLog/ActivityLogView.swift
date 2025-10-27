@@ -53,7 +53,14 @@ final class ActivityLogView: BaseView {
     // 시간별 활동 박스
     private let activityBoxView = BoxView(title: "시간별 활동")
     // 시간별 활동 차트 (걸음 수 + 이동 거리)
-    private let activityChartView = ActivityChartContainerView()
+    private lazy var activityChartView = ActivityChartContainerView()
+    // 차트 로딩 indicator
+    private let chartLoadingIndicator = {
+        let indicator = UIActivityIndicatorView()
+        indicator.hidesWhenStopped = true
+        indicator.color = AppColor.primary
+        return indicator
+    }()
     
     private func createVerticalLineView() -> UIView {
         let view = UIView()
@@ -76,6 +83,7 @@ final class ActivityLogView: BaseView {
     // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
+        chartLoadingIndicator.startAnimating()
     }
     
     override func setupHierarchy() {
@@ -94,7 +102,8 @@ final class ActivityLogView: BaseView {
             timeBoxView.addSubview($0)
         }
 
-        activityBoxView.addSubview(activityChartView)
+        activityBoxView.addSubview(chartLoadingIndicator)
+        // activityChartView는 setChartLoading(false)에서 추가
     }
     
     override func setupLayout() {
@@ -208,11 +217,11 @@ final class ActivityLogView: BaseView {
             make.top.equalTo(timeBoxView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
             make.bottom.equalToSuperview().inset(AppSpacing.regular)
+            make.height.greaterThanOrEqualTo(200)
         }
 
-        activityChartView.snp.makeConstraints { make in
-            make.top.equalTo(activityBoxView.lineView.snp.top).offset(AppSpacing.compact)
-            make.bottom.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
+        chartLoadingIndicator.snp.makeConstraints { make in
+            make.center.equalTo(activityBoxView)
         }
     }
 }
@@ -258,7 +267,27 @@ extension ActivityLogView {
     func setActivityLogs(activityLogs: [ActivityLog]) {
         activityChartView.setLogs(logs: activityLogs)
     }
-    
+
+    // 차트 로딩 상태
+    func setChartLoading(_ isLoading: Bool) {
+        if isLoading {
+            chartLoadingIndicator.startAnimating()
+        } else {
+            chartLoadingIndicator.stopAnimating()
+
+            // 차트 뷰를 처음 추가하고 레이아웃 설정
+            if activityChartView.superview == nil {
+                activityBoxView.addSubview(activityChartView)
+                activityChartView.snp.makeConstraints { make in
+                    make.top.equalTo(activityBoxView.lineView.snp.top).offset(AppSpacing.compact)
+                    make.bottom.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
+                }
+            }
+
+            activityChartView.isHidden = false
+        }
+    }
+
     // 시간 표기
     private func formatMinutes(_ minutes: Int) -> String {
         let hours = minutes / 60

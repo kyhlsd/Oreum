@@ -21,44 +21,48 @@ final class ActivityChartDataSource: ObservableObject {
 final class ActivityChartContainerView: BaseView {
 
     private var dataSource: ActivityChartDataSource
-    private var hostingController: UIHostingController<ActivityChartView>?
+    private lazy var hostingController: UIHostingController<ActivityChartView> = {
+        let chartView = ActivityChartView(dataSource: dataSource)
+        let hosting = UIHostingController(rootView: chartView)
+        hosting.sizingOptions = .intrinsicContentSize
+        hosting.view?.backgroundColor = .clear
+        return hosting
+    }()
 
     init(logs: [ActivityLog] = []) {
         self.dataSource = ActivityChartDataSource(logs: logs)
         super.init(frame: .zero)
     }
-    
+
     func setLogs(logs: [ActivityLog]) {
+        // hostingController를 강제로 초기화하고 뷰 추가
+        if hostingController.view.superview == nil {
+            addSubview(hostingController.view)
+            hostingController.view.snp.makeConstraints { make in
+                make.edges.equalToSuperview()
+            }
+        }
+
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
             dataSource.logs = logs
         }
     }
-    
+
     // MARK: - Setups
     override func setupView() {
-        let chartView = ActivityChartView(dataSource: dataSource)
-        let hosting = UIHostingController(rootView: chartView)
-        hosting.sizingOptions = .intrinsicContentSize
-        hostingController = hosting
+        backgroundColor = .clear
+    }
 
-        guard let hcView = hosting.view else { return }
-        hcView.backgroundColor = .clear
-    }
-    
     override func setupHierarchy() {
-        guard let hcView = hostingController?.view else { return }
-        addSubview(hcView)
+        // 차트는 setLogs가 호출될 때 추가됨
     }
-    
+
     override func setupLayout() {
-        guard let hcView = hostingController?.view else { return }
-        hcView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
+        // 차트는 setLogs가 호출될 때 레이아웃 설정됨
     }
-    
+
 }
 
 // MARK: - ChartView (SwiftUI)

@@ -56,7 +56,11 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeActivityLogViewModel(climbRecord: ClimbRecord) -> ActivityLogViewModel {
-        return ActivityLogViewModel(activityStatUseCase: makeActivityStatUseCase(), climbRecord: climbRecord)
+        return ActivityLogViewModel(
+            activityStatUseCase: makeActivityStatUseCase(),
+            getAverageActivityStatsUseCase: makeGetAverageActivityStatsUseCase(),
+            climbRecord: climbRecord
+        )
     }
 
     private func makeAddClimbRecordViewModel() -> AddClimbRecordViewModel {
@@ -85,6 +89,10 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     
     private func makeActivityStatUseCase() -> ActivityStatUseCase {
         return ActivityStatUseCaseImpl()
+    }
+
+    private func makeGetAverageActivityStatsUseCase() -> GetAverageActivityStatsUseCase {
+        return GetAverageActivityStatsUseCaseImpl(repository: climbRecordRepository)
     }
 
     private func makeSaveClimbRecordUseCase() -> SaveClimbRecordUseCase {

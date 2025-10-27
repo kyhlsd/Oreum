@@ -2,7 +2,7 @@
 //  RatioImageCollectionViewCell.swift
 //  Presentation
 //
-//  Created by Claude Code
+//  Created by 김영훈 on 10/27/25.
 //
 
 import UIKit
