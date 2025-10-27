@@ -1,5 +1,5 @@
 //
-//  UICollectionViewDelegate.swift
+//  UICollectionView+Extension.swift
 //  Presentation
 //
 //  Created by 김영훈 on 9/27/25.

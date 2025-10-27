@@ -48,7 +48,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
 
     // MARK: - ViewModels
     private func makeClimbRecordListViewModel() -> ClimbRecordListViewModel {
-        return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase())
+        return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase(), fetchRecordImageUseCase: makeFetchRecordImageUseCase())
     }
     
     private func makeClimbRecordDetailViewModel(climbRecord: ClimbRecord, isFromAddRecord: Bool = false) -> ClimbRecordDetailViewModel {

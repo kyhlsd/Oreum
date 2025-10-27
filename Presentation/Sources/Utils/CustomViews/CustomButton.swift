@@ -33,7 +33,7 @@ final class CustomButton: UIButton {
         
         configuration = config
         backgroundColor = background
-        layer.cornerRadius = AppRadius.radius
+        layer.cornerRadius = AppRadius.medium
         
         if hasBorder {
             layer.borderColor = foreground.cgColor

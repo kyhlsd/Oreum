@@ -45,7 +45,7 @@ final class ClusterCalloutView: BaseView {
     // MARK: - Setups
     override func setupView() {
         backgroundColor = .clear
-        layer.cornerRadius = AppRadius.radius
+        layer.cornerRadius = AppRadius.medium
     }
 
     override func setupHierarchy() {

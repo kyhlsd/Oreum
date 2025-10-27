@@ -14,9 +14,11 @@ final class ClimbRecordListViewModel: BaseViewModel {
 
     private let fetchUseCase: FetchClimbRecordUseCase
     private let toggleBookmarkUseCase: ToggleBookmarkUseCase
+    private let fetchRecordImageUseCase: FetchRecordImageUseCase
     private var cancellables = Set<AnyCancellable>()
 
     private(set) var climbRecordList = [ClimbRecord]()
+    private(set) var recordImageDatas: [String: [Data]] = [:]
     private let baseGuideText = "산을 눌러 자세한 정보를 확인하세요."
     private let emptyText = "+ 버튼으로 이전 기록을 추가하거나,\n측정 탭에서 기록을 측정하여 추가할 수 있습니다"
     private var isOnlyBookmarked = false
@@ -24,10 +26,12 @@ final class ClimbRecordListViewModel: BaseViewModel {
     private let reloadDataSubject = PassthroughSubject<Void, Never>()
     private lazy var guideTextSubject = CurrentValueSubject<String, Never>(baseGuideText)
     private lazy var emptyStateTextSubject = CurrentValueSubject<String, Never>(emptyText)
+    private let imageUpdatedSubject = PassthroughSubject<String, Never>()
 
-    init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase) {
+    init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase) {
         self.fetchUseCase = fetchUseCase
         self.toggleBookmarkUseCase = toggleBookmarkUseCase
+        self.fetchRecordImageUseCase = fetchRecordImageUseCase
     }
     
     struct Input {
@@ -44,6 +48,7 @@ final class ClimbRecordListViewModel: BaseViewModel {
         let bookmarkToggled: AnyPublisher<Int, Never>
         let emptyStateText: AnyPublisher<String, Never>
         let errorMessage: AnyPublisher<(String, String), Never>
+        let imageUpdated: AnyPublisher<String, Never>
     }
     
     func transform(input: Input) -> Output {
@@ -104,6 +109,12 @@ final class ClimbRecordListViewModel: BaseViewModel {
 
                 climbRecordList = list
 
+                // 이미지 캐시 초기화 (새로운 검색이므로)
+                recordImageDatas = [:]
+
+                // 기록 컬렉션 뷰 갱신
+                reloadDataSubject.send(())
+
                 // 북마크만, 개수 레이블 텍스트 업데이트
                 if isOnlyBookmarked {
                     guideTextSubject.send("북마크한 산들 (\(list.count)개)")
@@ -119,9 +130,6 @@ final class ClimbRecordListViewModel: BaseViewModel {
                         emptyStateTextSubject.send("검색 결과가 없습니다\n다른 키워드로 검색해보세요")
                     }
                 }
-
-                // 기록 컬렉션 뷰 갱신
-                reloadDataSubject.send(())
             }
             .store(in: &cancellables)
         
@@ -161,7 +169,44 @@ final class ClimbRecordListViewModel: BaseViewModel {
             bookmarkToggled: bookmarkToggled,
             emptyStateText: emptyStateTextSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher(),
+            imageUpdated: imageUpdatedSubject.eraseToAnyPublisher()
         )
+    }
+
+    func fetchImagesForRecord(recordId: String, completion: @escaping () -> Void) {
+        // 이미 가져온 이미지가 있으면 바로 리턴
+        if recordImageDatas[recordId] != nil {
+            return
+        }
+
+        // 해당 레코드 찾기
+        guard let record = climbRecordList.first(where: { $0.id == recordId }) else {
+            return
+        }
+
+        // 이미지가 없으면 빈 배열 저장
+        guard !record.images.isEmpty else {
+            recordImageDatas[recordId] = []
+            return
+        }
+
+        let imagePublishers = record.images.map { imageID in
+            fetchRecordImageUseCase.execute(imageID: imageID)
+                .compactMap { result -> Data? in
+                    if case .success(let data) = result {
+                        return data
+                    }
+                    return nil
+                }
+        }
+
+        Publishers.MergeMany(imagePublishers)
+            .collect()
+            .sink { [weak self] imageDatas in
+                self?.recordImageDatas[recordId] = imageDatas
+                completion()
+            }
+            .store(in: &cancellables)
     }
 }
 
@@ -205,6 +250,12 @@ extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
             $0.id == id
         }) {
             climbRecordList[index].images = images
+
+            // 이미지 캐시 무효화 (다음에 다시 가져오도록)
+            recordImageDatas[id] = nil
+
+            // 이미지 업데이트 알림
+            imageUpdatedSubject.send(id)
         }
     }
 }

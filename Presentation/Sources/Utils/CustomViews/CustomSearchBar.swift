@@ -36,7 +36,7 @@ final class CustomSearchBar: UISearchBar {
             searchTextField.subviews.first?.isHidden = true
         }
         layer.borderWidth = 2.0
-        layer.cornerRadius = AppRadius.radius
+        layer.cornerRadius = AppRadius.medium
         returnKeyType = .search
     }
     

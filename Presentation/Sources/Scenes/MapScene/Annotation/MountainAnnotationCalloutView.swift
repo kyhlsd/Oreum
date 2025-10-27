@@ -26,7 +26,7 @@ final class MountainAnnotationCalloutView: BaseView {
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = AppColor.primary
         button.titleLabel?.font = AppFont.titleS
-        button.layer.cornerRadius = AppRadius.radius
+        button.layer.cornerRadius = AppRadius.medium
         return button
     }()
 

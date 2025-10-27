@@ -312,7 +312,7 @@ extension MountainInfoView {
     private func createForecastItemView(forecast: DailyForecast) -> UIView {
         let containerView = UIView()
         containerView.backgroundColor = AppColor.boxBackground
-        containerView.layer.cornerRadius = AppRadius.radius
+        containerView.layer.cornerRadius = AppRadius.medium
         containerView.layer.borderWidth = 1
         containerView.layer.borderColor = AppColor.border.cgColor
 
