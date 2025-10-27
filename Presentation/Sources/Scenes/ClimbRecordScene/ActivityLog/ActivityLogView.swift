@@ -50,15 +50,10 @@ final class ActivityLogView: BaseView {
     private lazy var timeCenterLineView = createVerticalLineView()
     private lazy var timeHorizontalLineView = createHorizontalLineView()
     
-    // 시간별 거리 박스
-    private let distanceBoxView = BoxView(title: "시간별 거리(m)")
-    // 시간별 거리 차트
-    private let distanceChartView = ActivityChartContainerView(metric: .distance)
-    
-    // 시간별 걸음 수 박스
-    private let stepBoxView = BoxView(title: "시간별 걸음 수")
-    // 시간별 거리 차트
-    private let stepChartView = ActivityChartContainerView(metric: .step)
+    // 시간별 활동 박스
+    private let activityBoxView = BoxView(title: "시간별 활동")
+    // 시간별 활동 차트 (걸음 수 + 이동 거리)
+    private let activityChartView = ActivityChartContainerView()
     
     private func createVerticalLineView() -> UIView {
         let view = UIView()
@@ -87,21 +82,19 @@ final class ActivityLogView: BaseView {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
         
-        [titleLabel, dateLabel, summaryBoxView, timeBoxView, distanceBoxView, stepBoxView].forEach {
+        [titleLabel, dateLabel, summaryBoxView, timeBoxView, activityBoxView].forEach {
             contentView.addSubview($0)
         }
-        
+
         [summaryTimeView, summaryDistanceView, summaryStepView, summaryLeftLineView, summaryRightLineView].forEach {
             summaryBoxView.addSubview($0)
         }
-        
+
         [startTimeView, endTimeView, totalTimeView, exerciseTimeView, restTimeView, timeLeftLineView, timeRightLineView, timeCenterLineView, timeHorizontalLineView].forEach {
             timeBoxView.addSubview($0)
         }
-        
-        distanceBoxView.addSubview(distanceChartView)
-        
-        stepBoxView.addSubview(stepChartView)
+
+        activityBoxView.addSubview(activityChartView)
     }
     
     override func setupLayout() {
@@ -210,25 +203,15 @@ final class ActivityLogView: BaseView {
         timeHorizontalLineView.snp.makeConstraints { make in
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
         }
-        
-        distanceBoxView.snp.makeConstraints { make in
+
+        activityBoxView.snp.makeConstraints { make in
             make.top.equalTo(timeBoxView.snp.bottom).offset(AppSpacing.regular)
-            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
-        }
-        
-        distanceChartView.snp.makeConstraints { make in
-            make.top.equalTo(distanceBoxView.lineView.snp.top).offset(AppSpacing.compact)
-            make.bottom.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
-        }
-        
-        stepBoxView.snp.makeConstraints { make in
-            make.top.equalTo(distanceBoxView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
             make.bottom.equalToSuperview().inset(AppSpacing.regular)
         }
-        
-        stepChartView.snp.makeConstraints { make in
-            make.top.equalTo(stepBoxView.lineView.snp.top).offset(AppSpacing.compact)
+
+        activityChartView.snp.makeConstraints { make in
+            make.top.equalTo(activityBoxView.lineView.snp.top).offset(AppSpacing.compact)
             make.bottom.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
         }
     }
@@ -273,8 +256,7 @@ extension ActivityLogView {
     
     // 걸음 수, 이동 거리 차트
     func setActivityLogs(activityLogs: [ActivityLog]) {
-        distanceChartView.setLogs(logs: activityLogs)
-        stepChartView.setLogs(logs: activityLogs)
+        activityChartView.setLogs(logs: activityLogs)
     }
     
     // 시간 표기
