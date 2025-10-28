@@ -202,6 +202,7 @@ final class ClimbRecordListViewModel: BaseViewModel {
 
         Publishers.MergeMany(imagePublishers)
             .collect()
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] imageDatas in
                 self?.recordImageDatas[recordId] = imageDatas
                 completion()

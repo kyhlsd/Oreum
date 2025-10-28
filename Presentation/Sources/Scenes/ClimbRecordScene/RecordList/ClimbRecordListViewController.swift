@@ -177,11 +177,8 @@ extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionV
         // 이미지가 아직 로드되지 않았으면 가져오기
         if imageDatas.isEmpty && !climbRecord.images.isEmpty {
             viewModel.fetchImagesForRecord(recordId: climbRecord.id) { [weak self] in
-                DispatchQueue.main.async {
-                    // 해당 셀만 리로드
-                    if let index = self?.viewModel.climbRecordList.firstIndex(where: { $0.id == climbRecord.id }) {
-                        self?.mainView.recordCollectionView.reloadItems(at: [IndexPath(item: index, section: 0)])
-                    }
+                if let index = self?.viewModel.climbRecordList.firstIndex(where: { $0.id == climbRecord.id }) {
+                    self?.mainView.recordCollectionView.reloadItems(at: [IndexPath(item: index, section: 0)])
                 }
             }
         }
