@@ -21,8 +21,12 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     private let containerView = {
         let containerView = UIView()
         containerView.backgroundColor = .white
-        containerView.clipsToBounds = true
         containerView.layer.cornerRadius = AppRadius.large
+        containerView.layer.shadowColor = UIColor.black.cgColor
+        containerView.layer.shadowOpacity = 0.1
+        containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        containerView.layer.shadowRadius = 8
+        containerView.layer.masksToBounds = false
         return containerView
     }()
     
@@ -174,13 +178,13 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
             upRoadImageView.image = UIImage(named: "road4", in: .module, with: nil)
             downRoadImageView.image = UIImage(named: "road1", in: .module, with: nil)
             mountainImageView.snp.updateConstraints { make in
-                make.leading.equalToSuperview()
+                make.leading.equalToSuperview().offset(AppSpacing.compact)
             }
         } else {
             upRoadImageView.image = UIImage(named: "road2", in: .module, with: nil)
             downRoadImageView.image = UIImage(named: "road3", in: .module, with: nil)
             mountainImageView.snp.updateConstraints { make in
-                make.leading.equalToSuperview().offset(mountainImageSize / 2)
+                make.leading.equalToSuperview().offset(CGFloat(mountainImageSize / 2) + AppSpacing.compact)
             }
         }
     }
@@ -232,13 +236,13 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         upRoadImageView.snp.makeConstraints { make in
             make.width.equalTo(mountainImageSize)
             make.top.equalToSuperview()
-            make.leading.equalToSuperview().offset(mountainImageSize / 2)
+            make.leading.equalToSuperview().offset(CGFloat(mountainImageSize / 2) + AppSpacing.compact)
             make.bottom.equalTo(mountainImageView.snp.centerY)
         }
         
         downRoadImageView.snp.makeConstraints { make in
             make.width.equalTo(mountainImageSize)
-            make.leading.equalToSuperview().offset(mountainImageSize / 2)
+            make.leading.equalToSuperview().offset(CGFloat(mountainImageSize / 2) + AppSpacing.compact)
             make.top.equalTo(mountainImageView.snp.centerY)
             make.height.equalTo(upRoadImageView).multipliedBy(2)
             make.bottom.equalToSuperview().offset(1)
@@ -246,7 +250,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         
         mountainImageView.snp.makeConstraints { make in
             make.size.equalTo(mountainImageSize)
-            make.leading.equalToSuperview()
+            make.leading.equalToSuperview().offset(AppSpacing.compact)
         }
         
         nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
