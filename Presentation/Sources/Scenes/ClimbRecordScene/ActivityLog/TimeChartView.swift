@@ -206,7 +206,7 @@ struct TimeChartView: View {
                 }
                 .frame(height: chartHeight)
                 .chartXAxis(.hidden)
-                .chartXScale(domain: 0...(maxValue + 10))
+                .chartXScale(domain: 0...(maxValue + 2))
                 .chartLegend(.hidden)
                 .padding(.horizontal)
 
