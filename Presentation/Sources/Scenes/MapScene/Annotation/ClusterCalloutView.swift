@@ -38,7 +38,7 @@ final class ClusterCalloutView: BaseView {
     override var intrinsicContentSize: CGSize {
         let maxVisibleRows = min(mountains.count, 5)
         let height = CGFloat(maxVisibleRows) * cellHeight
-        let width = 160.0
+        let width = 120.0
         return CGSize(width: width, height: height)
     }
     
@@ -73,8 +73,9 @@ extension ClusterCalloutView: UITableViewDataSource, UITableViewDelegate {
 
         var content = cell.defaultContentConfiguration()
         content.text = mountain.mountainLocation.name
-        content.textProperties.font = AppFont.body
+        content.textProperties.font = AppFont.description
         content.textProperties.color = AppColor.primaryText
+        content.directionalLayoutMargins = .zero
 
         cell.contentConfiguration = content
         cell.backgroundColor = .clear

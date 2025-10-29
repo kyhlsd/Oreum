@@ -71,7 +71,7 @@ final class MountainAnnotationCalloutView: BaseView {
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.small)
             make.bottom.equalToSuperview().inset(AppSpacing.small)
             make.height.equalTo(32)
-            make.width.equalTo(180)
+            make.width.greaterThanOrEqualTo(180)
         }
     }
 

@@ -50,7 +50,6 @@ final class MapViewController: UIViewController, BaseViewController, NetworkStat
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        setupNavItem()
         setupDelegates()
         setupMapBoundary()
         setupAnnotationViewBuilder()
@@ -58,6 +57,16 @@ final class MapViewController: UIViewController, BaseViewController, NetworkStat
         bind()
 
         viewDidLoadSubject.send(())
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
     }
     
     deinit {
@@ -166,14 +175,6 @@ final class MapViewController: UIViewController, BaseViewController, NetworkStat
                 mainView.updateMapRegion(coordinate: coordinate)
             }
             .store(in: &cancellables)
-    }
-    
-    private func setupNavItem() {
-        if #available(iOS 26.0, *) {
-            navigationItem.titleView = NavTitleView(title: "명산 지도")
-        } else {
-            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: NavTitleLabel(title: "명산 지도"))
-        }
     }
     
     private func setupDelegates() {
@@ -294,7 +295,7 @@ extension MapViewController: MKMapViewDelegate {
         let regionLatitudinalMeters: CLLocationDistance = 800000
         let regionLongitudinalMeters: CLLocationDistance = 600000
         let minZoomDistance: CLLocationDistance = 5000
-        let maxZoomDistance: CLLocationDistance = 1000000
+        let maxZoomDistance: CLLocationDistance = 2000000
         
         let southKoreaRegion = MKCoordinateRegion(
             center: southKoreaCenter,
@@ -317,11 +318,11 @@ extension MapViewController: MKMapViewDelegate {
 // MARK: - UISearchBarDelegate
 extension MapViewController: UISearchBarDelegate {
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-        mainView.setSearchBarBorder(isFirstResponder: true)
+        mainView.setWithFirstResponder(isFirstResponder: true)
     }
 
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        mainView.setSearchBarBorder(isFirstResponder: false)
+        mainView.setWithFirstResponder(isFirstResponder: false)
     }
 
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
