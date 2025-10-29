@@ -48,7 +48,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
 
     // MARK: - ViewModels
     private func makeClimbRecordListViewModel() -> ClimbRecordListViewModel {
-        return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase())
+        return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase(), fetchRecordImageUseCase: makeFetchRecordImageUseCase())
     }
     
     private func makeClimbRecordDetailViewModel(climbRecord: ClimbRecord, isFromAddRecord: Bool = false) -> ClimbRecordDetailViewModel {
@@ -56,7 +56,11 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     }
     
     private func makeActivityLogViewModel(climbRecord: ClimbRecord) -> ActivityLogViewModel {
-        return ActivityLogViewModel(activityStatUseCase: makeActivityStatUseCase(), climbRecord: climbRecord)
+        return ActivityLogViewModel(
+            activityStatUseCase: makeActivityStatUseCase(),
+            getAverageActivityStatsUseCase: makeGetAverageActivityStatsUseCase(),
+            climbRecord: climbRecord
+        )
     }
 
     private func makeAddClimbRecordViewModel() -> AddClimbRecordViewModel {
@@ -85,6 +89,10 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
     
     private func makeActivityStatUseCase() -> ActivityStatUseCase {
         return ActivityStatUseCaseImpl()
+    }
+
+    private func makeGetAverageActivityStatsUseCase() -> GetAverageActivityStatsUseCase {
+        return GetAverageActivityStatsUseCaseImpl(repository: climbRecordRepository)
     }
 
     private func makeSaveClimbRecordUseCase() -> SaveClimbRecordUseCase {

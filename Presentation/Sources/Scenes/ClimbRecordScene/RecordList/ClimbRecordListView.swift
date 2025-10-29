@@ -59,13 +59,13 @@ final class ClimbRecordListView: BaseView {
     }()
  
     private func createLayout() -> UICollectionViewCompositionalLayout {
-        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(120))
+        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(140))
         let item = NSCollectionLayoutItem(layoutSize: size)
         
         let group = NSCollectionLayoutGroup.vertical(layoutSize: size, subitems: [item])
         
         let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: AppSpacing.regular, bottom: 0, trailing: AppSpacing.regular)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: AppSpacing.regular, bottom: AppSpacing.regular, trailing: AppSpacing.regular)
         
         return UICollectionViewCompositionalLayout(section: section)
     }

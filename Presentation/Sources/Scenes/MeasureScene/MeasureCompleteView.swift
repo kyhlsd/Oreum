@@ -14,7 +14,7 @@ final class MeasureCompleteView: BaseView {
     private let containerView = {
         let view = UIView()
         view.backgroundColor = AppColor.background
-        view.layer.cornerRadius = AppRadius.radius
+        view.layer.cornerRadius = AppRadius.medium
         return view
     }()
 

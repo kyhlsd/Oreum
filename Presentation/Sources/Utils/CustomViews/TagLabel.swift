@@ -19,7 +19,7 @@ final class TagLabel: PaddingLabel {
         font = AppFont.tag
         self.textColor = textColor
         self.backgroundColor = backgroundColor
-        layer.cornerRadius = AppRadius.radius
+        layer.cornerRadius = AppRadius.medium
         clipsToBounds = true
     }
 }

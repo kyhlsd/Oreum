@@ -10,7 +10,10 @@ import Domain
 import SnapKit
 
 final class ActivityLogView: BaseView {
-    
+
+    var onActivityChartRendered: (() -> Void)?
+    var onTimeChartRendered: (() -> Void)?
+
     // 전체 스크롤 뷰
     private let scrollView = UIScrollView()
     private let contentView = UIView()
@@ -34,31 +37,27 @@ final class ActivityLogView: BaseView {
     
     // 시간 박스
     private let timeBoxView = BoxView(title: "등산 시간")
-    // 시작 시간
-    private let startTimeView = ItemView(subtitle: "시작 시간")
-    // 완료 시간
-    private let endTimeView = ItemView(subtitle: "완료 시간")
-    // 총 소요 시간
-    private let totalTimeView = ItemView(subtitle: "총 소요 시간")
-    // 운동 시간
-    private let exerciseTimeView = ItemView(subtitle: "운동 시간")
-    // 휴식 시간
-    private let restTimeView = ItemView(subtitle: "휴식 시간")
-    // 구분선
-    private lazy var timeLeftLineView = createVerticalLineView()
-    private lazy var timeRightLineView = createVerticalLineView()
-    private lazy var timeCenterLineView = createVerticalLineView()
-    private lazy var timeHorizontalLineView = createHorizontalLineView()
+    // 시간 차트
+    private lazy var timeChartView = TimeChartContainerView()
+    // 시간 차트 로딩 indicator
+    private let timeChartLoadingIndicator = {
+        let indicator = UIActivityIndicatorView()
+        indicator.hidesWhenStopped = true
+        indicator.color = AppColor.primary
+        return indicator
+    }()
     
-    // 시간별 거리 박스
-    private let distanceBoxView = BoxView(title: "시간별 거리(m)")
-    // 시간별 거리 차트
-    private let distanceChartView = ActivityChartContainerView(metric: .distance)
-    
-    // 시간별 걸음 수 박스
-    private let stepBoxView = BoxView(title: "시간별 걸음 수")
-    // 시간별 거리 차트
-    private let stepChartView = ActivityChartContainerView(metric: .step)
+    // 시간별 활동 박스
+    private let activityBoxView = BoxView(title: "시간별 활동")
+    // 시간별 활동 차트 (걸음 수 + 이동 거리)
+    private lazy var activityChartView = ActivityChartContainerView()
+    // 활동 차트 로딩 indicator
+    private let activityChartLoadingIndicator = {
+        let indicator = UIActivityIndicatorView()
+        indicator.hidesWhenStopped = true
+        indicator.color = AppColor.primary
+        return indicator
+    }()
     
     private func createVerticalLineView() -> UIView {
         let view = UIView()
@@ -81,27 +80,27 @@ final class ActivityLogView: BaseView {
     // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
+        activityChartLoadingIndicator.startAnimating()
+        timeChartLoadingIndicator.startAnimating()
     }
     
     override func setupHierarchy() {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
         
-        [titleLabel, dateLabel, summaryBoxView, timeBoxView, distanceBoxView, stepBoxView].forEach {
+        [titleLabel, dateLabel, summaryBoxView, timeBoxView, activityBoxView].forEach {
             contentView.addSubview($0)
         }
-        
+
         [summaryTimeView, summaryDistanceView, summaryStepView, summaryLeftLineView, summaryRightLineView].forEach {
             summaryBoxView.addSubview($0)
         }
-        
-        [startTimeView, endTimeView, totalTimeView, exerciseTimeView, restTimeView, timeLeftLineView, timeRightLineView, timeCenterLineView, timeHorizontalLineView].forEach {
-            timeBoxView.addSubview($0)
-        }
-        
-        distanceBoxView.addSubview(distanceChartView)
-        
-        stepBoxView.addSubview(stepChartView)
+
+        timeBoxView.addSubview(timeChartLoadingIndicator)
+        // timeChartView는 setTimeChartLoading(false)에서 추가
+
+        activityBoxView.addSubview(activityChartLoadingIndicator)
+        // activityChartView는 setActivityChartLoading(false)에서 추가
     }
     
     override func setupLayout() {
@@ -158,91 +157,35 @@ final class ActivityLogView: BaseView {
         timeBoxView.snp.makeConstraints { make in
             make.top.equalTo(summaryBoxView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
+            make.height.greaterThanOrEqualTo(200)
         }
-        
-        startTimeView.snp.makeConstraints { make in
-            make.top.equalTo(timeBoxView.lineView.snp.bottom).offset(AppSpacing.compact)
-            make.leading.equalToSuperview().offset(AppSpacing.compact)
-            make.bottom.equalTo(timeHorizontalLineView.snp.centerY).offset(-AppSpacing.compact)
+
+        timeChartLoadingIndicator.snp.makeConstraints { make in
+            make.center.equalTo(timeBoxView)
         }
-        
-        endTimeView.snp.makeConstraints { make in
-            make.verticalEdges.width.equalTo(startTimeView)
-            make.leading.equalTo(startTimeView.snp.trailing)
-            make.width.equalTo(startTimeView)
-        }
-        
-        totalTimeView.snp.makeConstraints { make in
-            make.verticalEdges.width.equalTo(startTimeView)
-            make.leading.equalTo(endTimeView.snp.trailing)
-            make.trailing.equalToSuperview().inset(AppSpacing.compact)
-            make.width.equalTo(startTimeView)
-        }
-        
-        exerciseTimeView.snp.makeConstraints { make in
-            make.leading.height.equalTo(startTimeView)
-            make.top.equalTo(timeHorizontalLineView.snp.centerY).offset(AppSpacing.compact)
-            make.bottom.equalToSuperview().inset(AppSpacing.compact)
-            make.trailing.equalTo(timeBoxView.snp.centerX)
-        }
-        
-        restTimeView.snp.makeConstraints { make in
-            make.leading.equalTo(timeBoxView.snp.centerX)
-            make.trailing.equalToSuperview().inset(AppSpacing.compact)
-            make.verticalEdges.equalTo(exerciseTimeView)
-        }
-        
-        timeLeftLineView.snp.makeConstraints { make in
-            make.verticalEdges.equalTo(startTimeView)
-            make.centerX.equalTo(startTimeView.snp.trailing)
-        }
-        
-        timeRightLineView.snp.makeConstraints { make in
-            make.verticalEdges.equalTo(endTimeView)
-            make.centerX.equalTo(endTimeView.snp.trailing)
-        }
-        
-        timeCenterLineView.snp.makeConstraints { make in
-            make.verticalEdges.equalTo(exerciseTimeView)
-            make.centerX.equalTo(exerciseTimeView.snp.trailing)
-        }
-        
-        timeHorizontalLineView.snp.makeConstraints { make in
-            make.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
-        }
-        
-        distanceBoxView.snp.makeConstraints { make in
+
+        activityBoxView.snp.makeConstraints { make in
             make.top.equalTo(timeBoxView.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
-        }
-        
-        distanceChartView.snp.makeConstraints { make in
-            make.top.equalTo(distanceBoxView.lineView.snp.top).offset(AppSpacing.compact)
-            make.bottom.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
-        }
-        
-        stepBoxView.snp.makeConstraints { make in
-            make.top.equalTo(distanceBoxView.snp.bottom).offset(AppSpacing.regular)
-            make.horizontalEdges.equalToSuperview().inset(AppSpacing.regular)
             make.bottom.equalToSuperview().inset(AppSpacing.regular)
+            make.height.greaterThanOrEqualTo(200)
         }
-        
-        stepChartView.snp.makeConstraints { make in
-            make.top.equalTo(stepBoxView.lineView.snp.top).offset(AppSpacing.compact)
-            make.bottom.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
+
+        activityChartLoadingIndicator.snp.makeConstraints { make in
+            make.center.equalTo(activityBoxView)
         }
     }
 }
 
 // MARK: - Binding Methods
 extension ActivityLogView {
-    
+
     // 산 이름
     func setMountainName(name: String) {
         titleLabel.text = name
     }
     
-    // 등산 시간
+    // 요약 박스
     func setStat(activityStat: ActivityStat) {
         if let startTime = activityStat.startTime {
             dateLabel.text = AppFormatter.dateFormatter.string(from: startTime)
@@ -254,29 +197,60 @@ extension ActivityLogView {
         summaryDistanceView.setTitle(title: activityStat.totalDistance.formatted() + "m")
         summaryStepView.setTitle(title: activityStat.totalSteps.formatted())
         
-        if let startTime = activityStat.startTime {
-            startTimeView.setTitle(title: AppFormatter.timeFormatter.string(from: startTime))
+    }
+    
+    // 시간 차트
+    func setTimeStats(averageStat: AverageActivityStat, activityStat: ActivityStat) {
+        timeChartView.setStats(averageStat: averageStat, activityStat: activityStat)
+        onTimeChartRendered?()
+    }
+    
+    // 시간 차트 로딩 상태
+    func setTimeChartLoading(_ isLoading: Bool) {
+        if isLoading {
+            timeChartLoadingIndicator.startAnimating()
         } else {
-            startTimeView.setTitle(title: "기록 없음")
+            timeChartLoadingIndicator.stopAnimating()
+
+            // 차트 뷰를 처음 추가하고 레이아웃 설정
+            if timeChartView.superview == nil {
+                timeBoxView.addSubview(timeChartView)
+                timeChartView.snp.makeConstraints { make in
+                    make.top.equalTo(timeBoxView.lineView.snp.bottom).offset(AppSpacing.compact)
+                    make.bottom.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
+                }
+            }
+
+            timeChartView.isHidden = false
         }
-        
-        if let endTime = activityStat.endTime {
-            endTimeView.setTitle(title: AppFormatter.timeFormatter.string(from: endTime))
-        } else {
-            endTimeView.setTitle(title: "기록 없음")
-        }
-        
-        totalTimeView.setTitle(title: formatMinutes(activityStat.totalTimeMinutes))
-        exerciseTimeView.setTitle(title: formatMinutes(activityStat.exerciseMinutes))
-        restTimeView.setTitle(title: formatMinutes(activityStat.restMinutes))
     }
     
     // 걸음 수, 이동 거리 차트
     func setActivityLogs(activityLogs: [ActivityLog]) {
-        distanceChartView.setLogs(logs: activityLogs)
-        stepChartView.setLogs(logs: activityLogs)
+        activityChartView.setLogs(logs: activityLogs)
+        onActivityChartRendered?()
     }
-    
+
+    // 활동 차트 로딩 상태
+    func setActivityChartLoading(_ isLoading: Bool) {
+        if isLoading {
+            activityChartLoadingIndicator.startAnimating()
+        } else {
+            activityChartLoadingIndicator.stopAnimating()
+
+            // 차트 뷰를 처음 추가하고 레이아웃 설정
+            if activityChartView.superview == nil {
+                activityBoxView.addSubview(activityChartView)
+                activityChartView.snp.makeConstraints { make in
+                    make.top.equalTo(activityBoxView.lineView.snp.bottom).offset(AppSpacing.compact)
+                    make.bottom.horizontalEdges.equalToSuperview().inset(AppSpacing.compact)
+                }
+            }
+
+            activityChartView.isHidden = false
+        }
+    }
+
     // 시간 표기
     private func formatMinutes(_ minutes: Int) -> String {
         let hours = minutes / 60

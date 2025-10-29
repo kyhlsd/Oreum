@@ -12,9 +12,23 @@ import SnapKit
 
 final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
 
-    private let mountainImageSize = 80
+    private let mountainImageSize = 60
     var bookmarkTapped: ((String) -> Void)?
     private var cancellables = Set<AnyCancellable>()
+    private lazy var dataSource = createDataSource()
+    
+    // 컨테이너 뷰
+    private let containerView = {
+        let containerView = UIView()
+        containerView.backgroundColor = .white
+        containerView.layer.cornerRadius = AppRadius.large
+        containerView.layer.shadowColor = UIColor.black.cgColor
+        containerView.layer.shadowOpacity = 0.1
+        containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        containerView.layer.shadowRadius = 8
+        containerView.layer.masksToBounds = false
+        return containerView
+    }()
     
     // 상단 길 이미지
     private let upRoadImageView = {
@@ -38,10 +52,10 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     }()
     
     // 산 이름
-    private let nameLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleM)
+    private let nameLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleS)
     
     // 산 주소
-    private let dateLabel = UILabel.create(color: AppColor.subText, font: AppFont.body)
+    private let dateLabel = UILabel.create(color: AppColor.subText, font: AppFont.description)
     
     // 태그
     private let tagStackView = TagStackView()
@@ -53,6 +67,42 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         return button
     }()
     
+    // 이미지 컬렉션뷰
+    private lazy var imageCollectionView: UICollectionView = {
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createImageCollectionViewLayout())
+        collectionView.backgroundColor = .clear
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.isScrollEnabled = false
+        collectionView.isUserInteractionEnabled = false
+        return collectionView
+    }()
+
+    // 이미지 없음 뷰
+    private let noImageView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.background
+        view.layer.cornerRadius = AppRadius.medium
+        view.isHidden = true
+        return view
+    }()
+
+    private let photoImageView = {
+        let imageView = UIImageView()
+        imageView.image = AppIcon.photo
+        imageView.tintColor = AppColor.subText
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    private let noImageLabel = {
+        let label = UILabel()
+        label.text = "등산 사진을 추가해보세요"
+        label.textColor = AppColor.subText
+        label.font = AppFont.tag
+        label.textAlignment = .center
+        return label
+    }()
+
     override func prepareForReuse() {
         super.prepareForReuse()
         mountainImageView.image = nil
@@ -60,10 +110,12 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         downRoadImageView.image = nil
         bookmarkTapped = nil
         cancellables = Set<AnyCancellable>()
+        noImageView.isHidden = true
+        imageCollectionView.isHidden = false
     }
     
     // 데이터 정보 표기
-    final func setData(_ data: ClimbRecord, isFirstVisit: Bool) {
+    final func setData(_ data: ClimbRecord, isFirstVisit: Bool, imageDatas: [Data] = []) {
         let name = data.mountain.name
 
         mountainImageView.image = getMountainImage(date: data.climbDate)
@@ -80,6 +132,23 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
                 self?.bookmarkTapped?(data.id)
             }
             .store(in: &cancellables)
+
+        // 이미지 컬렉션뷰 데이터 업데이트
+        if data.images.isEmpty {
+            // 이미지 없음
+            imageCollectionView.isHidden = true
+            noImageView.isHidden = false
+        } else if imageDatas.isEmpty {
+            // 로딩 중: placeholder
+            imageCollectionView.isHidden = false
+            noImageView.isHidden = true
+            applySnapshot(images: [Data()]) // 빈 Data로 indicator 표시
+        } else {
+            // 이미지 있음
+            imageCollectionView.isHidden = false
+            noImageView.isHidden = true
+            applySnapshot(images: imageDatas)
+        }
     }
     
     // 길 이미지 세팅
@@ -109,13 +178,13 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
             upRoadImageView.image = UIImage(named: "road4", in: .module, with: nil)
             downRoadImageView.image = UIImage(named: "road1", in: .module, with: nil)
             mountainImageView.snp.updateConstraints { make in
-                make.leading.equalToSuperview()
+                make.leading.equalToSuperview().offset(AppSpacing.compact)
             }
         } else {
             upRoadImageView.image = UIImage(named: "road2", in: .module, with: nil)
             downRoadImageView.image = UIImage(named: "road3", in: .module, with: nil)
             mountainImageView.snp.updateConstraints { make in
-                make.leading.equalToSuperview().offset(mountainImageSize / 2)
+                make.leading.equalToSuperview().offset(CGFloat(mountainImageSize / 2) + AppSpacing.compact)
             }
         }
     }
@@ -123,12 +192,12 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     // 계절에 따라 다른 산 이미지
     private func getMountainImage(date: Date?) -> UIImage? {
         guard let date else {
-            return UIImage(named: "spring")
+            return nil
         }
-        
+
         let month = Calendar.current.component(.month, from: date)
         let bundle = Bundle.module
-        
+
         switch month {
         case 3...5:
             return UIImage(named: "spring", in: bundle, with: nil)
@@ -147,30 +216,41 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     }
     
     override func setupHierarchy() {
-        [upRoadImageView, downRoadImageView, mountainImageView, nameLabel, dateLabel, tagStackView, bookmarkButton].forEach {
+        [containerView, upRoadImageView, downRoadImageView, mountainImageView].forEach {
             contentView.addSubview($0)
+        }
+        [nameLabel, dateLabel, tagStackView, bookmarkButton, imageCollectionView, noImageView].forEach {
+            containerView.addSubview($0)
+        }
+        [photoImageView, noImageLabel].forEach {
+            noImageView.addSubview($0)
         }
     }
     
     override func setupLayout() {
+        containerView.snp.makeConstraints { make in
+            make.top.equalTo(mountainImageView)
+            make.horizontalEdges.bottom.equalToSuperview()
+        }
         
         upRoadImageView.snp.makeConstraints { make in
             make.width.equalTo(mountainImageSize)
             make.top.equalToSuperview()
-            make.leading.equalToSuperview().offset(mountainImageSize / 2)
+            make.leading.equalToSuperview().offset(CGFloat(mountainImageSize / 2) + AppSpacing.compact)
             make.bottom.equalTo(mountainImageView.snp.centerY)
         }
         
         downRoadImageView.snp.makeConstraints { make in
             make.width.equalTo(mountainImageSize)
-            make.bottom.equalToSuperview()
-            make.leading.equalToSuperview().offset(mountainImageSize / 2)
+            make.leading.equalToSuperview().offset(CGFloat(mountainImageSize / 2) + AppSpacing.compact)
             make.top.equalTo(mountainImageView.snp.centerY)
+            make.height.equalTo(upRoadImageView).multipliedBy(2)
+            make.bottom.equalToSuperview().offset(1)
         }
         
         mountainImageView.snp.makeConstraints { make in
             make.size.equalTo(mountainImageSize)
-            make.centerY.leading.equalToSuperview()
+            make.leading.equalToSuperview().offset(AppSpacing.compact)
         }
         
         nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -186,14 +266,85 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         }
 
         tagStackView.snp.makeConstraints { make in
-            make.centerY.equalToSuperview()
+            make.centerY.equalTo(mountainImageView)
             make.trailing.equalTo(bookmarkButton.snp.leading)
         }
         
         bookmarkButton.snp.makeConstraints { make in
             make.size.equalTo(40)
-            make.centerY.trailing.equalToSuperview()
+            make.centerY.equalTo(tagStackView)
+            make.trailing.equalToSuperview()
+        }
+
+        imageCollectionView.snp.makeConstraints { make in
+            make.top.equalTo(mountainImageView.snp.bottom)
+            make.leading.equalTo(nameLabel)
+            make.trailing.equalToSuperview().inset(AppSpacing.compact)
+            make.bottom.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        noImageView.snp.makeConstraints { make in
+            make.edges.equalTo(imageCollectionView)
+        }
+
+        photoImageView.snp.makeConstraints { make in
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.small)
+            make.leading.equalToSuperview().offset(AppSpacing.compact)
+            make.width.equalTo(photoImageView.snp.height)
+        }
+
+        noImageLabel.snp.makeConstraints { make in
+            make.leading.equalTo(photoImageView.snp.trailing).offset(AppSpacing.compact)
+            make.centerY.equalToSuperview()
         }
     }
+
+}
+
+// MARK: ImageCollectionView SubMethods
+extension ClimbRecordCollectionViewCell {
+    private enum Section: CaseIterable {
+        case main
+    }
     
+    private func createImageCollectionViewLayout() -> UICollectionViewLayout {
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .estimated(100),
+            heightDimension: .fractionalHeight(1)
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .estimated(100),
+            heightDimension: .fractionalHeight(1)
+        )
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
+        let section = NSCollectionLayoutSection(group: group)
+        section.interGroupSpacing = AppSpacing.compact
+        section.orthogonalScrollingBehavior = .continuous
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+
+        return UICollectionViewCompositionalLayout(section: section)
+    }
+    
+    private func createRegistration() -> UICollectionView.CellRegistration<RatioImageCollectionViewCell, Data> {
+        return UICollectionView.CellRegistration<RatioImageCollectionViewCell, Data> { cell, indexPath, item in
+            cell.setImage(imageData: item)
+        }
+    }
+
+    private func createDataSource() -> UICollectionViewDiffableDataSource<Section, Data> {
+        let registration = createRegistration()
+        return UICollectionViewDiffableDataSource<Section, Data>(collectionView: imageCollectionView) { collectionView, indexPath, item in
+            collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
+        }
+    }
+
+    private func applySnapshot(images: [Data]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Data>()
+        snapshot.appendSections(Section.allCases)
+        snapshot.appendItems(images)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
 }
