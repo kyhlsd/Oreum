@@ -34,7 +34,7 @@ final class BoxView: BaseView {
     override func setupView() {
         layer.borderColor = AppColor.border.cgColor
         layer.borderWidth = 1.0
-        layer.cornerRadius = AppRadius.radius
+        layer.cornerRadius = AppRadius.medium
         backgroundColor = AppColor.boxBackground
     }
     

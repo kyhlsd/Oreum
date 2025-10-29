@@ -10,143 +10,223 @@ import Charts
 import SnapKit
 import Domain
 
-enum ActivityChartMetric {
-    case step
-    case distance
-}
-
 final class ActivityChartDataSource: ObservableObject {
     @Published var logs: [ActivityLog]
-    let metric: ActivityChartMetric
-    
-    init(logs: [ActivityLog] = [], metric: ActivityChartMetric) {
+
+    init(logs: [ActivityLog] = []) {
         self.logs = logs
-        self.metric = metric
     }
 }
 
 final class ActivityChartContainerView: BaseView {
-    
+
     private var dataSource: ActivityChartDataSource
-    private var hostingController: UIHostingController<ActivityChartView>?
-    
-    init(logs: [ActivityLog] = [], metric: ActivityChartMetric) {
-        self.dataSource = ActivityChartDataSource(logs: logs, metric: metric)
-        super.init(frame: .zero)
-    }
-    
-    func setLogs(logs: [ActivityLog]) {
-        dataSource.logs = logs
-    }
-    
-    // MARK: - Setups
-    override func setupView() {
+    private lazy var hostingController: UIHostingController<ActivityChartView> = {
         let chartView = ActivityChartView(dataSource: dataSource)
         let hosting = UIHostingController(rootView: chartView)
-        hostingController = hosting
-        
-        guard let hcView = hosting.view else { return }
-        hcView.backgroundColor = .clear
+        hosting.sizingOptions = .intrinsicContentSize
+        hosting.view?.backgroundColor = .clear
+        return hosting
+    }()
+
+    init(logs: [ActivityLog] = []) {
+        self.dataSource = ActivityChartDataSource(logs: logs)
+        super.init(frame: .zero)
     }
-    
-    override func setupHierarchy() {
-        guard let hcView = hostingController?.view else { return }
-        addSubview(hcView)
-    }
-    
-    override func setupLayout() {
-        guard let hcView = hostingController?.view else { return }
-        hcView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+
+    func setLogs(logs: [ActivityLog]) {
+        // hostingController를 강제로 초기화하고 뷰 추가
+        if hostingController.view.superview == nil {
+            addSubview(hostingController.view)
+            hostingController.view.snp.makeConstraints { make in
+                make.edges.equalToSuperview()
+            }
+        }
+
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            dataSource.logs = logs
         }
     }
-    
+
+    // MARK: - Setups
+    override func setupView() {
+        backgroundColor = .clear
+    }
+
+    override func setupHierarchy() {
+        // 차트는 setLogs가 호출될 때 추가됨
+    }
+
+    override func setupLayout() {
+        // 차트는 setLogs가 호출될 때 레이아웃 설정됨
+    }
+
 }
 
 // MARK: - ChartView (SwiftUI)
 struct ActivityChartView: View {
-    
+
     @ObservedObject var dataSource: ActivityChartDataSource
-    
+
     private let perItemWidth = 12.0
     private let minChartWidth = 250.0
     private let chartHeight = 200.0
-    private let yMinValue = 0.0
-    private let color = Color.green
-    
+    private let stepColor = Color.green
+    private let distanceColor = Color(uiColor: AppColor.mossGreen)
+
     var body: some View {
-        let yMaxValue = calculateYMax()
         let xMinValue = dataSource.logs.first?.time ?? Date()
         let xMaxValue = (dataSource.logs.last?.time ?? Date())
-        
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                Chart(dataSource.logs, id: \.id) { log in
-                    LineMark(
-                        x: .value("시간", log.time),
-                        y: .value(dataSource.metric == .step ? "걸음 수" : "이동거리(m)",
-                                  dataSource.metric == .step ? log.step : log.distance)
-                    )
-                    .foregroundStyle(color)
-                    .interpolationMethod(.monotone)
+        let rawMaxStep = Double(dataSource.logs.map { $0.step }.max() ?? 100)
+        let rawMaxDistance = dataSource.logs.map { Double($0.distance) }.max() ?? 100.0
+        let maxStep = roundToNiceNumber(rawMaxStep)
+        let maxDistance = roundToNiceNumber(rawMaxDistance)
 
-                    AreaMark(
-                        x: .value("시간", log.time),
-                        y: .value(dataSource.metric == .step ? "걸음 수" : "이동거리(m)",
-                                  dataSource.metric == .step ? log.step : log.distance)
-                    )
-                    .foregroundStyle(color.opacity(0.3))
-
-                    PointMark(
-                        x: .value("시간", log.time),
-                        y: .value(dataSource.metric == .step ? "걸음 수" : "이동거리(m)",
-                                  dataSource.metric == .step ? log.step : log.distance)
-                    )
-                    .foregroundStyle(color)
-                    .symbolSize(24)
+        VStack(spacing: 8) {
+            // 범례
+            HStack(spacing: 16) {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(stepColor)
+                        .frame(width: 8, height: 8)
+                    Text("걸음 수")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-                .frame(width: chartWidth(), height: chartHeight)
-                .chartXAxis {
-                    AxisMarks(values: generateXAxisValues()) { value in
-                        AxisGridLine()
-                        AxisTick()
-                        AxisValueLabel {
-                            if let date = value.as(Date.self) {
-                                Text(elapsedTimeString(from: date))
-                                    .font(.caption2)
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(distanceColor)
+                        .frame(width: 8, height: 8)
+                    Text("이동 거리(m)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+            }
+            .padding(.horizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    Chart {
+                        ForEach(dataSource.logs, id: \.id) { log in
+                            createStepMarks(log: log, maxStep: maxStep)
+                            createDistanceMarks(log: log, maxDistance: maxDistance)
+                        }
+                    }
+                    .frame(width: chartWidth(), height: chartHeight)
+                    .drawingGroup()
+                    .chartXAxis {
+                        AxisMarks(values: generateXAxisValues()) { value in
+                            AxisGridLine()
+                            AxisTick()
+                            AxisValueLabel {
+                                if let date = value.as(Date.self) {
+                                    Text(elapsedTimeString(from: date))
+                                        .font(.caption2)
+                                }
                             }
                         }
                     }
+                    .chartYAxis {
+                        AxisMarks(position: .leading, values: .stride(by: 25)) { value in
+                            AxisGridLine()
+                            AxisTick()
+                            AxisValueLabel {
+                                if let doubleValue = value.as(Double.self) {
+                                    let stepValue = Int(doubleValue * maxStep / 100)
+                                    Text("\(stepValue)")
+                                        .font(.caption2)
+                                        .foregroundColor(stepColor)
+                                }
+                            }
+                        }
+                        AxisMarks(position: .trailing, values: .stride(by: 25)) { value in
+                            AxisTick()
+                            AxisValueLabel {
+                                if let doubleValue = value.as(Double.self) {
+                                    let distanceValue = Int(doubleValue * maxDistance / 100)
+                                    Text("\(distanceValue)m")
+                                        .font(.caption2)
+                                        .foregroundColor(distanceColor)
+                                }
+                            }
+                        }
+                    }
+                    .chartYScale(domain: 0...110)
+                    .chartXScale(domain: xMinValue...(xMaxValue + 32))
+                    .chartLegend(.hidden)
                 }
-                .chartYScale(domain: yMinValue...(yMaxValue + 20))
-                .chartXScale(domain: xMinValue...(xMaxValue + 32))
             }
         }
-        .frame(height: chartHeight)
+        .frame(height: chartHeight + 30)
     }
     
     // MARK: - Private Methods
     private func chartWidth() -> CGFloat {
         return max(CGFloat(dataSource.logs.count) * perItemWidth, minChartWidth)
     }
-    
-    // 걸음 수, 이동 거리 최댓값에 따라 차트 Y 최댓값 설정
-    private func calculateYMax() -> Double {
-        let min = 100.0
-        guard !dataSource.logs.isEmpty else { return min }
-        
-        let maxValue = (dataSource.metric == .step
-                        ? dataSource.logs.map { Double($0.step) }.max()
-                        : dataSource.logs.map { Double($0.distance) }.max() ?? min) ?? min
-        
-        var yMax = maxValue * 1.1
-        
-        let remainder = yMax.truncatingRemainder(dividingBy: 100)
-        if remainder != 0 {
-            yMax += 100 - remainder
+
+    @ChartContentBuilder
+    private func createStepMarks(log: ActivityLog, maxStep: Double) -> some ChartContent {
+        LineMark(
+            x: .value("시간", log.time),
+            y: .value("걸음 수", Double(log.step) / maxStep * 100),
+            series: .value("타입", "걸음 수")
+        )
+        .foregroundStyle(stepColor)
+        .lineStyle(StrokeStyle(lineWidth: 3))
+        .interpolationMethod(.monotone)
+
+        PointMark(
+            x: .value("시간", log.time),
+            y: .value("걸음 수", Double(log.step) / maxStep * 100)
+        )
+        .foregroundStyle(stepColor)
+        .symbolSize(40)
+        .symbol(.circle)
+    }
+
+    @ChartContentBuilder
+    private func createDistanceMarks(log: ActivityLog, maxDistance: Double) -> some ChartContent {
+        LineMark(
+            x: .value("시간", log.time),
+            y: .value("이동 거리", Double(log.distance) / maxDistance * 100),
+            series: .value("타입", "이동 거리")
+        )
+        .foregroundStyle(distanceColor)
+        .lineStyle(StrokeStyle(lineWidth: 3))
+        .interpolationMethod(.monotone)
+
+        PointMark(
+            x: .value("시간", log.time),
+            y: .value("이동 거리", Double(log.distance) / maxDistance * 100)
+        )
+        .foregroundStyle(distanceColor)
+        .symbolSize(35)
+        .symbol(.square)
+    }
+
+    // 깔끔한 숫자로 반올림
+    private func roundToNiceNumber(_ value: Double) -> Double {
+        guard value > 0 else { return 100 }
+
+        let magnitude = pow(10, floor(log10(value)))
+        let normalized = value / magnitude
+
+        let nice: Double
+        if normalized <= 1 {
+            nice = 1
+        } else if normalized <= 2 {
+            nice = 2
+        } else if normalized <= 5 {
+            nice = 5
+        } else {
+            nice = 10
         }
-        
-        return yMax
+
+        return nice * magnitude
     }
     
     // 30분 간격으로 X Label 표기할 [Date] 생성

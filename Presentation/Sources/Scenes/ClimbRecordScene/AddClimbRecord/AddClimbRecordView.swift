@@ -20,7 +20,7 @@ final class AddClimbRecordView: BaseView {
     let searchResultsOverlay = {
         let view = UIView()
         view.backgroundColor = AppColor.background
-        view.layer.cornerRadius = AppRadius.radius
+        view.layer.cornerRadius = AppRadius.medium
         view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOpacity = 0.1
         view.layer.shadowOffset = CGSize(width: 0, height: 2)
@@ -35,7 +35,7 @@ final class AddClimbRecordView: BaseView {
         let tableView = UITableView()
         tableView.backgroundColor = AppColor.background
         tableView.separatorStyle = .singleLine
-        tableView.layer.cornerRadius = AppRadius.radius
+        tableView.layer.cornerRadius = AppRadius.medium
         tableView.clipsToBounds = true
         tableView.isOpaque = true
         tableView.register(cellClass: SearchMountainTableViewCell.self)
@@ -63,7 +63,7 @@ final class AddClimbRecordView: BaseView {
     private let mountainBoxView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
-        view.layer.cornerRadius = AppRadius.radius
+        view.layer.cornerRadius = AppRadius.medium
         view.clipsToBounds = true
         return view
     }()
@@ -96,7 +96,7 @@ final class AddClimbRecordView: BaseView {
     private let dateBoxView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
-        view.layer.cornerRadius = AppRadius.radius
+        view.layer.cornerRadius = AppRadius.medium
         view.clipsToBounds = true
         return view
     }()

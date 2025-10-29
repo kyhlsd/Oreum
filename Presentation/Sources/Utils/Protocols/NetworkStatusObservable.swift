@@ -28,8 +28,9 @@ extension NetworkStatusObservable where Self: UIViewController {
 
         view.addSubview(banner)
         banner.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.top.equalTo(view)
             make.horizontalEdges.equalToSuperview()
+            make.bottom.equalTo(view.snp.top)
         }
 
         // 현재 네트워크 상태 즉시 체크

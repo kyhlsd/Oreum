@@ -19,7 +19,7 @@ final class MeasureView: BaseView {
     let searchResultsOverlay = {
         let view = UIView()
         view.backgroundColor = AppColor.background
-        view.layer.cornerRadius = AppRadius.radius
+        view.layer.cornerRadius = AppRadius.medium
         view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOpacity = 0.1
         view.layer.shadowOffset = CGSize(width: 0, height: 2)
@@ -33,7 +33,7 @@ final class MeasureView: BaseView {
         let tableView = UITableView()
         tableView.backgroundColor = AppColor.background
         tableView.separatorStyle = .singleLine
-        tableView.layer.cornerRadius = AppRadius.radius
+        tableView.layer.cornerRadius = AppRadius.medium
         tableView.clipsToBounds = true
         tableView.register(cellClass: SearchMountainTableViewCell.self)
         return tableView
@@ -58,7 +58,7 @@ final class MeasureView: BaseView {
     private let mountainBoxView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
-        view.layer.cornerRadius = AppRadius.radius
+        view.layer.cornerRadius = AppRadius.medium
         view.clipsToBounds = true
         return view
     }()
@@ -101,7 +101,7 @@ final class MeasureView: BaseView {
     private let measuringBoxView: UIView = {
         let view = UIView()
         view.backgroundColor = AppColor.boxBackground
-        view.layer.cornerRadius = AppRadius.radius
+        view.layer.cornerRadius = AppRadius.medium
         view.layer.borderWidth = 1
         view.layer.borderColor = AppColor.border.cgColor
         view.clipsToBounds = true
@@ -202,7 +202,7 @@ final class MeasureView: BaseView {
     private let permissionRequiredView = {
         let view = UIView()
         view.backgroundColor = AppColor.cardBackground
-        view.layer.cornerRadius = AppRadius.radius
+        view.layer.cornerRadius = AppRadius.medium
         view.clipsToBounds = true
         view.isHidden = true
         return view

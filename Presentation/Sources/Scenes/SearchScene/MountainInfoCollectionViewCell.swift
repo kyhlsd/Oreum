@@ -15,7 +15,7 @@ final class MountainInfoCollectionViewCell: BaseCollectionViewCell {
     private let containerView = {
         let view = UIView()
         view.backgroundColor = AppColor.boxBackground
-        view.layer.cornerRadius = AppRadius.radius
+        view.layer.cornerRadius = AppRadius.medium
         view.layer.borderWidth = 1
         view.layer.borderColor = AppColor.border.cgColor
         view.clipsToBounds = true

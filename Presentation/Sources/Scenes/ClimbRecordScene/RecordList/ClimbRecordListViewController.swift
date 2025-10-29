@@ -95,6 +95,17 @@ final class ClimbRecordListViewController: UIViewController, BaseViewController 
                 self?.presentDefaultAlert(title: title, message: message)
             }
             .store(in: &cancellables)
+
+        // 이미지 업데이트 시 해당 셀 리로드
+        output.imageUpdated
+            .sink { [weak self] recordId in
+                guard let self else { return }
+                if let index = self.viewModel.climbRecordList.firstIndex(where: { $0.id == recordId }) {
+                    // 해당 셀만 리로드
+                    self.mainView.recordCollectionView.reloadItems(at: [IndexPath(item: index, section: 0)])
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func setupNavItem() {
@@ -155,10 +166,21 @@ extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionV
             .min { $0.climbDate < $1.climbDate }
         let isFirstVisit = firstRecordOfMountain?.id == climbRecord.id
 
+        let imageDatas = viewModel.recordImageDatas[climbRecord.id] ?? []
+
         cell.setImages(row: indexPath.item, total: viewModel.climbRecordList.count)
-        cell.setData(climbRecord, isFirstVisit: isFirstVisit)
+        cell.setData(climbRecord, isFirstVisit: isFirstVisit, imageDatas: imageDatas)
         cell.bookmarkTapped = { [weak self] recordId in
             self?.cellBookmarkTapSubject.send(recordId)
+        }
+
+        // 이미지가 아직 로드되지 않았으면 가져오기
+        if imageDatas.isEmpty && !climbRecord.images.isEmpty {
+            viewModel.fetchImagesForRecord(recordId: climbRecord.id) { [weak self] in
+                if let index = self?.viewModel.climbRecordList.firstIndex(where: { $0.id == climbRecord.id }) {
+                    self?.mainView.recordCollectionView.reloadItems(at: [IndexPath(item: index, section: 0)])
+                }
+            }
         }
 
         return cell
