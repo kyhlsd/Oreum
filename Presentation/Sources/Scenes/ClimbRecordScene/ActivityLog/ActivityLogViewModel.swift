@@ -30,52 +30,84 @@ final class ActivityLogViewModel: BaseViewModel {
 
     struct Input {
         let viewDidAppear: AnyPublisher<Void, Never>
+        let activityChartDidRender: AnyPublisher<Void, Never>
+        let timeChartDidRender: AnyPublisher<Void, Never>
     }
 
     struct Output {
         let mountainName: String
         let activityStat: ActivityStat
-        let isLoadingChart: AnyPublisher<Bool, Never>
+        let isLoadingActivityChart: AnyPublisher<Bool, Never>
         let activityLogs: AnyPublisher<[ActivityLog], Never>
+        let isLoadingTimeChart: AnyPublisher<Bool, Never>
+        let timeStats: AnyPublisher<(AverageActivityStat, ActivityStat), Never>
+        let errorMessage: AnyPublisher<(String, String), Never>
     }
 
     func transform(input: Input) -> Output {
-        let stat = activityStatUseCase.execute(activityLogs: climbRecord.timeLog)
+        let errorMessageSubject = PassthroughSubject<(String, String), Never>()
+        
+        let activityStat = activityStatUseCase.execute(activityLogs: climbRecord.timeLog)
 
-//        // 평균 통계 가져오기
-//        getAverageActivityStatsUseCase.execute()
-//            .sink { result in
-//                switch result {
-//                case .success(let averageStats):
-//                    print("평균 통계:")
-//                    print("  - 평균 총 소요시간: \(averageStats.averageTotalMinutes)분")
-//                    print("  - 평균 운동 시간: \(averageStats.averageExerciseMinutes)분")
-//                    print("  - 평균 휴식 시간: \(averageStats.averageRestMinutes)분")
-//                    print("  - 평균 속도: \(String(format: "%.2f", averageStats.averageSpeed))m/분")
-//                case .failure(let error):
-//                    print("평균 통계 가져오기 실패: \(error)")
-//                }
-//            }
-//            .store(in: &cancellables)
-
-        // 차트 로딩 상태와 데이터 처리
-        let chartSubject = PassthroughSubject<[ActivityLog], Never>()
-        let isLoadingSubject = PassthroughSubject<Bool, Never>()
-
-        input.viewDidAppear
+        let viewDidAppear = input.viewDidAppear
             .prefix(1)
+            .share()
+
+        // 활동 차트 로딩 상태와 데이터 처리
+        let activityChartSubject = PassthroughSubject<[ActivityLog], Never>()
+        let activityIsLoadingSubject = PassthroughSubject<Bool, Never>()
+
+        viewDidAppear
             .sink { [weak self] _ in
-                guard let self = self else { return }
-                chartSubject.send(climbRecord.timeLog)
-                isLoadingSubject.send(false)
+                guard let self else { return }
+                activityIsLoadingSubject.send(true)
+                activityChartSubject.send(climbRecord.timeLog)
+            }
+            .store(in: &cancellables)
+
+        input.activityChartDidRender
+            .sink { _ in
+                activityIsLoadingSubject.send(false)
+            }
+            .store(in: &cancellables)
+        
+        // 시간 차트 로딩 상태와 데이터 처리
+        let timeChartSubject = PassthroughSubject<(AverageActivityStat, ActivityStat), Never>()
+        let timeIsLoadingSubject = PassthroughSubject<Bool, Never>()
+
+        viewDidAppear
+            .handleEvents(receiveOutput: { _ in
+                timeIsLoadingSubject.send(true)
+            })
+            .flatMap { [weak self] _ -> AnyPublisher<Result<AverageActivityStat, Error>, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
+                return getAverageActivityStatsUseCase.execute()
+            }
+            .sink { result in
+                switch result {
+                case .success(let value):
+                    timeChartSubject.send((value, activityStat))
+                case .failure(let error):
+                    errorMessageSubject.send(("평균 기록 불러오기 실패", error.localizedDescription))
+                    timeIsLoadingSubject.send(false)
+                }
+            }
+            .store(in: &cancellables)
+
+        input.timeChartDidRender
+            .sink { _ in
+                timeIsLoadingSubject.send(false)
             }
             .store(in: &cancellables)
 
         return Output(
             mountainName: climbRecord.mountain.name,
-            activityStat: stat,
-            isLoadingChart: isLoadingSubject.eraseToAnyPublisher(),
-            activityLogs: chartSubject.eraseToAnyPublisher()
+            activityStat: activityStat,
+            isLoadingActivityChart: activityIsLoadingSubject.eraseToAnyPublisher(),
+            activityLogs: activityChartSubject.eraseToAnyPublisher(),
+            isLoadingTimeChart: timeIsLoadingSubject.eraseToAnyPublisher(),
+            timeStats: timeChartSubject.eraseToAnyPublisher(),
+            errorMessage: errorMessageSubject.eraseToAnyPublisher()
         )
     }
 }

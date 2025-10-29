@@ -14,6 +14,8 @@ final class ActivityLogViewController: UIViewController, BaseViewController {
     let mainView = ActivityLogView()
     let viewModel: ActivityLogViewModel
     private let viewDidAppearSubject = PassthroughSubject<Void, Never>()
+    private let activityChartDidRenderSubject = PassthroughSubject<Void, Never>()
+    private let timeChartDidRenderSubject = PassthroughSubject<Void, Never>()
     private var cancellables = Set<AnyCancellable>()
 
     init(viewModel: ActivityLogViewModel) {
@@ -44,25 +46,57 @@ final class ActivityLogViewController: UIViewController, BaseViewController {
 
     func bind() {
         let input = ActivityLogViewModel.Input(
-            viewDidAppear: viewDidAppearSubject.eraseToAnyPublisher()
+            viewDidAppear: viewDidAppearSubject.eraseToAnyPublisher(),
+            activityChartDidRender: activityChartDidRenderSubject.eraseToAnyPublisher(),
+            timeChartDidRender: timeChartDidRenderSubject.eraseToAnyPublisher()
         )
         let output = viewModel.transform(input: input)
+
+        // 차트 렌더링 완료 콜백 설정
+        mainView.onActivityChartRendered = { [weak self] in
+            self?.activityChartDidRenderSubject.send()
+        }
+
+        mainView.onTimeChartRendered = { [weak self] in
+            self?.timeChartDidRenderSubject.send()
+        }
 
         // 기본 정보는 바로 표시
         mainView.setMountainName(name: output.mountainName)
         mainView.setStat(activityStat: output.activityStat)
 
-        // 차트 로딩 상태
-        output.isLoadingChart
+        // 시간 차트 로딩 상태
+        output.isLoadingTimeChart
             .sink { [weak self] isLoading in
-                self?.mainView.setChartLoading(isLoading)
+                self?.mainView.setTimeChartLoading(isLoading)
             }
             .store(in: &cancellables)
 
-        // 차트는 백그라운드에서 처리 후 표시
+        // 시간 차트
+        output.timeStats
+            .sink { [weak self] (averageStat, activityStat) in
+                self?.mainView.setTimeStats(averageStat: averageStat, activityStat: activityStat)
+            }
+            .store(in: &cancellables)
+        
+        // 활동 차트 로딩 상태
+        output.isLoadingActivityChart
+            .sink { [weak self] isLoading in
+                self?.mainView.setActivityChartLoading(isLoading)
+            }
+            .store(in: &cancellables)
+
+        // 활동 차트
         output.activityLogs
             .sink { [weak self] activityLogs in
                 self?.mainView.setActivityLogs(activityLogs: activityLogs)
+            }
+            .store(in: &cancellables)
+        
+        // 에러 Alert
+        output.errorMessage
+            .sink { [weak self] (title, message) in
+                self?.presentDefaultAlert(title: title, message: message)
             }
             .store(in: &cancellables)
     }

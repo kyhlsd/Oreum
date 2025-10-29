@@ -92,7 +92,7 @@ public final class GetAverageActivityStatsUseCaseImpl: GetAverageActivityStatsUs
         let avgExerciseMinutes = totalExerciseMinutes / count
         let avgRestMinutes = totalRestMinutes / count
 
-        // 평균 속도 (m/분)
+        // 평균 속도 (m/m)
         let avgSpeed = totalMinutes > 0 ? Double(totalDistance) / Double(totalMinutes) : 0.0
 
         return AverageActivityStat(
