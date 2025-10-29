@@ -157,7 +157,12 @@ final class MapView: BaseView {
 
         containerView.snp.makeConstraints { make in
             containerTopConstraint = make.top.equalTo(safeAreaLayoutGuide).offset(DeviceSize.height * 0.5).constraint
-            make.horizontalEdges.bottom.equalToSuperview()
+            make.horizontalEdges.equalToSuperview()
+            if #available(iOS 26.0, *) {
+                make.bottom.equalToSuperview()
+            } else {
+                make.bottom.equalTo(safeAreaLayoutGuide)
+            }
         }
 
         handleView.snp.makeConstraints { make in
