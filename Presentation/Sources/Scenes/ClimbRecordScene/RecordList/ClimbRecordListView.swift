@@ -12,7 +12,7 @@ import SnapKit
 final class ClimbRecordListView: BaseView {
 
     // 등산 통계 레이블
-    private let statsLabel = UILabel.create("등산 통계", color: AppColor.primaryText, font: AppFont.titleM)
+    private let statsLabel = UILabel.create("등산 통계", color: AppColor.primary, font: AppFont.titleM)
 
     // 통계 컨테이너
     private let statsContainerView = {
@@ -25,25 +25,13 @@ final class ClimbRecordListView: BaseView {
     }()
 
     // 정복한 산 개수
-    private let mountainCountItemView = {
-        let view = ItemView(subtitle: "정복한 산")
-        view.setTitleColor(color: AppColor.primary)
-        return view
-    }()
+    private let mountainCountItemView = ItemView(subtitle: "정복한 산")
 
     // 등산 횟수
-    private let climbCountItemView = {
-        let view = ItemView(subtitle: "등산 횟수")
-        view.setTitleColor(color: AppColor.primary)
-        return view
-    }()
+    private let climbCountItemView = ItemView(subtitle: "등산 횟수")
 
     // 총 높이
-    private let totalHeightItemView = {
-        let view = ItemView(subtitle: "총 높이")
-        view.setTitleColor(color: AppColor.primary)
-        return view
-    }()
+    private let totalHeightItemView = ItemView(subtitle: "총 높이")
 
     // 세로 구분선
     private lazy var leftDividerView = createVerticalDividerView()
@@ -57,7 +45,7 @@ final class ClimbRecordListView: BaseView {
     }()
     
     // 등산 일지 레이블
-    private let recordsLabel = UILabel.create("등산 일지", color: AppColor.primaryText, font: AppFont.titleM)
+    private let recordsLabel = UILabel.create("등산 일지", color: AppColor.primary, font: AppFont.titleM)
 
     // 검색 바
     let searchBar = CustomSearchBar()
