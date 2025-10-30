@@ -98,6 +98,13 @@ final class ClimbRecordListViewController: UIViewController, BaseViewController 
                 }
             }
             .store(in: &cancellables)
+
+        // 통계 업데이트
+        output.stat
+            .sink { [weak self] stats in
+                self?.mainView.setStats(mountainCount: stats.mountainCount, climbCount: stats.climbCount, totalHeight: stats.totalHeight)
+            }
+            .store(in: &cancellables)
     }
 
     private func setupNavItem() {

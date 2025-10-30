@@ -15,6 +15,7 @@ final class ClimbRecordListViewModel: BaseViewModel {
     private let fetchUseCase: FetchClimbRecordUseCase
     private let toggleBookmarkUseCase: ToggleBookmarkUseCase
     private let fetchRecordImageUseCase: FetchRecordImageUseCase
+    private let getRecordStatsUseCase: GetRecordStatsUseCase
     private var cancellables = Set<AnyCancellable>()
 
     private(set) var climbRecordList = [ClimbRecord]()
@@ -26,10 +27,11 @@ final class ClimbRecordListViewModel: BaseViewModel {
     private lazy var emptyStateTextSubject = CurrentValueSubject<String, Never>(emptyText)
     private let recordUpdatedSubject = PassthroughSubject<String, Never>()
 
-    init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase) {
+    init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase, getRecordStatsUseCase: GetRecordStatsUseCase) {
         self.fetchUseCase = fetchUseCase
         self.toggleBookmarkUseCase = toggleBookmarkUseCase
         self.fetchRecordImageUseCase = fetchRecordImageUseCase
+        self.getRecordStatsUseCase = getRecordStatsUseCase
     }
     
     struct Input {
@@ -46,12 +48,14 @@ final class ClimbRecordListViewModel: BaseViewModel {
         let emptyStateText: AnyPublisher<String, Never>
         let errorMessage: AnyPublisher<(String, String), Never>
         let recordUpdated: AnyPublisher<String, Never>
+        let stat: AnyPublisher<(mountainCount: Int, climbCount: Int, totalHeight: Int), Never>
     }
     
     func transform(input: Input) -> Output {
         let isOnlyBookmarkedSubject = CurrentValueSubject<Bool, Never>(isOnlyBookmarked)
         let searchTextSubject = CurrentValueSubject<String, Never>("")
         let errorMessageSubject = PassthroughSubject<(String, String), Never>()
+        let statsSubject = PassthroughSubject<(mountainCount: Int, climbCount: Int, totalHeight: Int), Never>()
 
         // 최초 모든 기록 불러오기
         input.viewDidLoad
@@ -112,6 +116,10 @@ final class ClimbRecordListViewModel: BaseViewModel {
                 // 기록 컬렉션 뷰 갱신
                 reloadDataSubject.send(())
 
+                // 통계 계산 및 전송
+                let stats = getRecordStatsUseCase.execute(records: list)
+                statsSubject.send((mountainCount: stats.mountainCount, climbCount: stats.climbCount, totalHeight: stats.totalHeight))
+
                 // 검색 결과 유무에 따른 업데이트
                 if list.isEmpty {
                     if keyword.isEmpty {
@@ -158,7 +166,8 @@ final class ClimbRecordListViewModel: BaseViewModel {
             bookmarkToggled: bookmarkToggled,
             emptyStateText: emptyStateTextSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher(),
-            recordUpdated: recordUpdatedSubject.eraseToAnyPublisher()
+            recordUpdated: recordUpdatedSubject.eraseToAnyPublisher(),
+            stat: statsSubject.eraseToAnyPublisher()
         )
     }
 

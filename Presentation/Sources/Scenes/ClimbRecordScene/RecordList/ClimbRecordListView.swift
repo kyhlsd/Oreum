@@ -119,10 +119,6 @@ final class ClimbRecordListView: BaseView {
         backgroundColor = AppColor.background
         setSearchBarBorder(isFirstResponder: false)
         setBookmarkImage(isOnlyBookmarked: false)
-        // TODO: 데이터 바인딩
-        mountainCountItemView.setTitle(title: "12개")
-        climbCountItemView.setTitle(title: "25회")
-        totalHeightItemView.setTitle(title: "15,230m")
     }
     
     override func setupHierarchy() {
@@ -204,6 +200,13 @@ final class ClimbRecordListView: BaseView {
 
 // MARK: - Binding Methods
 extension ClimbRecordListView {
+
+    // 통계 업데이트
+    func setStats(mountainCount: Int, climbCount: Int, totalHeight: Int) {
+        mountainCountItemView.setTitle(title: "\(mountainCount)개")
+        climbCountItemView.setTitle(title: "\(climbCount)회")
+        totalHeightItemView.setTitle(title: "\(totalHeight.formatted())m")
+    }
 
     // 기록 컬렉션 뷰 갱신, 스크롤 위로 올리기
     func reloadData() {

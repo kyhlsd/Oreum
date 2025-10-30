@@ -48,7 +48,7 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
 
     // MARK: - ViewModels
     private func makeClimbRecordListViewModel() -> ClimbRecordListViewModel {
-        return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase(), fetchRecordImageUseCase: makeFetchRecordImageUseCase())
+        return ClimbRecordListViewModel(fetchUseCase: makeFetchClimbRecordsUseCase(), toggleBookmarkUseCase: makeToggleBookmarkUseCase(), fetchRecordImageUseCase: makeFetchRecordImageUseCase(), getRecordStatsUseCase: makeGetRecordStatsUseCase())
     }
     
     private func makeClimbRecordDetailViewModel(climbRecord: ClimbRecord, isFromAddRecord: Bool = false) -> ClimbRecordDetailViewModel {
@@ -121,6 +121,10 @@ extension RecordSceneDIContainer: RecordSceneFlowCoordinatorDependencies {
 
     private func makeRemoveImageFromRecordUseCase() -> RemoveImageFromRecordUseCase {
         return RemoveImageFromRecordUseCaseImpl(repository: climbRecordRepository)
+    }
+
+    private func makeGetRecordStatsUseCase() -> GetRecordStatsUseCase {
+        return GetRecordStatsUseCaseImpl()
     }
 
     // MARK: - Repositories
