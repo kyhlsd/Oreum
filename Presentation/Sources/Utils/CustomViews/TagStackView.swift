@@ -9,9 +9,9 @@ import UIKit
 
 final class TagStackView: UIStackView {
     
-    private let firstVisitLabel = TagLabel(text: "정복", textColor: AppColor.firstVisitForeground, backgroundColor: AppColor.firstVisitBackground)
+    private let firstVisitLabel = TagLabel(text: "처음", textColor: AppColor.firstVisitForeground, backgroundColor: AppColor.firstVisitBackground)
     
-    private let hasLogLabel = TagLabel(text: "기록", textColor: AppColor.famousForeground, backgroundColor: AppColor.famousBackground)
+    private let hasLogLabel = TagLabel(text: "측정", textColor: AppColor.famousForeground, backgroundColor: AppColor.famousBackground)
     
     override init(frame: CGRect) {
         super.init(frame: frame)

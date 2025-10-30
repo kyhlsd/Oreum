@@ -60,14 +60,7 @@ final class ClimbRecordListViewController: UIViewController, BaseViewController 
                 self.mainView.setEmptyStateHidden(!self.viewModel.climbRecordList.isEmpty)
             }
             .store(in: &cancellables)
-        
-        // 산 개수, 북마크만 레이블 텍스트
-        output.guideText
-            .sink { [weak self] text in
-                self?.mainView.setGuideLabelText(text)
-            }
-            .store(in: &cancellables)
-        
+
         // 북마크만 표기에 따른 이미지
         output.isOnlyBookmarked
             .sink { [weak self] isOnlyBookmarked in
@@ -96,12 +89,11 @@ final class ClimbRecordListViewController: UIViewController, BaseViewController 
             }
             .store(in: &cancellables)
 
-        // 이미지 업데이트 시 해당 셀 리로드
-        output.imageUpdated
+        // 기록 업데이트 시 해당 셀 리로드
+        output.recordUpdated
             .sink { [weak self] recordId in
                 guard let self else { return }
                 if let index = self.viewModel.climbRecordList.firstIndex(where: { $0.id == recordId }) {
-                    // 해당 셀만 리로드
                     self.mainView.recordCollectionView.reloadItems(at: [IndexPath(item: index, section: 0)])
                 }
             }

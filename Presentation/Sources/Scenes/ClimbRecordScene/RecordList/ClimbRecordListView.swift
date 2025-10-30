@@ -20,14 +20,7 @@ final class ClimbRecordListView: BaseView {
         button.tintColor = AppColor.primary
         return button
     }()
-    
-    // 북마크만, 산 개수 표기 레이블
-    private let guideLabel = {
-        let label = UILabel.create(color: AppColor.mossGreen, font: AppFont.body)
-        label.textAlignment = .center
-        return label
-    }()
-    
+
     // 기록 컬렉션 뷰
     lazy var recordCollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
@@ -78,7 +71,7 @@ final class ClimbRecordListView: BaseView {
     }
     
     override func setupHierarchy() {
-        [searchBar, bookmarkButton, guideLabel, recordCollectionView, emptyStateLabel].forEach {
+        [searchBar, bookmarkButton, recordCollectionView, emptyStateLabel].forEach {
             addSubview($0)
         }
     }
@@ -96,14 +89,9 @@ final class ClimbRecordListView: BaseView {
             make.width.equalTo(bookmarkButton.snp.height)
             make.trailing.equalTo(safeAreaLayoutGuide).offset(-AppSpacing.regular)
         }
-        
-        guideLabel.snp.makeConstraints { make in
-            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.regular)
-            make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
-        }
-        
+
         recordCollectionView.snp.makeConstraints { make in
-            make.top.equalTo(guideLabel.snp.bottom).offset(AppSpacing.regular)
+            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.regular)
             make.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
         }
 
@@ -116,12 +104,7 @@ final class ClimbRecordListView: BaseView {
 
 // MARK: - Binding Methods
 extension ClimbRecordListView {
-    
-    // 산 개수, 북마크만 레이블
-    func setGuideLabelText(_ text: String) {
-        guideLabel.text = text
-    }
-    
+
     // 기록 컬렉션 뷰 갱신, 스크롤 위로 올리기
     func reloadData() {
         recordCollectionView.reloadData()

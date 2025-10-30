@@ -144,7 +144,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
 
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = 4
-        paragraphStyle.lineBreakMode = .byWordWrapping
+        paragraphStyle.lineBreakMode = .byTruncatingTail
         paragraphStyle.lineBreakStrategy = .hangulWordPriority
         attributedString.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSMakeRange(0, attributedString.length))
 

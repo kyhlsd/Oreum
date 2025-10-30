@@ -19,14 +19,12 @@ final class ClimbRecordListViewModel: BaseViewModel {
 
     private(set) var climbRecordList = [ClimbRecord]()
     private(set) var recordImageDatas: [String: [Data]] = [:]
-    private let baseGuideText = "산을 눌러 자세한 정보를 확인하세요."
-    private let emptyText = "+ 버튼으로 이전 기록을 추가하거나,\n측정 탭에서 기록을 측정하여 추가할 수 있습니다"
+    private let emptyText = "+ 버튼으로 이전 기록을 추가하거나,\n측정 탭에서 기록을 측정하여 추가할 수 있습니다."
     private var isOnlyBookmarked = false
-    
+
     private let reloadDataSubject = PassthroughSubject<Void, Never>()
-    private lazy var guideTextSubject = CurrentValueSubject<String, Never>(baseGuideText)
     private lazy var emptyStateTextSubject = CurrentValueSubject<String, Never>(emptyText)
-    private let imageUpdatedSubject = PassthroughSubject<String, Never>()
+    private let recordUpdatedSubject = PassthroughSubject<String, Never>()
 
     init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase) {
         self.fetchUseCase = fetchUseCase
@@ -43,12 +41,11 @@ final class ClimbRecordListViewModel: BaseViewModel {
     
     struct Output {
         let reloadData: AnyPublisher<Void, Never>
-        let guideText: AnyPublisher<String, Never>
         let isOnlyBookmarked: AnyPublisher<Bool, Never>
         let bookmarkToggled: AnyPublisher<Int, Never>
         let emptyStateText: AnyPublisher<String, Never>
         let errorMessage: AnyPublisher<(String, String), Never>
-        let imageUpdated: AnyPublisher<String, Never>
+        let recordUpdated: AnyPublisher<String, Never>
     }
     
     func transform(input: Input) -> Output {
@@ -115,14 +112,7 @@ final class ClimbRecordListViewModel: BaseViewModel {
                 // 기록 컬렉션 뷰 갱신
                 reloadDataSubject.send(())
 
-                // 북마크만, 개수 레이블 텍스트 업데이트
-                if isOnlyBookmarked {
-                    guideTextSubject.send("북마크한 산들 (\(list.count)개)")
-                } else {
-                    guideTextSubject.send("\(baseGuideText) (\(list.count)개)")
-                }
-
-                // 검색 결고 유무에 따른 업데이트
+                // 검색 결과 유무에 따른 업데이트
                 if list.isEmpty {
                     if keyword.isEmpty {
                         emptyStateTextSubject.send(emptyText)
@@ -161,15 +151,14 @@ final class ClimbRecordListViewModel: BaseViewModel {
             .store(in: &cancellables)
 
         let bookmarkToggled = bookmarkToggledSubject.eraseToAnyPublisher()
-        
+
         return Output(
             reloadData: reloadDataSubject.eraseToAnyPublisher(),
-            guideText: guideTextSubject.eraseToAnyPublisher(),
             isOnlyBookmarked: isOnlyBookmarked,
             bookmarkToggled: bookmarkToggled,
             emptyStateText: emptyStateTextSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher(),
-            imageUpdated: imageUpdatedSubject.eraseToAnyPublisher()
+            recordUpdated: recordUpdatedSubject.eraseToAnyPublisher()
         )
     }
 
@@ -221,6 +210,7 @@ extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
         }) {
             climbRecordList[index].score = rating
             climbRecordList[index].comment = comment
+            recordUpdatedSubject.send(id)
         }
     }
 
@@ -230,12 +220,6 @@ extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
             $0.id == id
         }) {
             climbRecordList.remove(at: index)
-
-            if isOnlyBookmarked {
-                guideTextSubject.send("북마크한 산들 (\(climbRecordList.count)개)")
-            } else {
-                guideTextSubject.send("\(baseGuideText) (\(climbRecordList.count)개)")
-            }
 
             if climbRecordList.isEmpty {
                 emptyStateTextSubject.send(emptyText)
@@ -256,7 +240,7 @@ extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
             recordImageDatas[id] = nil
 
             // 이미지 업데이트 알림
-            imageUpdatedSubject.send(id)
+            recordUpdatedSubject.send(id)
         }
     }
 }
