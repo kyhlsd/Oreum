@@ -55,12 +55,41 @@ final class ClimbRecordListViewModel: BaseViewModel {
         let isOnlyBookmarkedSubject = CurrentValueSubject<Bool, Never>(isOnlyBookmarked)
         let searchTextSubject = CurrentValueSubject<String, Never>("")
         let errorMessageSubject = PassthroughSubject<(String, String), Never>()
-        let statsSubject = PassthroughSubject<(mountainCount: Int, climbCount: Int, totalHeight: Int), Never>()
+        let statSubject = PassthroughSubject<(mountainCount: Int, climbCount: Int, totalHeight: Int), Never>()
 
-        // 최초 모든 기록 불러오기
+        // viewDidLoad 시 전체 데이터 불러와서 통계와 일지 모두 업데이트
         input.viewDidLoad
-            .map { "" }
-            .merge(with: input.searchText)
+            .flatMap { [fetchUseCase] in
+                fetchUseCase.execute(keyword: "", isOnlyBookmarked: false)
+            }
+            .sink { [weak self] result in
+                guard let self else { return }
+
+                switch result {
+                case .success(let records):
+                    // 통계 계산
+                    let stats = getRecordStatsUseCase.execute(records: records)
+                    statSubject.send((mountainCount: stats.mountainCount, climbCount: stats.climbCount, totalHeight: stats.totalHeight))
+
+                    // 일지 업데이트
+                    climbRecordList = records
+                    recordImageDatas = [:]
+                    reloadDataSubject.send(())
+
+                    if records.isEmpty {
+                        emptyStateTextSubject.send(emptyText)
+                    }
+
+                case .failure(let error):
+                    errorMessageSubject.send(("기록 불러오기 실패", error.localizedDescription))
+                    climbRecordList = []
+                    reloadDataSubject.send(())
+                }
+            }
+            .store(in: &cancellables)
+        
+        // 검색 텍스트 업데이트
+        input.searchText
             .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .removeDuplicates()
             .sink { searchTextSubject.send($0) }
@@ -76,57 +105,45 @@ final class ClimbRecordListViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        // 검색 시
+        // 검색, 북마크 필터, 새 기록 저장 시 일지만 다시 불러오기
         let searchText = searchTextSubject.eraseToAnyPublisher()
-        // 북마크만 표기 상태 변경
         let isOnlyBookmarked = isOnlyBookmarkedSubject.eraseToAnyPublisher()
-        // 새로운 기록이 저장되었을 때
         let climbRecordDidSave = NotificationCenter.default
             .publisher(for: .climbRecordDidSave)
             .map { _ in (searchTextSubject.value, isOnlyBookmarkedSubject.value) }
             .eraseToAnyPublisher()
-        // 위 세 가지 경우에 기록 불러오기
+
         Publishers.Merge(
             Publishers.CombineLatest(searchText, isOnlyBookmarked),
             climbRecordDidSave
         )
             .flatMap { [fetchUseCase] keyword, isOnlyBookmarked in
                 fetchUseCase.execute(keyword: keyword, isOnlyBookmarked: isOnlyBookmarked)
-                    .map { result -> (Result<[ClimbRecord], Error>, String, Bool) in
-                        (result, keyword, isOnlyBookmarked)
+                    .map { result -> (Result<[ClimbRecord], Error>, String) in
+                        (result, keyword)
                     }
             }
-            .sink { [weak self] (result, keyword, isOnlyBookmarked) in
+            .sink { [weak self] (result, keyword) in
                 guard let self else { return }
 
-                let list: [ClimbRecord]
                 switch result {
                 case .success(let records):
-                    list = records
+                    climbRecordList = records
+                    recordImageDatas = [:]
+                    reloadDataSubject.send(())
+
+                    if records.isEmpty {
+                        if keyword.isEmpty {
+                            emptyStateTextSubject.send(emptyText)
+                        } else {
+                            emptyStateTextSubject.send("검색 결과가 없습니다\n다른 키워드로 검색해보세요")
+                        }
+                    }
+
                 case .failure(let error):
                     errorMessageSubject.send(("기록 불러오기 실패", error.localizedDescription))
-                    list = []
-                }
-
-                climbRecordList = list
-
-                // 이미지 캐시 초기화 (새로운 검색이므로)
-                recordImageDatas = [:]
-
-                // 기록 컬렉션 뷰 갱신
-                reloadDataSubject.send(())
-
-                // 통계 계산 및 전송
-                let stats = getRecordStatsUseCase.execute(records: list)
-                statsSubject.send((mountainCount: stats.mountainCount, climbCount: stats.climbCount, totalHeight: stats.totalHeight))
-
-                // 검색 결과 유무에 따른 업데이트
-                if list.isEmpty {
-                    if keyword.isEmpty {
-                        emptyStateTextSubject.send(emptyText)
-                    } else {
-                        emptyStateTextSubject.send("검색 결과가 없습니다\n다른 키워드로 검색해보세요")
-                    }
+                    climbRecordList = []
+                    reloadDataSubject.send(())
                 }
             }
             .store(in: &cancellables)
@@ -144,7 +161,6 @@ final class ClimbRecordListViewModel: BaseViewModel {
             }
             .sink { [weak self] (result, id) in
                 guard let self else { return }
-
                 switch result {
                 case .success:
                     if let index = climbRecordList.firstIndex(where: { $0.id == id }) {
@@ -167,7 +183,7 @@ final class ClimbRecordListViewModel: BaseViewModel {
             emptyStateText: emptyStateTextSubject.eraseToAnyPublisher(),
             errorMessage: errorMessageSubject.eraseToAnyPublisher(),
             recordUpdated: recordUpdatedSubject.eraseToAnyPublisher(),
-            stat: statsSubject.eraseToAnyPublisher()
+            stat: statSubject.eraseToAnyPublisher()
         )
     }
 

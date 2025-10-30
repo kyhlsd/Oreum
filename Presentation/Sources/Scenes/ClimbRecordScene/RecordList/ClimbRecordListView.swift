@@ -12,7 +12,7 @@ import SnapKit
 final class ClimbRecordListView: BaseView {
 
     // 등산 통계 레이블
-    private let statsLabel = UILabel.create("등산 통계", color: AppColor.primary, font: AppFont.titleM)
+    private let statsLabel = UILabel.create("등산 통계", color: AppColor.primaryText, font: AppFont.titleM)
 
     // 통계 컨테이너
     private let statsContainerView = {
@@ -57,7 +57,7 @@ final class ClimbRecordListView: BaseView {
     }()
     
     // 등산 일지 레이블
-    private let recordsLabel = UILabel.create("등산 일지", color: AppColor.primary, font: AppFont.titleM)
+    private let recordsLabel = UILabel.create("등산 일지", color: AppColor.primaryText, font: AppFont.titleM)
 
     // 검색 바
     let searchBar = CustomSearchBar()

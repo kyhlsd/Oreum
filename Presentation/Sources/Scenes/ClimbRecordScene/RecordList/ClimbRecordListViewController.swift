@@ -16,7 +16,10 @@ final class ClimbRecordListViewController: UIViewController, BaseViewController 
 
     let mainView = ClimbRecordListView()
     let viewModel: ClimbRecordListViewModel
+    
+    
     private var cancellables = Set<AnyCancellable>()
+    private let viewDidLoadSubject = PassthroughSubject<Void, Never>()
     private let cellBookmarkTapSubject = PassthroughSubject<String, Never>()
     
     init(viewModel: ClimbRecordListViewModel) {
@@ -39,12 +42,14 @@ final class ClimbRecordListViewController: UIViewController, BaseViewController 
         bind()
         setupNavItem()
         setupDelegates()
+        
+        viewDidLoadSubject.send(())
     }
     
     func bind() {
 
         let input = ClimbRecordListViewModel.Input(
-            viewDidLoad: Just(()).eraseToAnyPublisher(),
+            viewDidLoad: viewDidLoadSubject.eraseToAnyPublisher(),
             searchText: mainView.searchBar.textDidChange,
             bookmarkButtonTapped: mainView.bookmarkButton.tap,
             cellBookmarkButtonTapped: cellBookmarkTapSubject.eraseToAnyPublisher()
@@ -101,8 +106,8 @@ final class ClimbRecordListViewController: UIViewController, BaseViewController 
 
         // 통계 업데이트
         output.stat
-            .sink { [weak self] stats in
-                self?.mainView.setStats(mountainCount: stats.mountainCount, climbCount: stats.climbCount, totalHeight: stats.totalHeight)
+            .sink { [weak self] stat in
+                self?.mainView.setStats(mountainCount: stat.mountainCount, climbCount: stat.climbCount, totalHeight: stat.totalHeight)
             }
             .store(in: &cancellables)
     }
