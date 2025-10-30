@@ -54,7 +54,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     // 산 이름
     private let nameLabel = UILabel.create(color: AppColor.primaryText, font: AppFont.titleS)
     
-    // 산 주소
+    // 등산 날짜
     private let dateLabel = UILabel.create(color: AppColor.subText, font: AppFont.description)
     
     // 태그
@@ -77,29 +77,11 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         return collectionView
     }()
 
-    // 이미지 없음 뷰
-    private let noImageView = {
-        let view = UIView()
-        view.backgroundColor = AppColor.background
-        view.layer.cornerRadius = AppRadius.medium
-        view.isHidden = true
-        return view
-    }()
-
-    private let photoImageView = {
-        let imageView = UIImageView()
-        imageView.image = AppIcon.photo
-        imageView.tintColor = AppColor.subText
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private let noImageLabel = {
-        let label = UILabel()
-        label.text = "등산 사진을 추가해보세요"
-        label.textColor = AppColor.subText
-        label.font = AppFont.tag
-        label.textAlignment = .center
+    // 후기 레이블
+    private let commentLabel = {
+        let label = UILabel.create(color: AppColor.tertiaryText, font: AppFont.description)
+        label.numberOfLines = 0
+        label.isHidden = true
         return label
     }()
 
@@ -109,9 +91,9 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         upRoadImageView.image = nil
         downRoadImageView.image = nil
         bookmarkTapped = nil
-        cancellables = Set<AnyCancellable>()
-        noImageView.isHidden = true
+        commentLabel.isHidden = true
         imageCollectionView.isHidden = false
+        cancellables = Set<AnyCancellable>()
     }
     
     // 데이터 정보 표기
@@ -133,22 +115,40 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
             }
             .store(in: &cancellables)
 
-        // 이미지 컬렉션뷰 데이터 업데이트
-        if data.images.isEmpty {
-            // 이미지 없음
+        // 이미지 컬렉션뷰 또는 코멘트 표시
+        if data.images.isEmpty && !data.comment.isEmpty {
+            // 이미지 없고 코멘트 있음
             imageCollectionView.isHidden = true
-            noImageView.isHidden = false
+            commentLabel.isHidden = false
+            setComment(text: data.comment)
+        } else if data.images.isEmpty {
+            // 이미지도 코멘트도 없음
+            imageCollectionView.isHidden = true
+            commentLabel.isHidden = true
         } else if imageDatas.isEmpty {
             // 로딩 중: placeholder
             imageCollectionView.isHidden = false
-            noImageView.isHidden = true
+            commentLabel.isHidden = true
             applySnapshot(images: [Data()]) // 빈 Data로 indicator 표시
         } else {
             // 이미지 있음
             imageCollectionView.isHidden = false
-            noImageView.isHidden = true
+            commentLabel.isHidden = true
             applySnapshot(images: imageDatas)
         }
+    }
+    
+    // 후기
+    func setComment(text: String) {
+        let attributedString = NSMutableAttributedString(string: text)
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 4
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        paragraphStyle.lineBreakStrategy = .hangulWordPriority
+        attributedString.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSMakeRange(0, attributedString.length))
+
+        commentLabel.attributedText = attributedString
     }
     
     // 길 이미지 세팅
@@ -219,11 +219,8 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
         [containerView, upRoadImageView, downRoadImageView, mountainImageView].forEach {
             contentView.addSubview($0)
         }
-        [nameLabel, dateLabel, tagStackView, bookmarkButton, imageCollectionView, noImageView].forEach {
+        [nameLabel, dateLabel, tagStackView, bookmarkButton, imageCollectionView, commentLabel].forEach {
             containerView.addSubview($0)
-        }
-        [photoImageView, noImageLabel].forEach {
-            noImageView.addSubview($0)
         }
     }
     
@@ -283,19 +280,9 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
             make.bottom.equalToSuperview().inset(AppSpacing.compact)
         }
 
-        noImageView.snp.makeConstraints { make in
-            make.edges.equalTo(imageCollectionView)
-        }
-
-        photoImageView.snp.makeConstraints { make in
-            make.verticalEdges.equalToSuperview().inset(AppSpacing.small)
-            make.leading.equalToSuperview().offset(AppSpacing.compact)
-            make.width.equalTo(photoImageView.snp.height)
-        }
-
-        noImageLabel.snp.makeConstraints { make in
-            make.leading.equalTo(photoImageView.snp.trailing).offset(AppSpacing.compact)
-            make.centerY.equalToSuperview()
+        commentLabel.snp.makeConstraints { make in
+            make.top.horizontalEdges.equalTo(imageCollectionView)
+            make.bottom.lessThanOrEqualTo(imageCollectionView)
         }
     }
 
