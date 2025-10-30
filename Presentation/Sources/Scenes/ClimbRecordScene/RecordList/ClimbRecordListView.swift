@@ -11,6 +11,9 @@ import SnapKit
 
 final class ClimbRecordListView: BaseView {
 
+    // 등산 통계 레이블
+    private let statsLabel = UILabel.create("등산 통계", color: AppColor.primary, font: AppFont.titleM)
+
     // 통계 컨테이너
     private let statsContainerView = {
         let view = UIView()
@@ -52,6 +55,9 @@ final class ClimbRecordListView: BaseView {
         view.backgroundColor = AppColor.tertiaryText.withAlphaComponent(0.2)
         return view
     }()
+    
+    // 등산 일지 레이블
+    private let recordsLabel = UILabel.create("등산 일지", color: AppColor.primary, font: AppFont.titleM)
 
     // 검색 바
     let searchBar = CustomSearchBar()
@@ -122,7 +128,7 @@ final class ClimbRecordListView: BaseView {
     }
     
     override func setupHierarchy() {
-        [statsContainerView, lineView, searchBar, bookmarkButton, recordCollectionView, emptyStateLabel].forEach {
+        [statsLabel ,statsContainerView, lineView, recordsLabel,searchBar, bookmarkButton, recordCollectionView, emptyStateLabel].forEach {
             addSubview($0)
         }
 
@@ -133,8 +139,12 @@ final class ClimbRecordListView: BaseView {
     
     override func setupLayout() {
 
+        statsLabel.snp.makeConstraints { make in
+            make.top.leading.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
+        }
+        
         statsContainerView.snp.makeConstraints { make in
-            make.top.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
+            make.top.equalTo(statsLabel.snp.bottom).offset(AppSpacing.small)
             make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
             make.height.equalTo(60)
         }
@@ -173,8 +183,13 @@ final class ClimbRecordListView: BaseView {
             make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
         }
         
-        searchBar.snp.makeConstraints { make in
+        recordsLabel.snp.makeConstraints { make in
             make.top.equalTo(lineView.snp.bottom).offset(AppSpacing.regular)
+            make.leading.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
+        }
+        
+        searchBar.snp.makeConstraints { make in
+            make.top.equalTo(recordsLabel.snp.bottom).offset(AppSpacing.small)
             make.height.equalTo(40)
             make.leading.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
             make.trailing.equalTo(bookmarkButton.snp.leading)
