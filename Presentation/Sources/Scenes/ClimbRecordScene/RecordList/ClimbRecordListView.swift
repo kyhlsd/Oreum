@@ -11,6 +11,48 @@ import SnapKit
 
 final class ClimbRecordListView: BaseView {
 
+    // 통계 컨테이너
+    private let statsContainerView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = AppRadius.medium
+        view.layer.borderColor = AppColor.border.cgColor
+        view.layer.borderWidth = 1
+        return view
+    }()
+
+    // 정복한 산 개수
+    private let mountainCountItemView = {
+        let view = ItemView(subtitle: "정복한 산")
+        view.setTitleColor(color: AppColor.primary)
+        return view
+    }()
+
+    // 등산 횟수
+    private let climbCountItemView = {
+        let view = ItemView(subtitle: "등산 횟수")
+        view.setTitleColor(color: AppColor.primary)
+        return view
+    }()
+
+    // 총 높이
+    private let totalHeightItemView = {
+        let view = ItemView(subtitle: "총 높이")
+        view.setTitleColor(color: AppColor.primary)
+        return view
+    }()
+
+    // 세로 구분선
+    private lazy var leftDividerView = createVerticalDividerView()
+    private lazy var rightDividerView = createVerticalDividerView()
+
+    // 가로 구분선
+    private let lineView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.tertiaryText.withAlphaComponent(0.2)
+        return view
+    }()
+
     // 검색 바
     let searchBar = CustomSearchBar()
     
@@ -20,7 +62,7 @@ final class ClimbRecordListView: BaseView {
         button.tintColor = AppColor.primary
         return button
     }()
-
+    
     // 기록 컬렉션 뷰
     lazy var recordCollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
@@ -63,22 +105,80 @@ final class ClimbRecordListView: BaseView {
         return UICollectionViewCompositionalLayout(section: section)
     }
     
+    private func createVerticalDividerView() -> UIView {
+        let view = UIView()
+        view.backgroundColor = AppColor.border
+        view.snp.makeConstraints { make in
+            make.width.equalTo(1)
+        }
+        return view
+    }
+    
     // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
         setSearchBarBorder(isFirstResponder: false)
         setBookmarkImage(isOnlyBookmarked: false)
+        // TODO: 데이터 바인딩
+        mountainCountItemView.setTitle(title: "12개")
+        climbCountItemView.setTitle(title: "25회")
+        totalHeightItemView.setTitle(title: "15,230m")
     }
     
     override func setupHierarchy() {
-        [searchBar, bookmarkButton, recordCollectionView, emptyStateLabel].forEach {
+        [statsContainerView, lineView, searchBar, bookmarkButton, recordCollectionView, emptyStateLabel].forEach {
             addSubview($0)
+        }
+
+        [mountainCountItemView, climbCountItemView, totalHeightItemView, leftDividerView, rightDividerView].forEach {
+            statsContainerView.addSubview($0)
         }
     }
     
     override func setupLayout() {
+
+        statsContainerView.snp.makeConstraints { make in
+            make.top.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
+            make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
+            make.height.equalTo(60)
+        }
+
+        mountainCountItemView.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+            make.width.equalTo(climbCountItemView)
+        }
+
+        leftDividerView.snp.makeConstraints { make in
+            make.leading.equalTo(mountainCountItemView.snp.trailing)
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        climbCountItemView.snp.makeConstraints { make in
+            make.leading.equalTo(leftDividerView.snp.trailing)
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+            make.width.equalTo(totalHeightItemView)
+        }
+
+        rightDividerView.snp.makeConstraints { make in
+            make.leading.equalTo(climbCountItemView.snp.trailing)
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        totalHeightItemView.snp.makeConstraints { make in
+            make.leading.equalTo(rightDividerView.snp.trailing)
+            make.trailing.equalToSuperview()
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        lineView.snp.makeConstraints { make in
+            make.top.equalTo(statsContainerView.snp.bottom).offset(AppSpacing.regular)
+            make.height.equalTo(1)
+            make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
+        }
+        
         searchBar.snp.makeConstraints { make in
-            make.top.equalTo(safeAreaLayoutGuide).offset(AppSpacing.small)
+            make.top.equalTo(lineView.snp.bottom).offset(AppSpacing.regular)
             make.height.equalTo(40)
             make.leading.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
             make.trailing.equalTo(bookmarkButton.snp.leading)
@@ -91,7 +191,7 @@ final class ClimbRecordListView: BaseView {
         }
 
         recordCollectionView.snp.makeConstraints { make in
-            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.regular)
+            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.small)
             make.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
         }
 
