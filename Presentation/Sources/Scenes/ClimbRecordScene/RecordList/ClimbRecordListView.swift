@@ -11,6 +11,42 @@ import SnapKit
 
 final class ClimbRecordListView: BaseView {
 
+    // 등산 통계 레이블
+    private let statsLabel = UILabel.create("등산 통계", color: AppColor.primary, font: AppFont.titleM)
+
+    // 통계 컨테이너
+    private let statsContainerView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = AppRadius.medium
+        view.layer.borderColor = AppColor.border.cgColor
+        view.layer.borderWidth = 1
+        return view
+    }()
+
+    // 정복한 산 개수
+    private let mountainCountItemView = ItemView(subtitle: "정복한 산")
+
+    // 등산 횟수
+    private let climbCountItemView = ItemView(subtitle: "등산 횟수")
+
+    // 총 높이
+    private let totalHeightItemView = ItemView(subtitle: "총 높이")
+
+    // 세로 구분선
+    private lazy var leftDividerView = createVerticalDividerView()
+    private lazy var rightDividerView = createVerticalDividerView()
+
+    // 가로 구분선
+    private let lineView = {
+        let view = UIView()
+        view.backgroundColor = AppColor.tertiaryText.withAlphaComponent(0.2)
+        return view
+    }()
+    
+    // 등산 일지 레이블
+    private let recordsLabel = UILabel.create("등산 일지", color: AppColor.primary, font: AppFont.titleM)
+
     // 검색 바
     let searchBar = CustomSearchBar()
     
@@ -19,13 +55,6 @@ final class ClimbRecordListView: BaseView {
         let button = UIButton()
         button.tintColor = AppColor.primary
         return button
-    }()
-    
-    // 북마크만, 산 개수 표기 레이블
-    private let guideLabel = {
-        let label = UILabel.create(color: AppColor.mossGreen, font: AppFont.body)
-        label.textAlignment = .center
-        return label
     }()
     
     // 기록 컬렉션 뷰
@@ -70,6 +99,15 @@ final class ClimbRecordListView: BaseView {
         return UICollectionViewCompositionalLayout(section: section)
     }
     
+    private func createVerticalDividerView() -> UIView {
+        let view = UIView()
+        view.backgroundColor = AppColor.border
+        view.snp.makeConstraints { make in
+            make.width.equalTo(1)
+        }
+        return view
+    }
+    
     // MARK: - Setups
     override func setupView() {
         backgroundColor = AppColor.background
@@ -78,14 +116,68 @@ final class ClimbRecordListView: BaseView {
     }
     
     override func setupHierarchy() {
-        [searchBar, bookmarkButton, guideLabel, recordCollectionView, emptyStateLabel].forEach {
+        [statsLabel ,statsContainerView, lineView, recordsLabel,searchBar, bookmarkButton, recordCollectionView, emptyStateLabel].forEach {
             addSubview($0)
+        }
+
+        [mountainCountItemView, climbCountItemView, totalHeightItemView, leftDividerView, rightDividerView].forEach {
+            statsContainerView.addSubview($0)
         }
     }
     
     override func setupLayout() {
+
+        statsLabel.snp.makeConstraints { make in
+            make.top.leading.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
+        }
+        
+        statsContainerView.snp.makeConstraints { make in
+            make.top.equalTo(statsLabel.snp.bottom).offset(AppSpacing.small)
+            make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
+            make.height.equalTo(60)
+        }
+
+        mountainCountItemView.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+            make.width.equalTo(climbCountItemView)
+        }
+
+        leftDividerView.snp.makeConstraints { make in
+            make.leading.equalTo(mountainCountItemView.snp.trailing)
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        climbCountItemView.snp.makeConstraints { make in
+            make.leading.equalTo(leftDividerView.snp.trailing)
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+            make.width.equalTo(totalHeightItemView)
+        }
+
+        rightDividerView.snp.makeConstraints { make in
+            make.leading.equalTo(climbCountItemView.snp.trailing)
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        totalHeightItemView.snp.makeConstraints { make in
+            make.leading.equalTo(rightDividerView.snp.trailing)
+            make.trailing.equalToSuperview()
+            make.verticalEdges.equalToSuperview().inset(AppSpacing.compact)
+        }
+
+        lineView.snp.makeConstraints { make in
+            make.top.equalTo(statsContainerView.snp.bottom).offset(AppSpacing.regular)
+            make.height.equalTo(1)
+            make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
+        }
+        
+        recordsLabel.snp.makeConstraints { make in
+            make.top.equalTo(lineView.snp.bottom).offset(AppSpacing.regular)
+            make.leading.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
+        }
+        
         searchBar.snp.makeConstraints { make in
-            make.top.equalTo(safeAreaLayoutGuide).offset(AppSpacing.small)
+            make.top.equalTo(recordsLabel.snp.bottom).offset(AppSpacing.small)
             make.height.equalTo(40)
             make.leading.equalTo(safeAreaLayoutGuide).offset(AppSpacing.regular)
             make.trailing.equalTo(bookmarkButton.snp.leading)
@@ -96,14 +188,9 @@ final class ClimbRecordListView: BaseView {
             make.width.equalTo(bookmarkButton.snp.height)
             make.trailing.equalTo(safeAreaLayoutGuide).offset(-AppSpacing.regular)
         }
-        
-        guideLabel.snp.makeConstraints { make in
-            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.regular)
-            make.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(AppSpacing.regular)
-        }
-        
+
         recordCollectionView.snp.makeConstraints { make in
-            make.top.equalTo(guideLabel.snp.bottom).offset(AppSpacing.regular)
+            make.top.equalTo(searchBar.snp.bottom).offset(AppSpacing.small)
             make.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
         }
 
@@ -116,12 +203,14 @@ final class ClimbRecordListView: BaseView {
 
 // MARK: - Binding Methods
 extension ClimbRecordListView {
-    
-    // 산 개수, 북마크만 레이블
-    func setGuideLabelText(_ text: String) {
-        guideLabel.text = text
+
+    // 통계 업데이트
+    func setStats(mountainCount: Int, climbCount: Int, totalHeight: Int) {
+        mountainCountItemView.setTitle(title: "\(mountainCount)개")
+        climbCountItemView.setTitle(title: "\(climbCount)회")
+        totalHeightItemView.setTitle(title: "\(totalHeight.formatted())m")
     }
-    
+
     // 기록 컬렉션 뷰 갱신, 스크롤 위로 올리기
     func reloadData() {
         recordCollectionView.reloadData()

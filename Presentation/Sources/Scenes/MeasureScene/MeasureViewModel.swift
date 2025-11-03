@@ -162,10 +162,23 @@ final class MeasureViewModel: BaseViewModel {
                 // 앱 재시작 시 Observer 재등록을 위해 기존 startDate로 startTracking 다시 호출
                 if let startDate = self.startTrackingActivityUseCase.getStartDate(),
                    let mountain = self.getClimbingMountainUseCase.execute() {
-                    self.startTrackingActivityUseCase.execute(startDate: startDate, mountain: mountain)
 
-                    // 측정 중인 산 정보 복원
-                    updateMountainLabelsSubject.send((mountain.name, mountain.address))
+                    // 측정 시작 시간이 24시간이 지났는지 확인
+                    let elapsedTime = Date().timeIntervalSince(startDate)
+                    let twentyFourHours: TimeInterval = 24 * 3600
+
+                    if elapsedTime >= twentyFourHours {
+                        // 24시간이 지났으면 측정 자동 취소
+                        self.stopTrackingActivityUseCase.execute(clearData: true)
+                        trackingStatusSubject.send(false)
+                        errorMessageSubject.send(("측정 자동 취소", "24시간이 경과하여 측정이 자동으로 취소되었습니다."))
+                    } else {
+                        // 24시간 이내면 정상적으로 복원
+                        self.startTrackingActivityUseCase.execute(startDate: startDate, mountain: mountain)
+
+                        // 측정 중인 산 정보 복원
+                        updateMountainLabelsSubject.send((mountain.name, mountain.address))
+                    }
                 }
             }
             .store(in: &cancellables)
