@@ -9,6 +9,7 @@ import UIKit
 import Data
 import FirebaseCore
 import Core
+import UserNotifications
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -27,6 +28,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             await NetworkManager.shared.cleanExpiredCache()
         }
 
+        // 알림 설정
+        UNUserNotificationCenter.current().delegate = self
+
         return true
     }
 
@@ -43,6 +47,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // If any sessions were discarded while the application was not running, this will be called shortly after application:didFinishLaunchingWithOptions.
         // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
+}
 
+// MARK: - UNUserNotificationCenterDelegate
+extension AppDelegate: UNUserNotificationCenterDelegate {
 
+    // 앱이 포그라운드에 있을 때 알림이 도착하면 호출
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        // 앱이 실행 중일 때도 알림 표시
+        completionHandler([.banner, .sound, .badge])
+    }
+
+    // 사용자가 알림을 탭했을 때 호출
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        completionHandler()
+    }
 }

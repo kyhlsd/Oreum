@@ -35,6 +35,10 @@ final class ItemView: BaseView {
         subtitleLabel.font = font
     }
     
+    func setTitleColor(color: UIColor) {
+        titleLabel.textColor = color
+    }
+    
     func setAlignment(_ alignment: NSTextAlignment) {
         titleLabel.textAlignment = alignment
         subtitleLabel.textAlignment = alignment
