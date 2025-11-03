@@ -2,7 +2,7 @@ import ProjectDescription
 
 let iOSVersion = "16.0"
 let teamID = "4QUWH828P3"
-let appVersion = "1.3.0"
+let appVersion = "1.4.0"
 let buildNumber = "1"
 
 let project = Project(
@@ -26,15 +26,6 @@ let project = Project(
                                     "UISceneConfigurationName": "Default Configuration",
                                     "UISceneDelegateClassName": "$(PRODUCT_MODULE_NAME).SceneDelegate"
                                 ],
-                            ]
-                        ]
-                    ],
-                    "NSAppTransportSecurity": [
-                        "NSExceptionDomains": [
-                            "forest.go.kr": [
-                                "NSIncludesSubdomains": true,
-                                "NSTemporaryExceptionAllowsInsecureHTTPLoads": true,
-                                "NSTemporaryExceptionMinimumTLSVersion": "TLSv1.0"
                             ]
                         ]
                     ],

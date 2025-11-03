@@ -55,7 +55,7 @@ private final class ActivityDataCorrectionService {
             let diffStep = current.step - prev.step
             let diffDist = current.distance - prev.distance
             
-            if diffStep > 200 {
+            if diffStep > 500 {
                 let adjustmentStep = diffStep / 2
                 let adjustmentDist = diffDist / 2
                 
