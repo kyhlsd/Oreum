@@ -7,6 +7,7 @@
 
 import Foundation
 import UserNotifications
+import WidgetKit
 
 public protocol StartTrackingActivityUseCase {
     func execute(startDate: Date, mountain: Mountain)
@@ -23,6 +24,7 @@ public final class StartTrackingActivityUseCaseImpl: StartTrackingActivityUseCas
     public func execute(startDate: Date, mountain: Mountain) {
         repository.startTracking(startDate: startDate, mountain: mountain)
         scheduleClimbingNotifications()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     public func getStartDate() -> Date? {

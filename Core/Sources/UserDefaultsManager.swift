@@ -77,7 +77,7 @@ public struct UserDefaultObject<T: Codable> {
         }
         set {
             if let newValue, let data = try? JSONEncoder().encode(newValue) {
-                UserDefaults.standard.set(data, forKey: key)
+                userDefault?.set(data, forKey: key)
             } else {
                 userDefault?.removeObject(forKey: key)
             }

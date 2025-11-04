@@ -7,6 +7,7 @@
 
 import Foundation
 import UserNotifications
+import WidgetKit
 
 public protocol StopTrackingActivityUseCase {
     func execute(clearData: Bool)
@@ -25,6 +26,7 @@ public final class StopTrackingActivityUseCaseImpl: StopTrackingActivityUseCase 
             repository.clearTrackingData()
         }
         cancelClimbingNotifications()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // 측정 알림 취소

@@ -9,17 +9,17 @@ import SwiftUI
 import WidgetKit
 
 struct OreumWidgetEntryView: View {
-    @Environment(\.widgetFamily) var family
+
     var entry: Provider.Entry
 
     var body: some View {
         switch entry.measurementState {
         case .measuring(let mountainName, let startDate):
-            MeasuringView(mountainName: mountainName, startDate: startDate, family: family)
+            MeasuringView(mountainName: mountainName, startDate: startDate)
         case .idle:
-            IdleView(family: family)
+            IdleView()
         case .placeholder:
-            PlaceholderView(family: family)
+            PlaceholderView()
         }
     }
 }
@@ -28,93 +28,107 @@ struct OreumWidgetEntryView: View {
 struct MeasuringView: View {
     let mountainName: String
     let startDate: TimeInterval
-    let family: WidgetFamily
+    private let primaryColor = Color.init(red: 45/225, green: 88/225, blue: 50/255)
 
     private var elapsedTime: String {
         let interval = Date().timeIntervalSince1970 - startDate
         let hours = Int(interval) / 3600
         let minutes = Int(interval) / 60 % 60
-        let seconds = Int(interval) % 60
-
+        
         if hours > 0 {
-            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+            return "\(hours)시간 \(minutes)분"
         } else {
-            return String(format: "%02d:%02d", minutes, seconds)
+            return "\(minutes)분"
         }
     }
 
     var body: some View {
-        VStack(spacing: family == .systemSmall ? 8 : 12) {
+        VStack(alignment: .leading, spacing: 8) {
+            Spacer()
+            
             HStack {
                 Image(systemName: "figure.hiking")
-                    .font(.system(size: family == .systemSmall ? 16 : 20))
-                    .foregroundColor(.white)
+                    .font(.system(size: 16))
                 Text("등산 중")
-                    .font(.system(size: family == .systemSmall ? 14 : 16, weight: .semibold))
-                    .foregroundColor(.white)
-                Spacer()
+                    .font(.system(size: 14, weight: .semibold))
             }
+            .foregroundColor(primaryColor)
             
             Spacer()
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(mountainName)
-                    .font(.system(size: family == .systemSmall ? 18 : 22, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.secondary)
                     .lineLimit(1)
                 
                 Text(elapsedTime)
-                    .font(.system(size: family == .systemSmall ? 28 : 36, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.primary)
                     .monospacedDigit()
             }
             
             Spacer()
         }
-        .padding(family == .systemSmall ? 16 : 20)
     }
 }
 
 // MARK: - Idle View (측정 유도)
 struct IdleView: View {
-    let family: WidgetFamily
-
+    private let primaryColor = Color.init(red: 45/225, green: 88/225, blue: 50/255)
+    
     var body: some View {
-        VStack(spacing: family == .systemSmall ? 12 : 16) {
+        VStack(spacing: 8) {
             Image(systemName: "mountain.2.fill")
-                .font(.system(size: family == .systemSmall ? 40 : 50))
-                .foregroundColor(Color(red: 0.25, green: 0.52, blue: 0.31))
+                .font(.system(size: 40))
+                .foregroundColor(primaryColor)
             
             VStack(spacing: 4) {
                 Text("등산을 시작하세요")
-                    .font(.system(size: family == .systemSmall ? 14 : 16, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primary)
                 
-                if family != .systemSmall {
-                    Text("앱에서 측정을 시작해보세요")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                }
+                Text("앱에서 측정을 시작해보세요")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
             }
         }
-        .padding(family == .systemSmall ? 16 : 20)
     }
 }
 
 // MARK: - Placeholder View
 struct PlaceholderView: View {
-    let family: WidgetFamily
+    private let mountainName: String = "북한산"
+    private let primaryColor = Color.init(red: 45/225, green: 88/225, blue: 50/255)
+    private let elapsedTime: String = "1시간 17분"
 
     var body: some View {
-        VStack(spacing: family == .systemSmall ? 12 : 16) {
-            Image(systemName: "mountain.2.fill")
-                .font(.system(size: family == .systemSmall ? 40 : 50))
-                .foregroundColor(.gray.opacity(0.3))
+        VStack(alignment: .leading, spacing: 8) {
+            Spacer()
             
-            Text("오름")
-                .font(.system(size: family == .systemSmall ? 14 : 16, weight: .semibold))
-                .foregroundColor(.gray)
+            HStack {
+                Image(systemName: "figure.hiking")
+                    .font(.system(size: 16))
+                Text("등산 중")
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundColor(primaryColor)
+            
+            Spacer()
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(mountainName)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                
+                Text(elapsedTime)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.black)
+                    .monospacedDigit()
+            }
+            
+            Spacer()
         }
-        .padding(family == .systemSmall ? 16 : 20)
     }
 }

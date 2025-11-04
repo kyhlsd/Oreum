@@ -26,10 +26,11 @@ struct OreumWidget: Widget {
                     .containerBackground(.fill.tertiary, for: .widget)
             } else {
                 OreumWidgetEntryView(entry: entry)
+                    .background(.tertiary)
             }
         }
         .configurationDisplayName("오름")
         .description("등산 측정 현황을 확인하세요")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall])
     }
 }
