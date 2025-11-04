@@ -173,8 +173,8 @@ final class MeasureViewModel: BaseViewModel {
                         trackingStatusSubject.send(false)
                         errorMessageSubject.send(("측정 자동 취소", "24시간이 경과하여 측정이 자동으로 취소되었습니다."))
                     } else {
-                        // 24시간 이내면 정상적으로 복원
-                        self.startTrackingActivityUseCase.execute(startDate: startDate, mountain: mountain)
+                        // 24시간 이내면 정상적으로 복원 (알림은 재설정하지 않음)
+                        self.startTrackingActivityUseCase.execute(startDate: startDate, mountain: mountain, scheduleNotification: false)
 
                         // 측정 중인 산 정보 복원
                         updateMountainLabelsSubject.send((mountain.name, mountain.address))
@@ -301,7 +301,7 @@ final class MeasureViewModel: BaseViewModel {
                 guard let mountain = self.selectedMountain else { return }
 
                 trackingStatusSubject.send(true)
-                self.startTrackingActivityUseCase.execute(startDate: Date(), mountain: mountain)
+                self.startTrackingActivityUseCase.execute(startDate: Date(), mountain: mountain, scheduleNotification: true)
             }
             .store(in: &cancellables)
 

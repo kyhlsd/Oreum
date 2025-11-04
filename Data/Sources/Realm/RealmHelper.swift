@@ -2,7 +2,7 @@
 //  RealmHelper.swift
 //  Data
 //
-//  Created by Claude on 10/25/25.
+//  Created by 김영훈 on 10/25/25.
 //
 
 import Foundation
