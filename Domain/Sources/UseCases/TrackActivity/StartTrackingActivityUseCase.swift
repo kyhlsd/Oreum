@@ -10,7 +10,7 @@ import UserNotifications
 import WidgetKit
 
 public protocol StartTrackingActivityUseCase {
-    func execute(startDate: Date, mountain: Mountain)
+    func execute(startDate: Date, mountain: Mountain, scheduleNotification: Bool)
     func getStartDate() -> Date?
 }
 
@@ -21,9 +21,11 @@ public final class StartTrackingActivityUseCaseImpl: StartTrackingActivityUseCas
         self.repository = repository
     }
 
-    public func execute(startDate: Date, mountain: Mountain) {
+    public func execute(startDate: Date, mountain: Mountain, scheduleNotification: Bool = true) {
         repository.startTracking(startDate: startDate, mountain: mountain)
-        scheduleClimbingNotifications()
+        if scheduleNotification {
+            scheduleClimbingNotifications()
+        }
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -34,6 +36,9 @@ public final class StartTrackingActivityUseCaseImpl: StartTrackingActivityUseCas
     // 측정 중 알림 스케줄링
     private func scheduleClimbingNotifications() {
         let center = UNUserNotificationCenter.current()
+
+        // 기존 알림 삭제
+        cancelClimbingNotifications()
 
         // 알림 권한 요청
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
@@ -63,5 +68,14 @@ public final class StartTrackingActivityUseCaseImpl: StartTrackingActivityUseCas
                 center.add(request)
             }
         }
+    }
+
+    // 기존 알림 취소
+    private func cancelClimbingNotifications() {
+        let center = UNUserNotificationCenter.current()
+
+        // 3~12시간 알림 모두 취소
+        let identifiers = (3...12).map { "climbing_reminder_\($0)" }
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
     }
 }
