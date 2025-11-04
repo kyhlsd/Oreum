@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Core
 
 public struct Mountain: Hashable, Codable {
     public let id: Int
@@ -20,6 +21,16 @@ public struct Mountain: Hashable, Codable {
         self.address = address
         self.height = height
         self.isFamous = isFamous
+    }
+}
+
+extension Mountain {
+    public static func fromDTO(_ dto: MountainDTO) -> Mountain {
+        return Mountain(id: dto.id, name: dto.name, address: dto.address, height: dto.height, isFamous: dto.isFamous)
+    }
+    
+    public func toDTO() -> MountainDTO {
+        return MountainDTO(id: id, name: name, address: address, height: height, isFamous: isFamous)
     }
 }
 
