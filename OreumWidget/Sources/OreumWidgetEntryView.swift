@@ -15,7 +15,7 @@ struct OreumWidgetEntryView: View {
     var body: some View {
         switch entry.measurementState {
         case .measuring(let mountainName, let startDate):
-            MeasuringView(mountainName: mountainName, startDate: startDate)
+            MeasuringView(mountainName: mountainName, startDate: startDate, currentDate: entry.date)
         case .idle:
             IdleView()
         case .placeholder:
@@ -28,13 +28,14 @@ struct OreumWidgetEntryView: View {
 struct MeasuringView: View {
     let mountainName: String
     let startDate: TimeInterval
+    let currentDate: Date
     private let primaryColor = Color.init(red: 45/225, green: 88/225, blue: 50/255)
 
     private var elapsedTime: String {
-        let interval = Date().timeIntervalSince1970 - startDate
+        let interval = currentDate.timeIntervalSince1970 - startDate
         let hours = Int(interval) / 3600
         let minutes = Int(interval) / 60 % 60
-        
+
         if hours > 0 {
             return "\(hours)시간 \(minutes)분"
         } else {
