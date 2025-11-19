@@ -167,7 +167,7 @@ let project = Project(
                         ]
                     ),
                     sources: ["OreumWidget/Sources/**"],
-                    resources: ["OreumWidget/Resources/**"],
+                    resources: [],
                     entitlements: .file(path: "OreumWidget/OreumWidget.entitlements"),
                     dependencies: [
                         .target(name: "Core")
