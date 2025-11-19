@@ -2,7 +2,7 @@
 //  ClusterCalloutView.swift
 //  Presentation
 //
-//  Created by Claude on 10/11/25.
+//  Created by 김영훈 on 10/11/25.
 //
 
 import UIKit

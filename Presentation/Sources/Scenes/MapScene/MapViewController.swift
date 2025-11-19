@@ -31,7 +31,6 @@ final class MapViewController: UIViewController, BaseViewController, NetworkStat
     private let annotationManager = MapAnnotationManager()
     private let annotationViewBuilder = MapAnnotationViewBuilder()
     private let regionDidChangeSubject = PassthroughSubject<Void, Never>()
-    private var lastAltitude: CLLocationDistance = 0
 
     init(viewModel: MapViewModel) {
         self.viewModel = viewModel
@@ -227,17 +226,7 @@ extension MapViewController: UICollectionViewDelegate {
 extension MapViewController: MKMapViewDelegate {
 
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        let currentAltitude = mapView.camera.altitude
-
-        // altitude 변화가 있을 때만 재클러스터링
-        let altitudeDifference = abs(currentAltitude - lastAltitude)
-        let altitudeChangeThreshold = currentAltitude * 0.1 // 10% 변화
-
-        // 첫 로드이거나 altitude가 충분히 변했을 때만
-        if lastAltitude == 0 || altitudeDifference >= altitudeChangeThreshold {
-            lastAltitude = currentAltitude
-            regionDidChangeSubject.send(())
-        }
+        regionDidChangeSubject.send(())
     }
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {

@@ -9,6 +9,7 @@ import Foundation
 import HealthKit
 import Combine
 import Domain
+import Core
 
 public final class HealthKitTrackActivityRepositoryImpl: TrackActivityRepository {
 
@@ -16,6 +17,7 @@ public final class HealthKitTrackActivityRepositoryImpl: TrackActivityRepository
     private var stepObserverQuery: HKObserverQuery?
     private var distanceObserverQuery: HKObserverQuery?
     private let healthKitUpdateSubject = PassthroughSubject<Void, Never>()
+    private let userDefault = UserDefaultsManager.shared
 
     public init() {}
 
@@ -90,8 +92,8 @@ public final class HealthKitTrackActivityRepositoryImpl: TrackActivityRepository
 
     // MARK: - Start/Stop Tracking
     public func startTracking(startDate: Date, mountain: Mountain) {
-        UserDefaultHelper.startDate = startDate.timeIntervalSince1970
-        UserDefaultHelper.climbingMountain = mountain
+        userDefault.startDate = startDate.timeIntervalSince1970
+        userDefault.climbingMountain = mountain.toDTO()
         startObservingHealthKitChanges()
     }
 
@@ -157,7 +159,7 @@ public final class HealthKitTrackActivityRepositoryImpl: TrackActivityRepository
                 return
             }
 
-            guard let startTimestamp = UserDefaultHelper.startDate, startTimestamp > 0 else {
+            guard let startTimestamp = userDefault.startDate, startTimestamp > 0 else {
                 promise(.success(.failure(HealthKitError.noTrackingSession)))
                 return
             }
@@ -216,7 +218,7 @@ public final class HealthKitTrackActivityRepositoryImpl: TrackActivityRepository
                 return
             }
 
-            guard let startTimestamp = UserDefaultHelper.startDate, startTimestamp > 0 else {
+            guard let startTimestamp = userDefault.startDate, startTimestamp > 0 else {
                 promise(.success(.failure(HealthKitError.noTrackingSession)))
                 return
             }
@@ -270,24 +272,28 @@ public final class HealthKitTrackActivityRepositoryImpl: TrackActivityRepository
 
     // MARK: - Tracking Status
     public func isTracking() -> AnyPublisher<Bool, Never> {
-        let isTracking = (UserDefaultHelper.startDate ?? 0) > 0
+        let isTracking = (userDefault.startDate ?? 0) > 0
         return Just(isTracking).eraseToAnyPublisher()
     }
 
     public func clearTrackingData() {
-        UserDefaultHelper.clearStartDate()
-        UserDefaultHelper.clearClimbingMountain()
+        userDefault.clearStartDate()
+        userDefault.clearClimbingMountain()
     }
 
     public func getStartDate() -> Date? {
-        guard let startTimestamp = UserDefaultHelper.startDate, startTimestamp > 0 else {
+        guard let startTimestamp = userDefault.startDate, startTimestamp > 0 else {
             return nil
         }
         return Date(timeIntervalSince1970: startTimestamp)
     }
 
     public func getClimbingMountain() -> Mountain? {
-        return UserDefaultHelper.climbingMountain
+        if let dto = userDefault.climbingMountain {
+            return Mountain.fromDTO(dto)
+        } else {
+            return nil
+        }
     }
 
     public var dataUpdatePublisher: AnyPublisher<Void, Never> {

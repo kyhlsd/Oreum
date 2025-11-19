@@ -2,7 +2,7 @@ import ProjectDescription
 
 let iOSVersion = "16.0"
 let teamID = "4QUWH828P3"
-let appVersion = "1.3.0"
+let appVersion = "1.4.0"
 let buildNumber = "1"
 
 let project = Project(
@@ -26,15 +26,6 @@ let project = Project(
                                     "UISceneConfigurationName": "Default Configuration",
                                     "UISceneDelegateClassName": "$(PRODUCT_MODULE_NAME).SceneDelegate"
                                 ],
-                            ]
-                        ]
-                    ],
-                    "NSAppTransportSecurity": [
-                        "NSExceptionDomains": [
-                            "forest.go.kr": [
-                                "NSIncludesSubdomains": true,
-                                "NSTemporaryExceptionAllowsInsecureHTTPLoads": true,
-                                "NSTemporaryExceptionMinimumTLSVersion": "TLSv1.0"
                             ]
                         ]
                     ],
@@ -73,6 +64,7 @@ let project = Project(
                 .target(name: "Domain"),
                 .target(name: "Data"),
                 .target(name: "Core"),
+                .target(name: "OreumWidgetExtension"),
                 .external(name: "FirebaseAnalytics"),
                 .external(name: "FirebaseCrashlytics")
             ],
@@ -108,7 +100,9 @@ let project = Project(
                     bundleId: "com.kyh.Domain",
                     deploymentTargets: .iOS(iOSVersion),
                     sources: ["Domain/Sources/**"],
-                    dependencies: [],
+                    dependencies: [
+                        .target(name: "Core")
+                    ],
                     settings: .settings(
                         base: [
                             "DEVELOPMENT_TEAM": .string(teamID)
@@ -151,6 +145,32 @@ let project = Project(
                         .external(name: "Kingfisher"),
                         .external(name: "SnapKit"),
                         .external(name: "Toast")
+                    ],
+                    settings: .settings(
+                        base: [
+                            "DEVELOPMENT_TEAM": .string(teamID)
+                        ]
+                    )
+                   ),
+
+            .target(name: "OreumWidgetExtension",
+                    destinations: [.iPhone],
+                    product: .appExtension,
+                    bundleId: "com.kyh.Oreum.OreumWidget",
+                    deploymentTargets: .iOS(iOSVersion),
+                    infoPlist: .extendingDefault(
+                        with: [
+                            "CFBundleDisplayName": "오름 위젯",
+                            "NSExtension": [
+                                "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
+                            ]
+                        ]
+                    ),
+                    sources: ["OreumWidget/Sources/**"],
+                    resources: [],
+                    entitlements: .file(path: "OreumWidget/OreumWidget.entitlements"),
+                    dependencies: [
+                        .target(name: "Core")
                     ],
                     settings: .settings(
                         base: [
