@@ -20,18 +20,28 @@ Oreum 프로젝트의 CI/CD 파이프라인은 fastlane과 GitHub Actions를 사
 ### Deploy 워크플로우 (`.github/workflows/deploy.yml`)
 - **트리거**: main 브랜치에 push, 수동 실행
 - **작업**:
-  - 빌드 번호 자동 증가
   - TestFlight에 자동 배포
 
 ## 🛠 로컬 설정
 
-### 1. Ruby 및 Bundler 설치
+### 1. Ruby 설정 (rbenv 사용)
 ```bash
-# Homebrew로 Ruby 설치 (선택사항)
-brew install ruby
+# rbenv 설치
+brew install rbenv ruby-build
 
-# Bundler 설치
-gem install bundler
+# rbenv 초기화 (zshrc에 추가)
+echo 'eval "$(rbenv init - zsh)"' >> ~/.zshrc
+source ~/.zshrc
+
+# Ruby 3.2.2 설치
+rbenv install 3.2.2
+
+# 프로젝트 디렉토리에서 Ruby 버전 설정
+cd /path/to/Oreum
+rbenv local 3.2.2
+
+# 버전 확인
+ruby -v  # ruby 3.2.2 출력 확인
 ```
 
 ### 2. 의존성 설치
@@ -141,17 +151,17 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 
 **실행 내용:**
 1. Tuist로 프로젝트 생성
-2. 빌드 번호 자동 증가
-3. 앱 빌드
-4. TestFlight 업로드
-5. 버전 변경사항 커밋
+2. 앱 빌드
+3. TestFlight 업로드
 
 ## 📱 Fastlane 레인
 
 ### `test`
 - Tuist로 프로젝트 생성
-- 유닛 테스트 실행
+- 유닛 테스트 실행 (Domain 스킴 사용)
 - 코드 커버리지 측정
+
+> **참고**: DomainTests 타겟의 테스트를 실행하기 위해 Domain 스킴을 사용합니다.
 
 ### `build`
 - Tuist로 프로젝트 생성
@@ -159,20 +169,35 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 
 ### `beta`
 - Tuist로 프로젝트 생성
-- 빌드 번호 자동 증가
 - 앱 빌드 및 서명
 - TestFlight 업로드
-- 버전 변경사항 커밋
+
+> **참고**: 빌드 번호는 `Project.swift` 파일에서 수동으로 관리합니다.
+> 배포 전에 `let buildNumber = "X"` 값을 직접 변경하세요.
 
 ## 🚨 주의사항
 
-1. **Apple ID**: Fastfile의 `apple_id` 값을 실제 Apple ID로 변경하세요
-2. **Team ID**: Project.swift의 `teamID`가 올바른지 확인하세요
-3. **Bundle ID**: `com.kyh.Oreum`이 맞는지 확인하세요
-4. **인증서**: Distribution 인증서와 App Store 프로비저닝 프로파일이 필요합니다
-5. **Match 사용**: 팀에서 인증서를 공유하려면 `match` 사용을 권장합니다
+1. **Tuist 프로젝트**: 이 프로젝트는 Tuist로 관리되므로 `.xcodeproj`와 `.xcworkspace` 파일은 `.gitignore`에 포함됩니다
+2. **빌드 번호**: `Project.swift` 파일에서 수동으로 관리합니다. TestFlight 배포 전에 빌드 번호를 증가시키세요
+3. **Apple ID**: `fastlane/Appfile`의 `apple_id` 값이 올바른지 확인하세요
+4. **Team ID**: `Project.swift`의 `teamID`가 올바른지 확인하세요
+5. **Bundle ID**: `com.kyh.Oreum`이 맞는지 확인하세요
+6. **인증서**: Distribution 인증서와 App Store 프로비저닝 프로파일이 필요합니다
+7. **Match 사용**: 팀에서 인증서를 공유하려면 `match` 사용을 권장합니다
 
 ## 🔧 트러블슈팅
+
+### Ruby 버전 오류
+```bash
+# Ruby 버전 확인
+ruby -v
+
+# 시스템 Ruby를 사용 중이면 rbenv 다시 초기화
+eval "$(rbenv init - zsh)"
+ruby -v  # 3.2.2 확인
+
+# 또는 새 터미널 창 열기
+```
 
 ### 테스트 실패
 ```bash
