@@ -19,6 +19,7 @@ final class FetchWeeklyForecastUseCaseTests: XCTestCase {
     override func setUp() {
         super.setUp()
         dummyRepository = DummyForecastRepositoryImpl()
+        dummyRepository.useMockData = true
         sut = FetchWeeklyForecastUseCaseImpl(repository: dummyRepository)
         cancellables = []
     }

@@ -19,6 +19,7 @@ final class GetAverageActivityStatsUseCaseTests: XCTestCase {
     override func setUp() {
         super.setUp()
         dummyRepository = DummyClimbRecordRepositoryImpl()
+        dummyRepository.useMockData = true
         sut = GetAverageActivityStatsUseCaseImpl(repository: dummyRepository)
         cancellables = []
     }

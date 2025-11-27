@@ -19,17 +19,18 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
     // Test properties
     var mockRecords: [ClimbRecord] = []
     var shouldReturnError = false
+    var useMockData = false
 
     init() {}
-    
+
     public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<Result<[ClimbRecord], Error>, Never> {
         if shouldReturnError {
             return Just(.failure(NSError(domain: "Test", code: -1, userInfo: nil)))
                 .eraseToAnyPublisher()
         }
 
-        // Use mockRecords if available, otherwise use dummy data
-        var records = mockRecords.isEmpty ? dummyClimbRecords : mockRecords
+        // Use mockRecords if useMockData flag is set, otherwise use dummy data
+        var records = useMockData ? mockRecords : dummyClimbRecords
 
         if !keyword.isEmpty {
             let ids = Mountain.dummy.filter { $0.name.contains(keyword)}.map { $0.id }

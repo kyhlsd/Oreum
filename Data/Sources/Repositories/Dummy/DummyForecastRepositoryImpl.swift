@@ -14,6 +14,7 @@ public final class DummyForecastRepositoryImpl: ForecastRepository {
     // Test properties
     var mockForecastItems: [ForecastItem] = []
     var shouldReturnError = false
+    var useMockData = false
     var lastNx: Int?
     var lastNy: Int?
 
@@ -28,8 +29,8 @@ public final class DummyForecastRepositoryImpl: ForecastRepository {
                 .eraseToAnyPublisher()
         }
 
-        // Use mockForecastItems if available, otherwise generate random data
-        if !mockForecastItems.isEmpty {
+        // Use mockForecastItems if useMockData flag is set
+        if useMockData {
             return Just(.success(mockForecastItems))
                 .eraseToAnyPublisher()
         }

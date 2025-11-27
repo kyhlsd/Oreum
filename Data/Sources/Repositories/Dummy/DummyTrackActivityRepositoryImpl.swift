@@ -21,6 +21,7 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
     // Test properties
     var mockLogs: [ActivityLog] = []
     var shouldReturnError = false
+    var useMockData = false
 
     init() {}
 
@@ -47,8 +48,8 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
                 .eraseToAnyPublisher()
         }
 
-        // Use mockLogs if available, otherwise generate random data
-        if !mockLogs.isEmpty {
+        // Use mockLogs if useMockData flag is set
+        if useMockData {
             return Just(.success(mockLogs))
                 .eraseToAnyPublisher()
         }

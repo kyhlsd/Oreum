@@ -19,6 +19,7 @@ final class GetActivityLogsUseCaseTests: XCTestCase {
     override func setUp() {
         super.setUp()
         dummyRepository = DummyTrackActivityRepositoryImpl()
+        dummyRepository.useMockData = true
         sut = GetActivityLogsUseCaseImpl(repository: dummyRepository)
         cancellables = []
     }
