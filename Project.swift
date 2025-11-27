@@ -109,6 +109,23 @@ let project = Project(
                         ]
                     )
                    ),
+
+            .target(name: "DomainTests",
+                    destinations: [.iPhone],
+                    product: .unitTests,
+                    bundleId: "com.kyh.DomainTests",
+                    deploymentTargets: .iOS(iOSVersion),
+                    sources: ["DomainTests/**"],
+                    dependencies: [
+                        .target(name: "Domain"),
+                        .target(name: "Data")
+                    ],
+                    settings: .settings(
+                        base: [
+                            "DEVELOPMENT_TEAM": .string(teamID)
+                        ]
+                    )
+                   ),
         
             .target(name: "Data",
                     destinations: [.iPhone],

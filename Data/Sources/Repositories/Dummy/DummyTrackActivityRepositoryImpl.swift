@@ -18,7 +18,11 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
     private let dataUpdateSubject = PassthroughSubject<Void, Never>()
     private var timer: Timer?
 
-    private init() {}
+    // Test properties
+    var mockLogs: [ActivityLog] = []
+    var shouldReturnError = false
+
+    init() {}
 
     public func requestAuthorization() -> AnyPublisher<Result<Bool, Error>, Never> {
         return Just(.success(true))
@@ -38,6 +42,17 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
     }
 
     public func getActivityLogs() -> AnyPublisher<Result<[ActivityLog], Error>, Never> {
+        if shouldReturnError {
+            return Just(.failure(NSError(domain: "Test", code: -1, userInfo: nil)))
+                .eraseToAnyPublisher()
+        }
+
+        // Use mockLogs if available, otherwise generate random data
+        if !mockLogs.isEmpty {
+            return Just(.success(mockLogs))
+                .eraseToAnyPublisher()
+        }
+
         guard let startDate = self.startDate else {
             return Just(.failure(NSError(domain: "No tracking session found", code: -1)))
                 .eraseToAnyPublisher()

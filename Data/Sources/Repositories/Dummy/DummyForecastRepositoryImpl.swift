@@ -11,9 +11,29 @@ import Domain
 
 public final class DummyForecastRepositoryImpl: ForecastRepository {
 
-    public init() {}
+    // Test properties
+    var mockForecastItems: [ForecastItem] = []
+    var shouldReturnError = false
+    var lastNx: Int?
+    var lastNy: Int?
+
+    init() {}
 
     public func fetchShortTermForecast(nx: Int, ny: Int) -> AnyPublisher<Result<[ForecastItem], Error>, Never> {
+        lastNx = nx
+        lastNy = ny
+
+        if shouldReturnError {
+            return Just(.failure(NSError(domain: "Test", code: -1, userInfo: nil)))
+                .eraseToAnyPublisher()
+        }
+
+        // Use mockForecastItems if available, otherwise generate random data
+        if !mockForecastItems.isEmpty {
+            return Just(.success(mockForecastItems))
+                .eraseToAnyPublisher()
+        }
+
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd"
 

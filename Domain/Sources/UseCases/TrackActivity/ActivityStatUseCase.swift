@@ -56,13 +56,8 @@ public final class ActivityStatUseCaseImpl: ActivityStatUseCase {
                 }
             }
         }
-        
-        let restMinutes = totalTimeMinutes - exerciseMinutes
 
-        // 로그가 초기값만 있는 경우 전체 시간을 운동 시간으로 계산
-        if logsToProcess.isEmpty && totalTimeMinutes > 0 {
-            exerciseMinutes = totalTimeMinutes
-        }
+        let restMinutes = totalTimeMinutes - exerciseMinutes
 
         return ActivityStat(
             totalTimeMinutes: totalTimeMinutes,
