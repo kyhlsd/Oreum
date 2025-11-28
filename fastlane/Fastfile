@@ -44,10 +44,19 @@ platform :ios do
     oreum_profile_uuid = ENV['OREUM_PROFILE_UUID']
     widget_profile_uuid = ENV['WIDGET_PROFILE_UUID']
 
+    # Setup App Store Connect API Key
+    api_key = app_store_connect_api_key(
+      key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
+      issuer_id: ENV['APP_STORE_CONNECT_API_ISSUER_ID'],
+      key_filepath: "~/.appstoreconnect/private_keys/AuthKey_#{ENV['APP_STORE_CONNECT_API_KEY_ID']}.p8",
+      in_house: false
+    )
+
     # Get latest build number from App Store Connect and increment
     latest_build_number = app_store_build_number(
       app_identifier: "com.kyh.Oreum",
-      live: false
+      live: false,
+      api_key: api_key
     )
     new_build_number = latest_build_number + 1
 
@@ -96,7 +105,8 @@ platform :ios do
 
     upload_to_testflight(
       skip_waiting_for_build_processing: true,
-      apple_id: "6753770017"
+      apple_id: "6753770017",
+      api_key: api_key
     )
   end
 end
