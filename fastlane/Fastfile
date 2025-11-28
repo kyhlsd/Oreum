@@ -44,6 +44,16 @@ platform :ios do
     oreum_profile_uuid = ENV['OREUM_PROFILE_UUID']
     widget_profile_uuid = ENV['WIDGET_PROFILE_UUID']
 
+    # Get latest build number from App Store Connect and increment
+    latest_build_number = app_store_build_number(
+      app_identifier: "com.kyh.Oreum",
+      live: false
+    )
+    new_build_number = latest_build_number + 1
+
+    UI.message("Latest build number: #{latest_build_number}")
+    UI.message("New build number: #{new_build_number}")
+
     # Update code signing settings for each target
     update_code_signing_settings(
       use_automatic_signing: false,
@@ -72,6 +82,7 @@ platform :ios do
       configuration: "Release",
       export_method: "app-store",
       clean: true,
+      xcargs: "CURRENT_PROJECT_VERSION=#{new_build_number}",
       export_options: {
         method: "app-store",
 	teamID: "4QUWH828P3",
