@@ -47,6 +47,7 @@ platform :ios do
       configuration: "Release",
       export_method: "app-store",
       clean: true,
+      xcargs: "PROVISIONING_PROFILE_SPECIFIER='#{ENV["MAIN_PROFILE_UUID"]}' PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]='#{ENV["MAIN_PROFILE_UUID"]}' CODE_SIGN_STYLE=Manual",
       export_options: {
         method: "app-store",
         teamID: "4QUWH828P3",
