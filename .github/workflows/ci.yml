@@ -23,6 +23,9 @@ jobs:
       - name: Install Tuist
         run: |
           curl -Ls https://get.tuist.io | bash
+          echo "Checking tuist installation..."
+          ls -la $HOME/.local/bin/ || echo ".local/bin not found"
+          find $HOME -name "tuist" 2>/dev/null || echo "tuist binary not found"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Setup Ruby
@@ -79,6 +82,9 @@ jobs:
       - name: Install Tuist
         run: |
           curl -Ls https://get.tuist.io | bash
+          echo "Checking tuist installation..."
+          ls -la $HOME/.local/bin/ || echo ".local/bin not found"
+          find $HOME -name "tuist" 2>/dev/null || echo "tuist binary not found"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Setup Ruby
