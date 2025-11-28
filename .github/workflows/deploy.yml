@@ -81,16 +81,21 @@ jobs:
           # Clean up
           rm "$CERTIFICATE_PATH"
 
-      - name: Save Provisioning Profiles as Files
+      - name: Install Provisioning Profiles
         env:
           PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
           WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
         run: |
-          # Save profiles to fastlane directory
-          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > fastlane/Oreum.mobileprovision
-          echo "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > fastlane/OreumWidget.mobileprovision
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
 
-          echo "Saved provisioning profiles to fastlane directory"
+          # Decode and install main app profile
+          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Oreum.mobileprovision
+
+          # Decode and install widget profile
+          echo "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/OreumWidget.mobileprovision
+
+          echo "Installed provisioning profiles"
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Deploy to TestFlight
         env:
