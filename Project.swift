@@ -80,8 +80,7 @@ let project = Project(
                 configurations: [
                     .release(name: .release, settings: [
                         "CODE_SIGN_STYLE": "Manual",
-                        "CODE_SIGN_IDENTITY": "Apple Distribution",
-                        "PROVISIONING_PROFILE_SPECIFIER": ""
+                        "CODE_SIGN_IDENTITY": "Apple Distribution"
                     ])
                 ]
             )
@@ -203,8 +202,7 @@ let project = Project(
                         configurations: [
                             .release(name: .release, settings: [
                                 "CODE_SIGN_STYLE": "Manual",
-                                "CODE_SIGN_IDENTITY": "Apple Distribution",
-                                "PROVISIONING_PROFILE_SPECIFIER": ""
+                                "CODE_SIGN_IDENTITY": "Apple Distribution"
                             ])
                         ]
                     )
