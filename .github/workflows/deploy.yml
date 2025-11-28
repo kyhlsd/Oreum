@@ -81,30 +81,16 @@ jobs:
           # Clean up
           rm "$CERTIFICATE_PATH"
 
-      - name: Import Provisioning Profiles
+      - name: Save Provisioning Profiles as Files
         env:
           PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
           WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
         run: |
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          # Save profiles to fastlane directory
+          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > fastlane/Oreum.mobileprovision
+          echo "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > fastlane/OreumWidget.mobileprovision
 
-          # Import main app provisioning profile
-          MAIN_PROFILE_PATH="$RUNNER_TEMP/main_app.mobileprovision"
-          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$MAIN_PROFILE_PATH"
-          MAIN_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< $(security cms -D -i "$MAIN_PROFILE_PATH"))
-          cp "$MAIN_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/${MAIN_UUID}.mobileprovision
-          echo "Installed main app provisioning profile with UUID: $MAIN_UUID"
-
-          # Import widget provisioning profile
-          WIDGET_PROFILE_PATH="$RUNNER_TEMP/widget.mobileprovision"
-          echo "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$WIDGET_PROFILE_PATH"
-          WIDGET_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< $(security cms -D -i "$WIDGET_PROFILE_PATH"))
-          cp "$WIDGET_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/${WIDGET_UUID}.mobileprovision
-          echo "Installed widget provisioning profile with UUID: $WIDGET_UUID"
-
-          # Export UUIDs as environment variables for fastlane
-          echo "MAIN_PROFILE_UUID=$MAIN_UUID" >> $GITHUB_ENV
-          echo "WIDGET_PROFILE_UUID=$WIDGET_UUID" >> $GITHUB_ENV
+          echo "Saved provisioning profiles to fastlane directory"
 
       - name: Deploy to TestFlight
         env:

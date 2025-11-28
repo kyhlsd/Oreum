@@ -40,6 +40,10 @@ platform :ios do
     # Tuist install and generate to create Xcode project
     sh("cd .. && tuist install && tuist generate")
 
+    # Install provisioning profiles
+    install_provisioning_profile(path: "Oreum.mobileprovision")
+    install_provisioning_profile(path: "OreumWidget.mobileprovision")
+
     # Build and upload to TestFlight
     build_app(
       workspace: "Oreum.xcworkspace",
@@ -52,8 +56,8 @@ platform :ios do
         teamID: "4QUWH828P3",
         signingStyle: "manual",
         provisioningProfiles: {
-          "com.kyh.Oreum" => ENV["MAIN_PROFILE_UUID"],
-          "com.kyh.Oreum.OreumWidget" => ENV["WIDGET_PROFILE_UUID"]
+          "com.kyh.Oreum" => "Oreum",
+          "com.kyh.Oreum.OreumWidget" => "OreumWidget"
         }
       }
     )
