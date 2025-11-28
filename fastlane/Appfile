@@ -1,0 +1,9 @@
+# Appfile for Oreum
+
+app_identifier("com.kyh.Oreum")
+apple_id("kmyghn@gmail.com")
+
+team_id("4QUWH828P3")
+
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile
