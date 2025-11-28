@@ -47,7 +47,10 @@ platform :ios do
       configuration: "Release",
       export_method: "app-store",
       clean: true,
-      xcargs: "-allowProvisioningUpdates"
+      export_options: {
+        method: "app-store",
+        teamID: "4QUWH828P3"
+      }
     )
 
     upload_to_testflight(
