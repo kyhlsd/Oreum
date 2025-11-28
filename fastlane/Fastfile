@@ -44,6 +44,23 @@ platform :ios do
     oreum_profile_uuid = ENV['OREUM_PROFILE_UUID']
     widget_profile_uuid = ENV['WIDGET_PROFILE_UUID']
 
+    # Update project with provisioning profiles
+    update_project_provisioning(
+      xcodeproj: "Oreum.xcodeproj",
+      profile: "~/Library/MobileDevice/Provisioning Profiles/#{oreum_profile_uuid}.mobileprovision",
+      target_filter: "Oreum",
+      build_configuration: "Release",
+      code_signing_identity: "Apple Distribution"
+    )
+
+    update_project_provisioning(
+      xcodeproj: "Oreum.xcodeproj",
+      profile: "~/Library/MobileDevice/Provisioning Profiles/#{widget_profile_uuid}.mobileprovision",
+      target_filter: "OreumWidgetExtension",
+      build_configuration: "Release",
+      code_signing_identity: "Apple Distribution"
+    )
+
     # Build and upload to TestFlight
     build_app(
       workspace: "Oreum.xcworkspace",
@@ -51,8 +68,6 @@ platform :ios do
       configuration: "Release",
       export_method: "app-store",
       clean: true,
-      codesigning_identity: "Apple Distribution",
-      xcargs: "CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=4QUWH828P3",
       export_options: {
         method: "app-store",
         teamID: "4QUWH828P3",
