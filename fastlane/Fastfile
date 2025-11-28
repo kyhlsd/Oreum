@@ -23,13 +23,15 @@ platform :ios do
     # Tuist install and generate to create Xcode project
     sh("cd .. && tuist install && tuist generate")
 
-    # Build the app
-    build_app(
+    # Build the app for verification
+    xcodebuild(
       workspace: "Oreum.xcworkspace",
       scheme: "Oreum",
+      configuration: "Debug",
       clean: true,
-      skip_archive: true,
-      skip_codesigning: true
+      build: true,
+      destination: "generic/platform=iOS Simulator",
+      xcargs: "CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO"
     )
   end
 
