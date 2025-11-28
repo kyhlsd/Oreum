@@ -102,6 +102,10 @@ jobs:
           cp "$WIDGET_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/${WIDGET_UUID}.mobileprovision
           echo "Installed widget provisioning profile with UUID: $WIDGET_UUID"
 
+          # Export UUIDs as environment variables for fastlane
+          echo "MAIN_PROFILE_UUID=$MAIN_UUID" >> $GITHUB_ENV
+          echo "WIDGET_PROFILE_UUID=$WIDGET_UUID" >> $GITHUB_ENV
+
       - name: Deploy to TestFlight
         env:
           FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}

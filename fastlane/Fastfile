@@ -49,7 +49,12 @@ platform :ios do
       clean: true,
       export_options: {
         method: "app-store",
-        teamID: "4QUWH828P3"
+        teamID: "4QUWH828P3",
+        signingStyle: "manual",
+        provisioningProfiles: {
+          "com.kyh.Oreum" => ENV["MAIN_PROFILE_UUID"],
+          "com.kyh.Oreum.OreumWidget" => ENV["WIDGET_PROFILE_UUID"]
+        }
       }
     )
 
