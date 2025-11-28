@@ -41,6 +41,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-tuist-
 
+      - name: Create APIInfos.swift
+        run: |
+          echo "${{ secrets.API_INFOS_SWIFT }}" | base64 --decode > Data/Sources/Network/Secrets/APIInfos.swift
+
+      - name: Create GoogleService-Info.plist
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > Oreum/Resources/GoogleService-Info.plist
+
       - name: Setup App Store Connect API Key
         env:
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY }}

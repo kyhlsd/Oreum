@@ -40,6 +40,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-tuist-
 
+      - name: Create APIInfos.swift
+        run: |
+          echo "${{ secrets.API_INFOS_SWIFT }}" | base64 --decode > Data/Sources/Network/Secrets/APIInfos.swift
+
+      - name: Create GoogleService-Info.plist
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > Oreum/Resources/GoogleService-Info.plist
+
       - name: Run Tests
         run: bundle exec fastlane test
 
@@ -82,6 +90,14 @@ jobs:
           key: ${{ runner.os }}-tuist-${{ hashFiles('**/Project.swift') }}
           restore-keys: |
             ${{ runner.os }}-tuist-
+
+      - name: Create APIInfos.swift
+        run: |
+          echo "${{ secrets.API_INFOS_SWIFT }}" | base64 --decode > Data/Sources/Network/Secrets/APIInfos.swift
+
+      - name: Create GoogleService-Info.plist
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > Oreum/Resources/GoogleService-Info.plist
 
       - name: Build App
         run: bundle exec fastlane build

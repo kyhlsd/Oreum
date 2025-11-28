@@ -73,7 +73,25 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 
 ### 필수 Secrets
 
-#### 1. App Store Connect API Key
+#### 1. 앱 필수 파일 (Secret Files)
+
+**API_INFOS_SWIFT**
+- APIInfos.swift 파일 내용 (base64 인코딩)
+- API 키들을 포함하는 Swift 파일
+- 생성 방법:
+  ```bash
+  cat Data/Sources/Network/Secrets/APIInfos.swift | base64
+  ```
+
+**GOOGLE_SERVICE_INFO_PLIST**
+- GoogleService-Info.plist 파일 내용 (base64 인코딩)
+- Firebase 설정 파일
+- 생성 방법:
+  ```bash
+  cat Oreum/Resources/GoogleService-Info.plist | base64
+  ```
+
+#### 2. App Store Connect API Key
 
 **APP_STORE_CONNECT_API_KEY_ID**
 - App Store Connect API Key ID
@@ -96,7 +114,7 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 3. Key Name 입력, Access는 "Admin" 선택
 4. .p8 파일 다운로드 및 Key ID, Issuer ID 저장
 
-#### 2. 인증서 및 프로비저닝 프로파일
+#### 3. 인증서 및 프로비저닝 프로파일
 
 **BUILD_CERTIFICATE_BASE64**
 - Distribution 인증서 (.p12 파일, base64 인코딩)
@@ -123,6 +141,21 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 **FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD**
 - Apple ID 2단계 인증용 앱 전용 암호
 - 생성: [appleid.apple.com](https://appleid.apple.com) → Security → App-Specific Passwords
+
+### Secrets 요약
+
+총 **10개**의 GitHub Secrets가 필요합니다:
+
+1. **API_INFOS_SWIFT** - API 키 파일
+2. **GOOGLE_SERVICE_INFO_PLIST** - Firebase 설정 파일
+3. **APP_STORE_CONNECT_API_KEY_ID** - App Store Connect API Key ID
+4. **APP_STORE_CONNECT_API_ISSUER_ID** - App Store Connect Issuer ID
+5. **APP_STORE_CONNECT_API_KEY** - App Store Connect API Key (base64)
+6. **BUILD_CERTIFICATE_BASE64** - Distribution 인증서 (base64)
+7. **P12_PASSWORD** - 인증서 비밀번호
+8. **PROVISIONING_PROFILE_BASE64** - 프로비저닝 프로파일 (base64)
+9. **KEYCHAIN_PASSWORD** - CI 키체인 비밀번호 (임의 설정)
+10. **FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD** - Apple 앱 전용 암호
 
 ### Secrets 추가 방법
 
