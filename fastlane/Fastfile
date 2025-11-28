@@ -40,6 +40,31 @@ platform :ios do
     # Tuist install and generate to create Xcode project
     sh("cd .. && tuist install && tuist generate")
 
+    # Get provisioning profile UUIDs from environment variables
+    oreum_profile_uuid = ENV['OREUM_PROFILE_UUID']
+    widget_profile_uuid = ENV['WIDGET_PROFILE_UUID']
+
+    # Update code signing settings for each target
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Oreum.xcodeproj",
+      targets: ["Oreum"],
+      code_sign_identity: "Apple Distribution",
+      bundle_identifier: "com.kyh.Oreum",
+      profile_uuid: oreum_profile_uuid,
+      build_configurations: ["Release"]
+    )
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Oreum.xcodeproj",
+      targets: ["OreumWidgetExtension"],
+      code_sign_identity: "Apple Distribution",
+      bundle_identifier: "com.kyh.Oreum.OreumWidget",
+      profile_uuid: widget_profile_uuid,
+      build_configurations: ["Release"]
+    )
+
     # Build and upload to TestFlight
     build_app(
       workspace: "Oreum.xcworkspace",
@@ -49,11 +74,11 @@ platform :ios do
       clean: true,
       export_options: {
         method: "app-store",
+	teamID: "4QUWH828P3",
         signingStyle: "manual",
-        teamID: "4QUWH828P3",
         provisioningProfiles: {
-          "com.kyh.Oreum" => "Oreum",
-          "com.kyh.Oreum.OreumWidget" => "OreumWidget"
+          "com.kyh.Oreum" => oreum_profile_uuid,
+          "com.kyh.Oreum.OreumWidget" => widget_profile_uuid
         }
       }
     )
