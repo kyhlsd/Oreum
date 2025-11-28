@@ -13,16 +13,44 @@ Oreum 프로젝트의 CI/CD 파이프라인은 fastlane과 GitHub Actions를 사
 
 ### CI 워크플로우 (`.github/workflows/ci.yml`)
 - **트리거**: PR 생성/업데이트, main/develop 브랜치에 push
+- **환경**: macOS 14, Xcode 16.2
 - **작업**:
+  - mise를 통한 Tuist 설치 (버전: 4.26.0)
+  - Tuist로 프로젝트 생성
   - 유닛 테스트 실행
-  - 빌드 검증
+  - 빌드 검증 (code signing 없이)
 
 ### Deploy 워크플로우 (`.github/workflows/deploy.yml`)
 - **트리거**: main 브랜치에 push, 수동 실행
+- **환경**: macOS 14, Xcode 16.2
 - **작업**:
+  - mise를 통한 Tuist 설치
+  - 인증서 및 프로비저닝 프로파일 import
+  - 앱 빌드 및 서명
   - TestFlight에 자동 배포
 
 ## 🛠 로컬 설정
+
+### 0. Tuist 설치 (mise 사용)
+```bash
+# mise 설치 (macOS)
+brew install mise
+
+# mise 초기화 (zshrc에 추가)
+echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
+source ~/.zshrc
+
+# 프로젝트 디렉토리로 이동
+cd /path/to/Oreum
+
+# .mise.toml에 정의된 Tuist 자동 설치
+mise install
+
+# Tuist 버전 확인
+tuist version  # 4.26.0 출력 확인
+```
+
+> **참고**: `.mise.toml` 파일이 Tuist 버전을 관리합니다.
 
 ### 1. Ruby 설정 (rbenv 사용)
 ```bash
@@ -116,6 +144,26 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 
 #### 3. 인증서 및 프로비저닝 프로파일
 
+##### 인증서 생성 가이드:
+1. Xcode → Settings → Accounts → Apple ID 선택 → Team 선택 → Manage Certificates
+2. "Apple Distribution" 인증서 생성
+3. Keychain Access 앱에서 인증서를 .p12로 export
+   - "Apple Distribution: Your Name (XXXXXXXXXX)" 인증서 선택
+   - 우클릭 → Export → .p12 형식 선택
+   - 비밀번호 설정 (이게 P12_PASSWORD가 됨)
+
+##### Provisioning Profile 생성 가이드:
+1. [Apple Developer](https://developer.apple.com) → Certificates, Identifiers & Profiles
+2. Profiles → "+" 버튼 → App Store 선택
+3. **메인 앱용** provisioning profile:
+   - App ID: `com.kyh.Oreum` 선택
+   - Certificate: Distribution 인증서 선택
+   - 다운로드
+4. **위젯용** provisioning profile:
+   - App ID: `com.kyh.Oreum.OreumWidget` 선택 (없으면 생성)
+   - Certificate: 동일한 Distribution 인증서 선택
+   - 다운로드
+
 **BUILD_CERTIFICATE_BASE64**
 - Distribution 인증서 (.p12 파일, base64 인코딩)
 - 생성 방법:
@@ -128,10 +176,19 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 - .p12 파일 생성 시 입력한 비밀번호
 
 **PROVISIONING_PROFILE_BASE64**
-- App Store 프로비저닝 프로파일 (base64 인코딩)
+- 메인 앱용 App Store 프로비저닝 프로파일 (base64 인코딩)
+- Bundle ID: `com.kyh.Oreum`
 - 생성 방법:
   ```bash
-  cat YourProfile.mobileprovision | base64
+  cat Oreum_AppStore.mobileprovision | base64
+  ```
+
+**WIDGET_PROVISIONING_PROFILE_BASE64**
+- 위젯용 App Store 프로비저닝 프로파일 (base64 인코딩)
+- Bundle ID: `com.kyh.Oreum.OreumWidget`
+- 생성 방법:
+  ```bash
+  cat OreumWidget_AppStore.mobileprovision | base64
   ```
 
 **KEYCHAIN_PASSWORD**
@@ -144,7 +201,7 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 
 ### Secrets 요약
 
-총 **10개**의 GitHub Secrets가 필요합니다:
+총 **11개**의 GitHub Secrets가 필요합니다:
 
 1. **API_INFOS_SWIFT** - API 키 파일
 2. **GOOGLE_SERVICE_INFO_PLIST** - Firebase 설정 파일
@@ -153,9 +210,10 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 5. **APP_STORE_CONNECT_API_KEY** - App Store Connect API Key (base64)
 6. **BUILD_CERTIFICATE_BASE64** - Distribution 인증서 (base64)
 7. **P12_PASSWORD** - 인증서 비밀번호
-8. **PROVISIONING_PROFILE_BASE64** - 프로비저닝 프로파일 (base64)
-9. **KEYCHAIN_PASSWORD** - CI 키체인 비밀번호 (임의 설정)
-10. **FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD** - Apple 앱 전용 암호
+8. **PROVISIONING_PROFILE_BASE64** - 메인 앱 프로비저닝 프로파일 (base64)
+9. **WIDGET_PROVISIONING_PROFILE_BASE64** - 위젯 프로비저닝 프로파일 (base64)
+10. **KEYCHAIN_PASSWORD** - CI 키체인 비밀번호 (임의 설정)
+11. **FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD** - Apple 앱 전용 암호
 
 ### Secrets 추가 방법
 
@@ -190,20 +248,25 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 ## 📱 Fastlane 레인
 
 ### `test`
-- Tuist로 프로젝트 생성
+- `tuist install && tuist generate`로 프로젝트 생성 및 의존성 설치
 - 유닛 테스트 실행 (Domain 스킴 사용)
 - 코드 커버리지 측정
+- 테스트 대상: DomainTests
 
 > **참고**: DomainTests 타겟의 테스트를 실행하기 위해 Domain 스킴을 사용합니다.
 
 ### `build`
-- Tuist로 프로젝트 생성
-- 앱 빌드 (코드 서명 없이)
+- `tuist install && tuist generate`로 프로젝트 생성 및 의존성 설치
+- iOS Simulator용 빌드 (코드 서명 없이)
+- CI에서 빌드 검증 용도로 사용
+- `xcodebuild` 액션 사용, `CODE_SIGNING_ALLOWED=NO` 설정
 
 ### `beta`
-- Tuist로 프로젝트 생성
-- 앱 빌드 및 서명
+- `tuist install && tuist generate`로 프로젝트 생성 및 의존성 설치
+- Release 구성으로 앱 빌드
+- App Store 방식으로 export
 - TestFlight 업로드
+- 메인 앱과 위젯 모두 서명 및 포함
 
 > **참고**: 빌드 번호는 `Project.swift` 파일에서 수동으로 관리합니다.
 > 배포 전에 `let buildNumber = "X"` 값을 직접 변경하세요.
@@ -211,12 +274,16 @@ TestFlight 자동 배포를 위해 다음 Secrets를 GitHub 저장소에 추가�
 ## 🚨 주의사항
 
 1. **Tuist 프로젝트**: 이 프로젝트는 Tuist로 관리되므로 `.xcodeproj`와 `.xcworkspace` 파일은 `.gitignore`에 포함됩니다
-2. **빌드 번호**: `Project.swift` 파일에서 수동으로 관리합니다. TestFlight 배포 전에 빌드 번호를 증가시키세요
-3. **Apple ID**: `fastlane/Appfile`의 `apple_id` 값이 올바른지 확인하세요
-4. **Team ID**: `Project.swift`의 `teamID`가 올바른지 확인하세요
-5. **Bundle ID**: `com.kyh.Oreum`이 맞는지 확인하세요
-6. **인증서**: Distribution 인증서와 App Store 프로비저닝 프로파일이 필요합니다
-7. **Match 사용**: 팀에서 인증서를 공유하려면 `match` 사용을 권장합니다
+2. **Tuist 버전 관리**: Tuist는 mise를 통해 관리됩니다 (`.mise.toml` 참조)
+3. **빌드 번호**: `Project.swift` 파일에서 수동으로 관리합니다. TestFlight 배포 전에 빌드 번호를 증가시키세요
+4. **Apple ID**: Fastfile의 `upload_to_testflight`에서 사용하는 `apple_id` 값이 올바른지 확인하세요
+5. **Team ID**: `Project.swift`의 `teamID`가 올바른지 확인하세요
+6. **Bundle IDs**:
+   - 메인 앱: `com.kyh.Oreum`
+   - 위젯: `com.kyh.Oreum.OreumWidget`
+7. **인증서 및 프로비저닝**: Distribution 인증서와 **2개**의 App Store 프로비저닝 프로파일(메인 앱, 위젯)이 필요합니다
+8. **Widget Extension**: 위젯이 포함되므로 위젯용 provisioning profile도 별도로 필요합니다
+9. **Xcode 버전**: CI/CD는 Xcode 16.2를 사용합니다 (Swift 6 지원, Firebase 11.x 호환)
 
 ## 🔧 트러블슈팅
 
@@ -251,10 +318,27 @@ tuist generate
 - Xcode에서 Signing & Capabilities 탭 확인
 - 인증서와 프로비저닝 프로파일이 유효한지 확인
 - GitHub Secrets가 올바르게 설정되었는지 확인
+- Widget extension용 provisioning profile이 누락되지 않았는지 확인
+
+### Firebase 빌드 에러 (Swift 6 관련)
+```
+error: cannot find type 'sending' in scope
+error: Access level on imports require '-enable-experimental-feature AccessLevelOnImport'
+```
+- **원인**: Firebase 11.x는 Swift 6 기능 사용
+- **해결**: Xcode 16.x 사용 (CI/CD는 이미 16.2 설정됨)
+- 로컬에서도 Xcode 16 이상 사용 권장
+
+### Tuist 설치 실패 (CI)
+- **원인**: mise가 설치되지 않음
+- **해결**: `jdx/mise-action@v2` 사용하여 자동 설치
+- `.mise.toml`에서 Tuist 버전 관리
 
 ## 📚 참고 자료
 
 - [Fastlane 문서](https://docs.fastlane.tools/)
 - [GitHub Actions 문서](https://docs.github.com/en/actions)
 - [Tuist 문서](https://docs.tuist.io/)
+- [mise 문서](https://mise.jdx.dev/)
 - [App Store Connect API](https://developer.apple.com/documentation/appstoreconnectapi)
+- [Firebase iOS SDK](https://github.com/firebase/firebase-ios-sdk)
