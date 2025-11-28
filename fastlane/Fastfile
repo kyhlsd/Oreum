@@ -6,7 +6,7 @@ platform :ios do
   desc "Run tests"
   lane :test do
     # Tuist generate to create Xcode project
-    sh("export PATH=\"$HOME/.tuist/bin:$PATH\" && cd .. && tuist generate")
+    sh("cd .. && tuist generate")
 
     # Run tests
     run_tests(
@@ -21,7 +21,7 @@ platform :ios do
   desc "Build the app"
   lane :build do
     # Tuist generate to create Xcode project
-    sh("export PATH=\"$HOME/.tuist/bin:$PATH\" && cd .. && tuist generate")
+    sh("cd .. && tuist generate")
 
     # Build the app
     build_app(
@@ -36,7 +36,7 @@ platform :ios do
   desc "Deploy to TestFlight"
   lane :beta do
     # Tuist generate to create Xcode project
-    sh("export PATH=\"$HOME/.tuist/bin:$PATH\" && cd .. && tuist generate")
+    sh("cd .. && tuist generate")
 
     # Match for code signing (or use manual signing)
     # match(

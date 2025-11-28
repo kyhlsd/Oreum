@@ -23,6 +23,7 @@ jobs:
       - name: Install Tuist
         run: |
           curl -Ls https://get.tuist.io | bash
+          echo "$HOME/.tuist/bin" >> $GITHUB_PATH
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -76,6 +77,7 @@ jobs:
       - name: Install Tuist
         run: |
           curl -Ls https://get.tuist.io | bash
+          echo "$HOME/.tuist/bin" >> $GITHUB_PATH
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
