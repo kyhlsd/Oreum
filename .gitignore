@@ -78,3 +78,15 @@ Data/Resources/
 
 ### Firebase ###
 GoogleService-Info.plist
+
+### Fastlane ###
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/README.md
+
+### Ruby ###
+vendor/bundle
+.bundle
+Gemfile.lock

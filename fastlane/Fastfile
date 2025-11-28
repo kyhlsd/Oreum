@@ -1,0 +1,61 @@
+# Fastfile for Oreum
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Run tests"
+  lane :test do
+    # Tuist install and generate to create Xcode project
+    sh("cd .. && tuist install && tuist generate")
+
+    # Run tests
+    run_tests(
+      workspace: "Oreum.xcworkspace",
+      scheme: "Domain",  # Use Domain scheme which includes DomainTests
+      devices: ["iPhone 17 Pro"],
+      clean: true,
+      code_coverage: true
+    )
+  end
+
+  desc "Build the app"
+  lane :build do
+    # Tuist install and generate to create Xcode project
+    sh("cd .. && tuist install && tuist generate")
+
+    # Build the app for verification
+    xcodebuild(
+      workspace: "Oreum.xcworkspace",
+      scheme: "Oreum",
+      configuration: "Debug",
+      clean: true,
+      build: true,
+      destination: "generic/platform=iOS Simulator",
+      xcargs: "CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO"
+    )
+  end
+
+  desc "Deploy to TestFlight"
+  lane :beta do
+    # Tuist install and generate to create Xcode project
+    sh("cd .. && tuist install && tuist generate")
+
+    # Match for code signing (or use manual signing)
+    # match(
+    #   type: "appstore",
+    #   readonly: true
+    # )
+
+    # Build and upload to TestFlight
+    build_app(
+      workspace: "Oreum.xcworkspace",
+      scheme: "Oreum",
+      export_method: "app-store"
+    )
+
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      apple_id: "6737080550"  # Replace with your app's Apple ID
+    )
+  end
+end
