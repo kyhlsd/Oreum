@@ -20,16 +20,8 @@ jobs:
         with:
           xcode-version: '15.4'
 
-      - name: Install Tuist
-        run: |
-          echo "Installing Tuist..."
-          curl -Ls https://get.tuist.io | bash
-          echo "Installation complete. Searching for tuist..."
-          which tuist || echo "tuist not in PATH"
-          find $HOME -name "tuist" -type f 2>/dev/null | head -5
-          ls -la $HOME/.local/bin/ 2>/dev/null || echo ".local/bin not found"
-          ls -la $HOME/.tuist/ 2>/dev/null || echo ".tuist not found"
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install mise
+        uses: jdx/mise-action@v2
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -58,9 +50,7 @@ jobs:
           echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > Oreum/Resources/GoogleService-Info.plist
 
       - name: Run Tests
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          bundle exec fastlane test
+        run: bundle exec fastlane test
 
       - name: Upload Test Results
         if: always()
@@ -82,16 +72,8 @@ jobs:
         with:
           xcode-version: '15.4'
 
-      - name: Install Tuist
-        run: |
-          echo "Installing Tuist..."
-          curl -Ls https://get.tuist.io | bash
-          echo "Installation complete. Searching for tuist..."
-          which tuist || echo "tuist not in PATH"
-          find $HOME -name "tuist" -type f 2>/dev/null | head -5
-          ls -la $HOME/.local/bin/ 2>/dev/null || echo ".local/bin not found"
-          ls -la $HOME/.tuist/ 2>/dev/null || echo ".tuist not found"
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install mise
+        uses: jdx/mise-action@v2
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -120,6 +102,4 @@ jobs:
           echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > Oreum/Resources/GoogleService-Info.plist
 
       - name: Build App
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          bundle exec fastlane build
+        run: bundle exec fastlane build

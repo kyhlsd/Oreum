@@ -21,10 +21,8 @@ jobs:
         with:
           xcode-version: '15.4'
 
-      - name: Install Tuist
-        run: |
-          curl -Ls https://get.tuist.io | bash
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install mise
+        uses: jdx/mise-action@v2
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -89,9 +87,7 @@ jobs:
           FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          bundle exec fastlane beta
+        run: bundle exec fastlane beta
 
       - name: Clean up keychain
         if: always()
