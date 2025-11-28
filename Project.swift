@@ -76,6 +76,13 @@ let project = Project(
                     "DEVELOPMENT_TEAM": .string(teamID),
                     "MARKETING_VERSION": .string(appVersion),
                     "CURRENT_PROJECT_VERSION": .string(buildNumber)
+                ],
+                configurations: [
+                    .release(name: .release, settings: [
+                        "CODE_SIGN_STYLE": "Manual",
+                        "CODE_SIGN_IDENTITY": "Apple Distribution",
+                        "PROVISIONING_PROFILE_SPECIFIER": ""
+                    ])
                 ]
             )
         ),
@@ -192,6 +199,13 @@ let project = Project(
                     settings: .settings(
                         base: [
                             "DEVELOPMENT_TEAM": .string(teamID)
+                        ],
+                        configurations: [
+                            .release(name: .release, settings: [
+                                "CODE_SIGN_STYLE": "Manual",
+                                "CODE_SIGN_IDENTITY": "Apple Distribution",
+                                "PROVISIONING_PROFILE_SPECIFIER": ""
+                            ])
                         ]
                     )
                    )
