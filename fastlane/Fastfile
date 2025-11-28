@@ -47,6 +47,8 @@ platform :ios do
       configuration: "Release",
       export_method: "app-store",
       clean: true,
+      codesigning_identity: "Apple Distribution",
+      xcargs: "CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=4QUWH828P3",
       export_options: {
         method: "app-store",
         teamID: "4QUWH828P3",

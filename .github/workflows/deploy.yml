@@ -89,13 +89,28 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
 
           # Decode and install main app profile
-          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/Oreum.mobileprovision
+          PROFILE_PATH="$RUNNER_TEMP/Oreum.mobileprovision"
+          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+
+          # Extract UUID and copy to correct location
+          UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID raw -o - -)
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "Installed main app profile with UUID: $UUID"
 
           # Decode and install widget profile
-          echo "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/OreumWidget.mobileprovision
+          WIDGET_PROFILE_PATH="$RUNNER_TEMP/OreumWidget.mobileprovision"
+          echo "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$WIDGET_PROFILE_PATH"
 
-          echo "Installed provisioning profiles"
+          # Extract UUID and copy to correct location
+          WIDGET_UUID=$(security cms -D -i "$WIDGET_PROFILE_PATH" | plutil -extract UUID raw -o - -)
+          cp "$WIDGET_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$WIDGET_UUID".mobileprovision
+          echo "Installed widget profile with UUID: $WIDGET_UUID"
+
+          echo "Installed provisioning profiles:"
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
+
+          # Clean up temp files
+          rm "$PROFILE_PATH" "$WIDGET_PROFILE_PATH"
 
       - name: Deploy to TestFlight
         env:
