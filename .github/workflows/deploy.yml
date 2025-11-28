@@ -97,6 +97,9 @@ jobs:
           cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
           echo "Installed main app profile with UUID: $UUID"
 
+          # Export UUID for Fastlane
+          echo "OREUM_PROFILE_UUID=$UUID" >> $GITHUB_ENV
+
           # Decode and install widget profile
           WIDGET_PROFILE_PATH="$RUNNER_TEMP/OreumWidget.mobileprovision"
           echo "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$WIDGET_PROFILE_PATH"
@@ -105,6 +108,9 @@ jobs:
           WIDGET_UUID=$(security cms -D -i "$WIDGET_PROFILE_PATH" | plutil -extract UUID raw -o - -)
           cp "$WIDGET_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$WIDGET_UUID".mobileprovision
           echo "Installed widget profile with UUID: $WIDGET_UUID"
+
+          # Export UUID for Fastlane
+          echo "WIDGET_PROFILE_UUID=$WIDGET_UUID" >> $GITHUB_ENV
 
           echo "Installed provisioning profiles:"
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
