@@ -21,8 +21,10 @@ jobs:
         with:
           xcode-version: '15.4'
 
-      - name: Install Mise and Tuist
-        uses: jdx/mise-action@v2
+      - name: Install Tuist
+        run: |
+          curl -Ls https://get.tuist.io | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
