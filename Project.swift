@@ -2,7 +2,7 @@ import ProjectDescription
 
 let iOSVersion = "16.0"
 let teamID = "4QUWH828P3"
-let appVersion = "1.4.0"
+let appVersion = "1.4.1"
 let buildNumber = "1"
 
 let project = Project(
@@ -76,6 +76,12 @@ let project = Project(
                     "DEVELOPMENT_TEAM": .string(teamID),
                     "MARKETING_VERSION": .string(appVersion),
                     "CURRENT_PROJECT_VERSION": .string(buildNumber)
+                ],
+                configurations: [
+                    .release(name: .release, settings: [
+                        "CODE_SIGN_STYLE": "Manual",
+                        "CODE_SIGN_IDENTITY": "Apple Distribution"
+                    ])
                 ]
             )
         ),
@@ -192,6 +198,12 @@ let project = Project(
                     settings: .settings(
                         base: [
                             "DEVELOPMENT_TEAM": .string(teamID)
+                        ],
+                        configurations: [
+                            .release(name: .release, settings: [
+                                "CODE_SIGN_STYLE": "Manual",
+                                "CODE_SIGN_IDENTITY": "Apple Distribution"
+                            ])
                         ]
                     )
                    )

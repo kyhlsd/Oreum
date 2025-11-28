@@ -81,26 +81,42 @@ jobs:
           # Clean up
           rm "$CERTIFICATE_PATH"
 
-      - name: Import Provisioning Profiles
+      - name: Install Provisioning Profiles
         env:
           PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
           WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
 
-          # Import main app provisioning profile
-          MAIN_PROFILE_PATH="$RUNNER_TEMP/main_app.mobileprovision"
-          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$MAIN_PROFILE_PATH"
-          MAIN_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< $(security cms -D -i "$MAIN_PROFILE_PATH"))
-          cp "$MAIN_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/${MAIN_UUID}.mobileprovision
-          echo "Installed main app provisioning profile with UUID: $MAIN_UUID"
+          # Decode and install main app profile
+          PROFILE_PATH="$RUNNER_TEMP/Oreum.mobileprovision"
+          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
 
-          # Import widget provisioning profile
-          WIDGET_PROFILE_PATH="$RUNNER_TEMP/widget.mobileprovision"
+          # Extract UUID and copy to correct location
+          UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID raw -o - -)
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "Installed main app profile with UUID: $UUID"
+
+          # Export UUID for Fastlane
+          echo "OREUM_PROFILE_UUID=$UUID" >> $GITHUB_ENV
+
+          # Decode and install widget profile
+          WIDGET_PROFILE_PATH="$RUNNER_TEMP/OreumWidget.mobileprovision"
           echo "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$WIDGET_PROFILE_PATH"
-          WIDGET_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< $(security cms -D -i "$WIDGET_PROFILE_PATH"))
-          cp "$WIDGET_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/${WIDGET_UUID}.mobileprovision
-          echo "Installed widget provisioning profile with UUID: $WIDGET_UUID"
+
+          # Extract UUID and copy to correct location
+          WIDGET_UUID=$(security cms -D -i "$WIDGET_PROFILE_PATH" | plutil -extract UUID raw -o - -)
+          cp "$WIDGET_PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$WIDGET_UUID".mobileprovision
+          echo "Installed widget profile with UUID: $WIDGET_UUID"
+
+          # Export UUID for Fastlane
+          echo "WIDGET_PROFILE_UUID=$WIDGET_UUID" >> $GITHUB_ENV
+
+          echo "Installed provisioning profiles:"
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
+
+          # Clean up temp files
+          rm "$PROFILE_PATH" "$WIDGET_PROFILE_PATH"
 
       - name: Deploy to TestFlight
         env:
