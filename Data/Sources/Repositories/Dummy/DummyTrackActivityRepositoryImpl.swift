@@ -23,7 +23,7 @@ public final class DummyTrackActivityRepositoryImpl: TrackActivityRepository {
     var shouldReturnError = false
     var useMockData = false
 
-    init() {}
+    public init() {}
 
     public func requestAuthorization() -> AnyPublisher<Result<Bool, Error>, Never> {
         return Just(.success(true))

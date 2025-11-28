@@ -21,7 +21,7 @@ public final class DummyClimbRecordRepositoryImpl: ClimbRecordRepository {
     var shouldReturnError = false
     var useMockData = false
 
-    init() {}
+    public init() {}
 
     public func fetch(keyword: String, isOnlyBookmarked: Bool) -> AnyPublisher<Result<[ClimbRecord], Error>, Never> {
         if shouldReturnError {

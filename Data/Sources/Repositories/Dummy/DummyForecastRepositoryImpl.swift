@@ -18,7 +18,7 @@ public final class DummyForecastRepositoryImpl: ForecastRepository {
     var lastNx: Int?
     var lastNy: Int?
 
-    init() {}
+    public init() {}
 
     public func fetchShortTermForecast(nx: Int, ny: Int) -> AnyPublisher<Result<[ForecastItem], Error>, Never> {
         lastNx = nx
