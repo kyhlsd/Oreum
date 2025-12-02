@@ -53,10 +53,10 @@
     <th><code>검색/산 정보 보기</code></th>
   </tr>
   <tr>
-    <td><img src="https://github.com/user-attachments/assets/1762f489-375d-4618-bab2-b3ea5321a3e4" alt="등산 기록 관리"></td>
-    <td><img src="https://github.com/user-attachments/assets/2f6702ff-343e-436f-ae56-9bd441e7aa29" alt="기록 측정/통계"></td>
-    <td><img src="https://github.com/user-attachments/assets/271e8ae8-a1f4-4c54-8095-c8dfd655e045" alt="명산 지도"></td>
-    <td><img src="https://github.com/user-attachments/assets/983f0037-04ed-42fe-a890-b89de42ac4ea" alt="검색/산 정보 보기"></td>
+    <td><img src="https://github.com/user-attachments/assets/3ab1071c-5414-4ae0-8568-7e07af5934c8" alt="등산 기록 관리"></td>
+    <td><img src="https://github.com/user-attachments/assets/0c59b980-e1ca-4e7e-855c-c0155386e2f4" alt="기록 측정/통계"></td>
+    <td><img src="https://github.com/user-attachments/assets/1def00b6-ed9a-4a7e-8817-3d40511ecdfa" alt="명산 지도"></td>
+    <td><img src="https://github.com/user-attachments/assets/cf01e639-e6b6-4780-baa9-5a5020253dfb" alt="검색/산 정보 보기"></td>
   </tr>
 </table>
 
