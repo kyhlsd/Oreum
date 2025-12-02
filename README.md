@@ -26,20 +26,33 @@
 
 <br>
   
-## 📌 기술스택
+## 📌 기술스택  
 
+**Architecture**
 - Tuist를 활용해 Clean Architecture 계층을 모듈화하여 의존성 관리 및 빌드 효율 향상
 - MVVM-C와 Combine 기반 구조체 Input/Output 패턴으로 명확한 데이터 흐름과 반응형 프로그래밍 구현
-- DI Container를 적용해 서비스/개발 환경별 Repository 주입 분리 및 테스트 용이성 확보
-- NSCache와 FileManager를 활용해 캐싱을 구현해 데이터 접근 속도 개선 및 네트워크 단절 상황 대응
-- Github Actions와 Fastlane으로 자동화된 테스트와 배포 시스템 구현
-- HealthKit을 활용해 앱이 종료된 상태에서의 데이터 수집, 휴리스틱 필터와 칼만 필터로 데이터 보정
-- WidgetKit으로 측정 중 정보 표기, 측정 지속 여부를 확인하는 Push 알림 구현
-- Alamofire와 Router 패턴으로 API 통신 구조 표준화, NWPathMonitor로 네트워크 상태 감지, 응답 값 기반 에러 처리
+
+**Network**
+- NSCache와 FileManager를 활용한 캐싱 구현으로 데이터 접근 속도 개선 및 네트워크 단절 상황 대응
+- NWPathMonitor로 네트워크 상태를 감지해 단절/재연결 배너를 상단 표기
+- Alamofire와 Router 패턴으로 API 통신 구조 표준화, 응답 값 기반 에러 처리
+
+**Data**
 - Realm을 활용한 1:N 관계형 DB 설계, 양방향 관계 설정으로 데이터 무결성 보장
+- HealthKit을 활용해 앱이 종료된 상태에서의 데이터 수집, 휴리스틱 필터와 칼만 필터로 데이터 보정
+- WidgetKit으로 측정 중 정보 표기
+- 로컬 Push 알림으로 등산 완료 시 앱에서도 측정 종료 유도
 - Quad-Tree 알고리즘 클러스터링으로 지도의 시각적 가독성과 효율성 개선
 - 기기 크기에 따른 이미지 리사이징으로 저장 공간 절감 및 성능 향상
+
+**CI / CD**
+- DI Container를 적용해 서비스/개발 환경별 Repository 주입 분리 및 테스트 용이성 확보
+- Github Actions와 Fastlane으로 자동화된 테스트와 배포 시스템 구현
+
+**Mornitoring**
 - Firebase Analytics와 Crashlytics로 사용자 행동 및 안정성 모니터링
+
+**Frameworks**  
 - UIKit(code base, +SwiftUI), Combine, MapKit, CoreLocation, HealthKit, Charts, NWPathMonitor, Tuist, Realm, Alamofire, Kingfisher, SnapKit, Toast, Firebase Analytics, Firebase Crashlytics
 
 <br>
@@ -61,34 +74,33 @@
 </table>
 
 **등산 기록 관리**
-- Realm DB를 활용하여 등산 기록을 로컬에 저장하고 관리
+- 등산 기록을 저장하고 관리
 - 등산 중 촬영한 사진과 후기, 별점과 측정 정보 등을 함께 저장
-- 디바이스 크기에 따른 이미지 Resizing으로 저장 공간 관리
 - 수정/삭제, 검색/북마크 기능 지원
 
 
 **기록 측정/통계**
-- HealthKit을 활용하여 앱이 실행 중이 아니더라도 걸음 수와 이동 거리 측정
-- Widget으로 등산 측정 진행 상황을 확인
-- 측정 시작 3시간 이후 1시간마다 측정 중인지 확인하는 Push 알림
-- 휴리스틱 필터와 칼만 필터를 적용하여 측정 데이터 보정
+- 등산 중 걸음 수와 이동 거리 측정
+- 실제 측정 기록고 유사하도록 측정 데이터 보정(휴리스틱 필터, 칼만 필터)
 - 운동 시간, 휴식 시간 분석 및 걸음 수, 이동 거리 통계 정보 제공
-- Charts를 활용한 시간 별 걸음 수/이동 거리 시각화
+- 시간 별 걸음 수/이동 거리, 평균 대비 기록을 차트로 시각화
+- 위젯으로 등산 측정 진행 상황을 표기(산 이름, 경과 시간)
+- 측정 시작 3시간 이후 1시간마다 측정 중인지 확인하는 로컬 Push 알림
 
 
 **명산 지도**
-- MapKit을 사용하여 전국의 명산 위치를 지도에 표시
-- Quad-Tree 기반 Clustering
+- 전국의 명산 위치를 지도에 표시
 - 현재 위치 기반으로 주변 산 탐색
-- 지도에서 산을 선택하여 상세 정보 확인 가능
+- 밀집된 영역은 묶어서 개수로 함께 표기
+- 산을 선택하여 상세 정보 확인 가능
 
 
 **검색/산 정보 보기**
 - 전국 산 정보 검색
 - 검색 결과에서 산을 선택하여 상세 페이지로 이동
-- Geocoding과 기상청 API를 연결해 날씨 정보 제공
+- 국토교통부와 기상청 API를 연결해 날씨 정보 제공
 - 산 이름, 위치, 높이 등의 기본 정보 제공
-- Realm DB를 통한 최근 검색어 기능 지원
+- 최근 검색어 기능 지원
 
 <br>
 
