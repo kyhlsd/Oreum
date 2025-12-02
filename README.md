@@ -68,7 +68,7 @@
   <tr>
     <td><img src="https://github.com/user-attachments/assets/3ab1071c-5414-4ae0-8568-7e07af5934c8" alt="등산 기록 관리"></td>
     <td><img src="https://github.com/user-attachments/assets/0c59b980-e1ca-4e7e-855c-c0155386e2f4" alt="기록 측정/통계"></td>
-    <td><img src="https://github.com/user-attachments/assets/1def00b6-ed9a-4a7e-8817-3d40511ecdfa" alt="명산 지도"></td>
+    <td><img src="https://github.com/user-attachments/assets/8e370234-45c3-4acd-91bb-edaf2616d867" alt="명산 지도"></td>
     <td><img src="https://github.com/user-attachments/assets/cf01e639-e6b6-4780-baa9-5a5020253dfb" alt="검색/산 정보 보기"></td>
   </tr>
 </table>
