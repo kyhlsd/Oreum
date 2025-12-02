@@ -1,18 +1,19 @@
 # 오름
 > 한국의 산 정보를 제공하고, 등산 기록을 측정/관리하는 iOS 앱  
 > [앱스토어](https://apps.apple.com/kr/app/%EC%98%A4%EB%A6%84-%EB%82%98%EC%9D%98-%EB%93%B1%EC%82%B0-%EA%B8%B0%EB%A1%9D/id6753770017)  
-> 현재 버전: 1.3.0  
+> 현재 버전: 1.4.1  
 
 <br>
 
 ## 📌 프로젝트 소개
 > 프로젝트 기간: 2025/09/21 ~ 2025/10/09  
+> 업데이트 기간: 2025/10/10 ~ 현재  
 > 개인 프로젝트
 
 **오름**은 등산 기록 및 관리 앱입니다.
-- Restful API를 통해 한국의 산 정보를 제공하고
-- Healthkit을 활용하여 등산 활동을 추적하며
-- Realm DB를 통해 사진, 후기 등의 기록을 관리할 수 있습니다.
+- 한국의 산 정보를 제공하고
+- 등산 활동을 추적해 통계를 제공하며
+- 사진, 후기, 별점으로 등산 기록을 관리할 수 있습니다.
 
 <br>
 
@@ -30,10 +31,13 @@
 - Tuist를 활용해 Clean Architecture 계층을 모듈화하여 의존성 관리 및 빌드 효율 향상
 - MVVM-C와 Combine 기반 구조체 Input/Output 패턴으로 명확한 데이터 흐름과 반응형 프로그래밍 구현
 - DI Container를 적용해 서비스/개발 환경별 Repository 주입 분리 및 테스트 용이성 확보
+- NSCache와 FileManager를 활용해 캐싱을 구현해 데이터 접근 속도 개선 및 네트워크 단절 상황 대응
+- Github Actions와 Fastlane으로 자동화된 테스트와 배포 시스템 구현
+- HealthKit을 활용해 앱이 종료된 상태에서의 데이터 수집
+- WidgetKit으로 측정 중 정보 표기, 측정 지속 여부를 확인하는 Push 알림 구현
 - Alamofire와 Router 패턴으로 API 통신 구조 표준화, NWPathMonitor로 네트워크 상태 감지, 응답 값 기반 에러 처리
 - Realm을 활용한 1:N 관계형 DB 설계, 양방향 관계 설정으로 데이터 무결성 보장
-- 지도 줌 레벨 기반 Grid 클러스터링으로 시각적 가독성 개선
-- HealthKit을 활용해 앱 종료 중에도 데이터 수집
+- 지도 줌 레벨 기반 Quad-Tree 알고리즘 클러스터링으로 시각적 가독성과 효율성 개선
 - 기기 크기에 따른 이미지 리사이징으로 저장 공간 절감 및 성능 향상
 - Firebase Analytics와 Crashlytics로 사용자 행동 및 안정성 모니터링
 - UIKit(code base, +SwiftUI), Combine, MapKit, CoreLocation, HealthKit, Charts, NWPathMonitor, Tuist, Realm, Alamofire, Kingfisher, SnapKit, Toast, Firebase Analytics, Firebase Crashlytics
