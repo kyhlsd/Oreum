@@ -53,7 +53,7 @@
 - Firebase Analytics와 Crashlytics로 사용자 행동 및 안정성 모니터링
 
 **Frameworks**  
-- UIKit(code base, +SwiftUI), Combine, MapKit, CoreLocation, HealthKit, Charts, NWPathMonitor, Tuist, Realm, Alamofire, Kingfisher, SnapKit, Toast, Firebase Analytics, Firebase Crashlytics
+- UIKit(code base, +SwiftUI), Combine, MapKit, CoreLocation, HealthKit, Charts, NWPathMonitor, Tuist, Realm, Alamofire,XMLCoder, Kingfisher, SnapKit, Toast, Firebase Analytics, Firebase Crashlytics
 
 <br>
 
