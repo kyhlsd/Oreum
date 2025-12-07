@@ -14,6 +14,7 @@ protocol ClimbRecordDetailViewModelDelegate: AnyObject {
     func updateReview(id: String, rating: Int, comment: String)
     func deleteRecord(id: String)
     func updateImages(id: String, images: [String])
+    func refreshStats()
 }
 
 final class ClimbRecordDetailViewModel: BaseViewModel {
@@ -495,6 +496,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                 switch result {
                 case .success:
                     delegate?.deleteRecord(id: climbRecord.id)
+                    delegate?.refreshStats()
                     popVCSubject.send(())
                 case .failure(let error):
                     errorMesssageSubject.send(("기록 삭제에 실패했습니다", error.localizedDescription))
@@ -555,15 +557,15 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                         .eraseToAnyPublisher()
                 }
             }
-            .sink { result in
-                if let result = result {
-                    switch result {
-                    case .success:
-                        NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
-                        saveCompletedSubject.send(())
-                    case .failure(let error):
-                        errorMesssageSubject.send(("저장 실패", error.localizedDescription))
-                    }
+            .sink { [weak self] result in
+                guard let self, let result else { return }
+                switch result {
+                case .success:
+                    NotificationCenter.default.post(name: .climbRecordDidSave, object: nil)
+                    delegate?.refreshStats()
+                    saveCompletedSubject.send(())
+                case .failure(let error):
+                    errorMesssageSubject.send(("저장 실패", error.localizedDescription))
                 }
             }
             .store(in: &cancellables)
