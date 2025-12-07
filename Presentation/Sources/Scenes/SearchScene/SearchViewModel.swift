@@ -59,6 +59,7 @@ final class SearchViewModel: BaseViewModel {
         let currentKeywordSubject = CurrentValueSubject<String, Never>("")
         let isLastPageSubject = CurrentValueSubject<Bool, Never>(false)
         let currentMountainsSubject = CurrentValueSubject<[MountainInfo], Never>([])
+        let totalReceivedCountSubject = CurrentValueSubject<Int, Never>(0)
 
         // 최근 검색어 Fetch
         let loadRecentSearchTrigger = PassthroughSubject<Void, Never>()
@@ -134,6 +135,7 @@ final class SearchViewModel: BaseViewModel {
                 currentKeywordSubject.send(keyword)
                 currentPageSubject.send(1)
                 isLastPageSubject.send(false)
+                totalReceivedCountSubject.send(0)
                 isLoadingSubject.send(true)
             })
             .flatMap { [weak self] keyword -> AnyPublisher<Result<MountainResponse, Error>, Never> in
@@ -147,10 +149,18 @@ final class SearchViewModel: BaseViewModel {
                 switch result {
                 case .success(let response):
                     let mountains = response.body.items.item
-                    currentMountainsSubject.send(mountains)
-                    searchResultsSubject.send(mountains)
 
-                    // 마지막 페이지 체크
+                    // API 응답 자체에 중복이 있을 수 있으므로 중복 제거 (순서 유지)
+                    var seenIds = Set<Int>()
+                    let uniqueMountains = mountains.filter { seenIds.insert($0.id).inserted }
+
+                    currentMountainsSubject.send(uniqueMountains)
+                    searchResultsSubject.send(uniqueMountains)
+
+                    // 받은 데이터 개수 업데이트 (중복 포함)
+                    totalReceivedCountSubject.send(mountains.count)
+
+                    // 마지막 페이지 체크 (중복 포함 받은 데이터 개수 기준)
                     if mountains.count >= response.body.totalCount {
                         isLastPageSubject.send(true)
                     }
@@ -158,6 +168,7 @@ final class SearchViewModel: BaseViewModel {
                     errorMessageSubject.send(("검색 실패", error.localizedDescription))
                     currentMountainsSubject.send([])
                     searchResultsSubject.send([])
+                    totalReceivedCountSubject.send(0)
                     isLastPageSubject.send(true)
                 }
             }
@@ -181,13 +192,27 @@ final class SearchViewModel: BaseViewModel {
                 switch result {
                 case .success(let response):
                     let newMountains = response.body.items.item
-                    let allMountains = currentMountainsSubject.value + newMountains
+
+                    // API 응답 자체에 중복이 있을 수 있으므로 먼저 중복 제거 (순서 유지)
+                    var seenIdsInResponse = Set<Int>()
+                    let deduplicatedNewMountains = newMountains.filter { seenIdsInResponse.insert($0.id).inserted }
+
+                    // 기존 데이터와 비교하여 중복 체크
+                    let existingMountains = currentMountainsSubject.value
+                    let existingIds = Set(existingMountains.map { $0.id })
+                    let uniqueNewMountains = deduplicatedNewMountains.filter { !existingIds.contains($0.id) }
+
+                    let allMountains = existingMountains + uniqueNewMountains
                     currentMountainsSubject.send(allMountains)
                     searchResultsSubject.send(allMountains)
                     currentPageSubject.send(currentPageSubject.value + 1)
 
-                    // 마지막 페이지 체크
-                    if allMountains.count >= response.body.totalCount {
+                    // 누적 받은 데이터 개수 업데이트 (API 응답 내 중복 제거 후)
+                    let totalReceived = totalReceivedCountSubject.value + deduplicatedNewMountains.count
+                    totalReceivedCountSubject.send(totalReceived)
+
+                    // 마지막 페이지 체크 (누적 개수 기준 또는 새 데이터가 없는 경우)
+                    if totalReceived >= response.body.totalCount || uniqueNewMountains.isEmpty {
                         isLastPageSubject.send(true)
                     }
                 case .failure(let error):
