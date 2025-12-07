@@ -26,6 +26,7 @@ final class ClimbRecordListViewModel: BaseViewModel {
     private let reloadDataSubject = PassthroughSubject<Void, Never>()
     private lazy var emptyStateTextSubject = CurrentValueSubject<String, Never>(emptyText)
     private let recordUpdatedSubject = PassthroughSubject<String, Never>()
+    private let statSubject = PassthroughSubject<(mountainCount: Int, climbCount: Int, totalHeight: Int), Never>()
 
     init(fetchUseCase: FetchClimbRecordUseCase, toggleBookmarkUseCase: ToggleBookmarkUseCase, fetchRecordImageUseCase: FetchRecordImageUseCase, getRecordStatsUseCase: GetRecordStatsUseCase) {
         self.fetchUseCase = fetchUseCase
@@ -55,7 +56,6 @@ final class ClimbRecordListViewModel: BaseViewModel {
         let isOnlyBookmarkedSubject = CurrentValueSubject<Bool, Never>(isOnlyBookmarked)
         let searchTextSubject = CurrentValueSubject<String, Never>("")
         let errorMessageSubject = PassthroughSubject<(String, String), Never>()
-        let statSubject = PassthroughSubject<(mountainCount: Int, climbCount: Int, totalHeight: Int), Never>()
 
         // viewDidLoad 시 전체 데이터 불러와서 통계와 일지 모두 업데이트
         input.viewDidLoad
@@ -105,18 +105,11 @@ final class ClimbRecordListViewModel: BaseViewModel {
             }
             .store(in: &cancellables)
 
-        // 검색, 북마크 필터, 새 기록 저장 시 일지만 다시 불러오기
+        // 검색, 북마크 필터 변경 시 일지 다시 불러오기
         let searchText = searchTextSubject.eraseToAnyPublisher()
         let isOnlyBookmarked = isOnlyBookmarkedSubject.eraseToAnyPublisher()
-        let climbRecordDidSave = NotificationCenter.default
-            .publisher(for: .climbRecordDidSave)
-            .map { _ in (searchTextSubject.value, isOnlyBookmarkedSubject.value) }
-            .eraseToAnyPublisher()
 
-        Publishers.Merge(
-            Publishers.CombineLatest(searchText, isOnlyBookmarked),
-            climbRecordDidSave
-        )
+        Publishers.CombineLatest(searchText, isOnlyBookmarked)
             .flatMap { [fetchUseCase] keyword, isOnlyBookmarked in
                 fetchUseCase.execute(keyword: keyword, isOnlyBookmarked: isOnlyBookmarked)
                     .map { result -> (Result<[ClimbRecord], Error>, String) in
@@ -139,6 +132,40 @@ final class ClimbRecordListViewModel: BaseViewModel {
                             emptyStateTextSubject.send("검색 결과가 없습니다\n다른 키워드로 검색해보세요")
                         }
                     }
+
+                case .failure(let error):
+                    errorMessageSubject.send(("기록 불러오기 실패", error.localizedDescription))
+                    climbRecordList = []
+                    reloadDataSubject.send(())
+                }
+            }
+            .store(in: &cancellables)
+
+        // 새 기록 저장 시 일지 + 통계 갱신
+        NotificationCenter.default
+            .publisher(for: .climbRecordDidSave)
+            .flatMap { [fetchUseCase] _ in
+                fetchUseCase.execute(keyword: searchTextSubject.value, isOnlyBookmarked: isOnlyBookmarkedSubject.value)
+            }
+            .sink { [weak self] result in
+                guard let self else { return }
+
+                switch result {
+                case .success(let records):
+                    climbRecordList = records
+                    recordImageDatas = [:]
+                    reloadDataSubject.send(())
+
+                    if records.isEmpty {
+                        if searchTextSubject.value.isEmpty {
+                            emptyStateTextSubject.send(emptyText)
+                        } else {
+                            emptyStateTextSubject.send("검색 결과가 없습니다\n다른 키워드로 검색해보세요")
+                        }
+                    }
+
+                    // 통계 갱신 (전체 데이터 기준)
+                    self.refreshStats()
 
                 case .failure(let error):
                     errorMessageSubject.send(("기록 불러오기 실패", error.localizedDescription))
@@ -267,5 +294,23 @@ extension ClimbRecordListViewModel: ClimbRecordDetailViewModelDelegate {
             // 이미지 업데이트 알림
             recordUpdatedSubject.send(id)
         }
+    }
+
+    // 통계 갱신
+    func refreshStats() {
+        fetchUseCase.execute(keyword: "", isOnlyBookmarked: false)
+            .sink { [weak self] result in
+                guard let self else { return }
+
+                switch result {
+                case .success(let records):
+                    // 전체 데이터로 통계 재계산
+                    let stats = self.getRecordStatsUseCase.execute(records: records)
+                    self.statSubject.send((mountainCount: stats.mountainCount, climbCount: stats.climbCount, totalHeight: stats.totalHeight))
+                case .failure:
+                    break
+                }
+            }
+            .store(in: &cancellables)
     }
 }
