@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Run Tests
-    runs-on: macos-15
+    runs-on: macos-14
 
     steps:
       - name: Checkout
@@ -61,7 +61,7 @@ jobs:
 
   build:
     name: Build Verification
-    runs-on: macos-15
+    runs-on: macos-14
 
     steps:
       - name: Checkout
