@@ -12,7 +12,6 @@ platform :ios do
     run_tests(
       workspace: "Oreum.xcworkspace",
       scheme: "Domain",  # Use Domain scheme which includes DomainTests
-      devices: ["iPhone 16 Pro"],
       clean: true,
       code_coverage: true
     )
