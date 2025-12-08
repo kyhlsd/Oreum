@@ -12,7 +12,7 @@ platform :ios do
     run_tests(
       workspace: "Oreum.xcworkspace",
       scheme: "Domain",  # Use Domain scheme which includes DomainTests
-      destination: "platform=iOS Simulator",
+      devices: ["iPhone 15 Pro"],
       clean: true,
       code_coverage: true
     )
