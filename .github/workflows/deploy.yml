@@ -1,14 +1,14 @@
 # ============================================================================
 # Xcode 26.0을 GitHub Actions에서 지원할 때까지 임시 비활성화
-# GitHub Actions가 Xcode 26을 지원하면 branches를 [ main ]으로 변경하세요
+# GitHub Actions가 Xcode 26을 지원하면 아래처럼 push 트리거를 추가하세요:
+#   push:
+#     branches: [ main ]
 # ============================================================================
 
 name: Deploy to TestFlight
 
 on:
-  push:
-    branches: []  # 모든 브랜치 비활성화
-  workflow_dispatch:  # 수동 실행은 가능
+  workflow_dispatch:  # 수동 실행만 가능
 
 jobs:
   deploy:
