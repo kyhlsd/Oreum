@@ -2,7 +2,7 @@ import ProjectDescription
 
 let iOSVersion = "16.0"
 let teamID = "4QUWH828P3"
-let appVersion = "1.4.2"
+let appVersion = "1.4.3"
 let buildNumber = "1"
 
 let project = Project(
@@ -184,6 +184,7 @@ let project = Project(
                     infoPlist: .extendingDefault(
                         with: [
                             "CFBundleDisplayName": "오름 위젯",
+                            "CFBundleShortVersionString": .string(appVersion),
                             "NSExtension": [
                                 "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
                             ]
@@ -197,7 +198,9 @@ let project = Project(
                     ],
                     settings: .settings(
                         base: [
-                            "DEVELOPMENT_TEAM": .string(teamID)
+                            "DEVELOPMENT_TEAM": .string(teamID),
+                            "MARKETING_VERSION": .string(appVersion),
+                            "CURRENT_PROJECT_VERSION": .string(buildNumber)
                         ],
                         configurations: [
                             .release(name: .release, settings: [
