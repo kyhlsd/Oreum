@@ -46,6 +46,7 @@ final class MapViewController: UIViewController, BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        setupNavItem()
         setupDelegates()
         setupMapBoundary()
         setupAnnotationViewBuilder()
@@ -141,6 +142,12 @@ final class MapViewController: UIViewController, BaseViewController {
     }
     
     // MARK: - Setups
+    private func setupNavItem() {
+        if #unavailable(iOS 26.0) {
+            navigationItem.backButtonTitle = " "
+        }
+    }
+
     private func setupAnnotationViewBuilder() {
         // 상세 정보 보기 선택 시
         annotationViewBuilder.mountainInfoButtonTapped
