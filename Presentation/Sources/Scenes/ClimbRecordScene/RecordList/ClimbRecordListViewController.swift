@@ -170,7 +170,7 @@ extension ClimbRecordListViewController: UICollectionViewDelegate, UICollectionV
             .min { $0.climbDate < $1.climbDate }
         let isFirstVisit = firstRecordOfMountain?.id == climbRecord.id
 
-        let imageDatas = viewModel.recordImageDatas[climbRecord.id] ?? []
+        let imageDatas = viewModel.recordImageDatas[climbRecord.id]?.map { ImageItem(data: $0) } ?? []
 
         cell.setImages(row: indexPath.item, total: viewModel.climbRecordList.count)
         cell.setData(climbRecord, isFirstVisit: isFirstVisit, imageDatas: imageDatas)

@@ -288,21 +288,21 @@ extension ClimbRecordDetailViewController {
         case main
     }
     
-    private func createRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, Data> {
-        return UICollectionView.CellRegistration<ImageCollectionViewCell, Data> { cell, indexPath, item in
+    private func createRegistration() -> UICollectionView.CellRegistration<ImageCollectionViewCell, ImageItem> {
+        return UICollectionView.CellRegistration<ImageCollectionViewCell, ImageItem> { cell, indexPath, item in
             cell.setImage(imageData: item)
         }
     }
 
-    private func createDataSource() -> UICollectionViewDiffableDataSource<Section, Data> {
+    private func createDataSource() -> UICollectionViewDiffableDataSource<Section, ImageItem> {
         let registration = createRegistration()
-        return UICollectionViewDiffableDataSource<Section, Data>(collectionView: mainView.imageCollectionView) { collectionView, indexPath, item in
+        return UICollectionViewDiffableDataSource<Section, ImageItem>(collectionView: mainView.imageCollectionView) { collectionView, indexPath, item in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
         }
     }
 
-    private func applySnapshot(images: [Data]) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Data>()
+    private func applySnapshot(images: [ImageItem]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, ImageItem>()
         snapshot.appendSections(Section.allCases)
         snapshot.appendItems(images)
         dataSource.apply(snapshot, animatingDifferences: true)

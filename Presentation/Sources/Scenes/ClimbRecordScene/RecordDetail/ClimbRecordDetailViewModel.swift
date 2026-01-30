@@ -78,7 +78,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
         let timelineButtonTitle: AnyPublisher<String, Never>
         let presentPhotoActionSheet: AnyPublisher<Bool, Never>
         let saveCompleted: AnyPublisher<Void, Never>
-        let imagesFetched: AnyPublisher<[Data], Never>
+        let imagesFetched: AnyPublisher<[ImageItem], Never>
         let presentImageDeleteAlert: AnyPublisher<Void, Never>
         let placeholderState: AnyPublisher<(isPlaceholder: Bool, text: String), Never>
     }
@@ -91,7 +91,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
         let pushVCSubject = PassthroughSubject<ClimbRecord, Never>()
         let errorMesssageSubject = PassthroughSubject<(String, String), Never>()
         let presentPhotoActionSheetSubject = PassthroughSubject<Bool, Never>()
-        let imagesFetchedSubject = PassthroughSubject<[Data], Never>()
+        let imagesFetchedSubject = PassthroughSubject<[ImageItem], Never>()
         let presentImageDeleteAlertSubject = PassthroughSubject<Void, Never>()
         let isPlaceholderSubject = PassthroughSubject<Bool, Never>()
         let commentTextSubject = PassthroughSubject<String, Never>()
@@ -203,7 +203,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
 
                 // Add 화면이면 pendingImages 반환
                 if isFromAddRecord {
-                    imagesFetchedSubject.send(pendingImages)
+                    imagesFetchedSubject.send(pendingImages.map { ImageItem(data: $0 )})
                     return
                 }
 
@@ -224,7 +224,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                                 return nil
                             }
                         }
-                        imagesFetchedSubject.send(imageDatas)
+                        imagesFetchedSubject.send(imageDatas.map { ImageItem(data: $0 )})
                     }
                     .store(in: &self.cancellables)
             }
@@ -264,7 +264,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
             .sink { [weak self] imageData in
                 guard let self else { return }
                 pendingImages.append(imageData)
-                imagesFetchedSubject.send(pendingImages)
+                imagesFetchedSubject.send(pendingImages.map { ImageItem(data: $0 )})
             }
             .store(in: &cancellables)
 
@@ -319,7 +319,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                     .eraseToAnyPublisher()
             }
             .sink { imageDatas in
-                imagesFetchedSubject.send(imageDatas)
+                imagesFetchedSubject.send(imageDatas.map { ImageItem(data: $0 )})
             }
             .store(in: &cancellables)
 
@@ -366,7 +366,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                    index < pendingImages.count {
                     pendingImages.remove(at: index)
                 }
-                imagesFetchedSubject.send(pendingImages)
+                imagesFetchedSubject.send(pendingImages.map { ImageItem(data: $0 )})
             }
             .store(in: &cancellables)
 
@@ -414,7 +414,7 @@ final class ClimbRecordDetailViewModel: BaseViewModel {
                     .eraseToAnyPublisher()
             }
             .sink { imageDatas in
-                imagesFetchedSubject.send(imageDatas)
+                imagesFetchedSubject.send(imageDatas.map { ImageItem(data: $0 )})
             }
             .store(in: &cancellables)
 

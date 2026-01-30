@@ -97,7 +97,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
     }
     
     // 데이터 정보 표기
-    final func setData(_ data: ClimbRecord, isFirstVisit: Bool, imageDatas: [Data] = []) {
+    final func setData(_ data: ClimbRecord, isFirstVisit: Bool, imageDatas: [ImageItem] = []) {
         let name = data.mountain.name
 
         mountainImageView.image = getMountainImage(date: data.climbDate)
@@ -129,7 +129,7 @@ final class ClimbRecordCollectionViewCell: BaseCollectionViewCell {
             // 로딩 중: placeholder
             imageCollectionView.isHidden = false
             commentLabel.isHidden = true
-            applySnapshot(images: [Data()]) // 빈 Data로 indicator 표시
+            applySnapshot(images: [ImageItem(data: Data())]) // 빈 Data로 indicator 표시
         } else {
             // 이미지 있음
             imageCollectionView.isHidden = false
@@ -315,21 +315,21 @@ extension ClimbRecordCollectionViewCell {
         return UICollectionViewCompositionalLayout(section: section)
     }
     
-    private func createRegistration() -> UICollectionView.CellRegistration<RatioImageCollectionViewCell, Data> {
-        return UICollectionView.CellRegistration<RatioImageCollectionViewCell, Data> { cell, indexPath, item in
-            cell.setImage(imageData: item)
+    private func createRegistration() -> UICollectionView.CellRegistration<RatioImageCollectionViewCell, ImageItem> {
+        return UICollectionView.CellRegistration<RatioImageCollectionViewCell, ImageItem> { cell, indexPath, item in
+            cell.setImage(imageData: item.data)
         }
     }
 
-    private func createDataSource() -> UICollectionViewDiffableDataSource<Section, Data> {
+    private func createDataSource() -> UICollectionViewDiffableDataSource<Section, ImageItem> {
         let registration = createRegistration()
-        return UICollectionViewDiffableDataSource<Section, Data>(collectionView: imageCollectionView) { collectionView, indexPath, item in
+        return UICollectionViewDiffableDataSource<Section, ImageItem>(collectionView: imageCollectionView) { collectionView, indexPath, item in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
         }
     }
 
-    private func applySnapshot(images: [Data]) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Data>()
+    private func applySnapshot(images: [ImageItem]) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, ImageItem>()
         snapshot.appendSections(Section.allCases)
         snapshot.appendItems(images)
         dataSource.apply(snapshot, animatingDifferences: false)

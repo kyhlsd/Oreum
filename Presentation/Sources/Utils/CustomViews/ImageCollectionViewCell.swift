@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Domain
 import SnapKit
 import Kingfisher
 
@@ -19,8 +20,8 @@ final class ImageCollectionViewCell: BaseCollectionViewCell {
         return imageView
     }()
 
-    func setImage(imageData: Data) {
-        if let image = UIImage(data: imageData) {
+    func setImage(imageData: ImageItem) {
+        if let image = UIImage(data: imageData.data) {
             imageView.image = image
         } else {
             imageView.image = nil
