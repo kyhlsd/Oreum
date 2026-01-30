@@ -185,7 +185,11 @@ public final class RealmClimbRecordRepositoryImpl: ClimbRecordRepository {
                 try realm.write {
                     realm.delete(record.images)
                     if let mountain = record.mountain {
-                        realm.delete(mountain)
+                        let otherRecords = realm.objects(ClimbRecordRealm.self)
+                            .filter("mountain == %@", mountain)
+                        if otherRecords.count <= 1 {
+                            realm.delete(mountain)
+                        }
                     }
                     realm.delete(record.timeLog)
                     realm.delete(record)
