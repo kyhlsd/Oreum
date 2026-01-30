@@ -2,7 +2,7 @@ import ProjectDescription
 
 let iOSVersion = "16.0"
 let teamID = "4QUWH828P3"
-let appVersion = "1.4.3"
+let appVersion = "1.5.0"
 let buildNumber = "1"
 
 let project = Project(
@@ -56,7 +56,8 @@ let project = Project(
                         "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
                         "$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
                         "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}.debug.dylib"
-                    ]
+                    ],
+                    basedOnDependencyAnalysis: false
                 )
             ],
             dependencies: [
@@ -73,6 +74,7 @@ let project = Project(
                     "DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym",
                     "CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION": "YES",
                     "OTHER_LDFLAGS": "$(inherited) -ObjC",
+                    "ENABLE_DEBUG_DYLIB": "NO",
                     "DEVELOPMENT_TEAM": .string(teamID),
                     "MARKETING_VERSION": .string(appVersion),
                     "CURRENT_PROJECT_VERSION": .string(buildNumber)

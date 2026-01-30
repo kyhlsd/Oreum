@@ -358,7 +358,7 @@ extension MeasureViewController: UITableViewDelegate {
     private func applySnapshot(mountains: [MountainInfo]) {
         var snapshot = NSDiffableDataSourceSnapshot<Section, MountainInfo>()
         snapshot.appendSections([.main])
-        snapshot.appendItems(mountains)
+        snapshot.appendItems(mountains.uniq(by: \.id))
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 }
