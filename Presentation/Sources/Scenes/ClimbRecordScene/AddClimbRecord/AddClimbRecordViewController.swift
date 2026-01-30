@@ -230,7 +230,7 @@ extension AddClimbRecordViewController: UITableViewDelegate {
     private func applySnapshot(mountains: [Mountain]) {
         var snapshot = NSDiffableDataSourceSnapshot<Section, Mountain>()
         snapshot.appendSections([.main])
-        snapshot.appendItems(mountains)
+        snapshot.appendItems(mountains.uniq(by: \.id))
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 }
