@@ -331,7 +331,7 @@ extension ClimbRecordCollectionViewCell {
     private func applySnapshot(images: [ImageItem]) {
         var snapshot = NSDiffableDataSourceSnapshot<Section, ImageItem>()
         snapshot.appendSections(Section.allCases)
-        snapshot.appendItems(images)
+        snapshot.appendItems(images.uniq(by: \.self))
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 }

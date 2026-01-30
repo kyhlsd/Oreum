@@ -215,7 +215,7 @@ extension MapViewController: UICollectionViewDelegate {
     private func applySnapshot(mountains: [MountainDistance]) {
         var snapshot = NSDiffableDataSourceSnapshot<Section, MountainDistance>()
         snapshot.appendSections(Section.allCases)
-        snapshot.appendItems(mountains)
+        snapshot.appendItems(mountains.uniq(by: \.self))
         dataSource.apply(snapshot, animatingDifferences: true)
     }
 
